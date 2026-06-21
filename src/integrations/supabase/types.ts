@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      change_orders: {
+        Row: {
+          approved_at: string | null
+          client_signature: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          number: number
+          price_change: number
+          project_id: string
+          reason: string | null
+          status: string
+          timeline_change_days: number
+        }
+        Insert: {
+          approved_at?: string | null
+          client_signature?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          number?: number
+          price_change?: number
+          project_id: string
+          reason?: string | null
+          status?: string
+          timeline_change_days?: number
+        }
+        Update: {
+          approved_at?: string | null
+          client_signature?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          number?: number
+          price_change?: number
+          project_id?: string
+          reason?: string | null
+          status?: string
+          timeline_change_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -128,6 +181,130 @@ export type Database = {
           },
         ]
       }
+      container_builds: {
+        Row: {
+          airbnb_use_case: string | null
+          container_count: number | null
+          container_size: string | null
+          deck_patio: string | null
+          details: Json
+          exterior_paint: string | null
+          foundation_type: string | null
+          id: string
+          insulation: string | null
+          interior_finish: string | null
+          landscaping: string | null
+          layout_notes: string | null
+          project_id: string
+          roof_type: string | null
+          signage: string | null
+          updated_at: string
+          utility_plan: string | null
+        }
+        Insert: {
+          airbnb_use_case?: string | null
+          container_count?: number | null
+          container_size?: string | null
+          deck_patio?: string | null
+          details?: Json
+          exterior_paint?: string | null
+          foundation_type?: string | null
+          id?: string
+          insulation?: string | null
+          interior_finish?: string | null
+          landscaping?: string | null
+          layout_notes?: string | null
+          project_id: string
+          roof_type?: string | null
+          signage?: string | null
+          updated_at?: string
+          utility_plan?: string | null
+        }
+        Update: {
+          airbnb_use_case?: string | null
+          container_count?: number | null
+          container_size?: string | null
+          deck_patio?: string | null
+          details?: Json
+          exterior_paint?: string | null
+          foundation_type?: string | null
+          id?: string
+          insulation?: string | null
+          interior_finish?: string | null
+          landscaping?: string | null
+          layout_notes?: string | null
+          project_id?: string
+          roof_type?: string | null
+          signage?: string | null
+          updated_at?: string
+          utility_plan?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "container_builds_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_logs: {
+        Row: {
+          client_communication: string | null
+          created_at: string
+          created_by: string | null
+          crew_notes: string | null
+          equipment_notes: string | null
+          hours_worked: number | null
+          id: string
+          log_date: string
+          material_notes: string | null
+          progress_notes: string | null
+          project_id: string
+          subcontractor_notes: string | null
+          weather: string | null
+        }
+        Insert: {
+          client_communication?: string | null
+          created_at?: string
+          created_by?: string | null
+          crew_notes?: string | null
+          equipment_notes?: string | null
+          hours_worked?: number | null
+          id?: string
+          log_date?: string
+          material_notes?: string | null
+          progress_notes?: string | null
+          project_id: string
+          subcontractor_notes?: string | null
+          weather?: string | null
+        }
+        Update: {
+          client_communication?: string | null
+          created_at?: string
+          created_by?: string | null
+          crew_notes?: string | null
+          equipment_notes?: string | null
+          hours_worked?: number | null
+          id?: string
+          log_date?: string
+          material_notes?: string | null
+          progress_notes?: string | null
+          project_id?: string
+          subcontractor_notes?: string | null
+          weather?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estimate_line_items: {
         Row: {
           category: Database["public"]["Enums"]["estimate_category"]
@@ -231,6 +408,238 @@ export type Database = {
           },
         ]
       }
+      historic_projects: {
+        Row: {
+          building_age: string | null
+          details: Json
+          grant_notes: string | null
+          historic_notes: string | null
+          id: string
+          masonry_damage: string | null
+          phased_plan: string | null
+          project_id: string
+          safety_concerns: string | null
+          structural_concerns: string | null
+          updated_at: string
+          water_intrusion: string | null
+          window_condition: string | null
+        }
+        Insert: {
+          building_age?: string | null
+          details?: Json
+          grant_notes?: string | null
+          historic_notes?: string | null
+          id?: string
+          masonry_damage?: string | null
+          phased_plan?: string | null
+          project_id: string
+          safety_concerns?: string | null
+          structural_concerns?: string | null
+          updated_at?: string
+          water_intrusion?: string | null
+          window_condition?: string | null
+        }
+        Update: {
+          building_age?: string | null
+          details?: Json
+          grant_notes?: string | null
+          historic_notes?: string | null
+          id?: string
+          masonry_damage?: string | null
+          phased_plan?: string | null
+          project_id?: string
+          safety_concerns?: string | null
+          structural_concerns?: string | null
+          updated_at?: string
+          water_intrusion?: string | null
+          window_condition?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historic_projects_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_builds: {
+        Row: {
+          closeout: Json
+          design: Json
+          id: string
+          preconstruction: Json
+          project_id: string
+          selections: Json
+          updated_at: string
+        }
+        Insert: {
+          closeout?: Json
+          design?: Json
+          id?: string
+          preconstruction?: Json
+          project_id: string
+          selections?: Json
+          updated_at?: string
+        }
+        Update: {
+          closeout?: Json
+          design?: Json
+          id?: string
+          preconstruction?: Json
+          project_id?: string
+          selections?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_builds_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_costs: {
+        Row: {
+          actual: number
+          category: Database["public"]["Enums"]["estimate_category"]
+          estimated: number
+          id: string
+          notes: string | null
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          actual?: number
+          category: Database["public"]["Enums"]["estimate_category"]
+          estimated?: number
+          id?: string
+          notes?: string | null
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          actual?: number
+          category?: Database["public"]["Enums"]["estimate_category"]
+          estimated?: number
+          id?: string
+          notes?: string | null
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_costs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_tasks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          is_complete: boolean
+          notes: string | null
+          project_id: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          is_complete?: boolean
+          notes?: string | null
+          project_id: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          is_complete?: boolean
+          notes?: string | null
+          project_id?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_entries: {
+        Row: {
+          actual_total: number | null
+          created_at: string
+          created_by: string | null
+          estimated_total: number | null
+          final_scope: string | null
+          id: string
+          labor_hours: number | null
+          lessons_learned: string | null
+          margin_pct: number | null
+          project_id: string | null
+          project_type: Database["public"]["Enums"]["project_type"]
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          actual_total?: number | null
+          created_at?: string
+          created_by?: string | null
+          estimated_total?: number | null
+          final_scope?: string | null
+          id?: string
+          labor_hours?: number | null
+          lessons_learned?: string | null
+          margin_pct?: number | null
+          project_id?: string | null
+          project_type: Database["public"]["Enums"]["project_type"]
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          actual_total?: number | null
+          created_at?: string
+          created_by?: string | null
+          estimated_total?: number | null
+          final_scope?: string | null
+          id?: string
+          labor_hours?: number | null
+          lessons_learned?: string | null
+          margin_pct?: number | null
+          project_id?: string | null
+          project_type?: Database["public"]["Enums"]["project_type"]
+          tags?: string[]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lidar_scans: {
         Row: {
           created_at: string
@@ -268,6 +677,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      material_costs: {
+        Row: {
+          category: string | null
+          county: string | null
+          created_at: string
+          id: string
+          item_name: string
+          last_updated: string
+          state: string | null
+          supplier: string | null
+          unit: string
+          unit_cost: number
+          zip: string | null
+        }
+        Insert: {
+          category?: string | null
+          county?: string | null
+          created_at?: string
+          id?: string
+          item_name: string
+          last_updated?: string
+          state?: string | null
+          supplier?: string | null
+          unit?: string
+          unit_cost?: number
+          zip?: string | null
+        }
+        Update: {
+          category?: string | null
+          county?: string | null
+          created_at?: string
+          id?: string
+          item_name?: string
+          last_updated?: string
+          state?: string | null
+          supplier?: string | null
+          unit?: string
+          unit_cost?: number
+          zip?: string | null
+        }
+        Relationships: []
       }
       measurements: {
         Row: {
@@ -312,6 +763,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      production_rates: {
+        Row: {
+          created_at: string
+          crew_size: number
+          equipment: string | null
+          id: string
+          labor_hours_per_unit: number | null
+          notes: string | null
+          rate_per_day: number | null
+          unit: string
+          work_type: string
+        }
+        Insert: {
+          created_at?: string
+          crew_size?: number
+          equipment?: string | null
+          id?: string
+          labor_hours_per_unit?: number | null
+          notes?: string | null
+          rate_per_day?: number | null
+          unit?: string
+          work_type: string
+        }
+        Update: {
+          created_at?: string
+          crew_size?: number
+          equipment?: string | null
+          id?: string
+          labor_hours_per_unit?: number | null
+          notes?: string | null
+          rate_per_day?: number | null
+          unit?: string
+          work_type?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -633,6 +1120,65 @@ export type Database = {
             foreignKeyName: "proposals_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      septic_projects: {
+        Row: {
+          as_built_notes: string | null
+          drainage_notes: string | null
+          gps_points: string | null
+          id: string
+          inspection_notes: string | null
+          leach_field_layout: string | null
+          maintenance_notes: string | null
+          permit_notes: string | null
+          project_id: string
+          sensor_status: Json
+          setbacks: string | null
+          soil_notes: string | null
+          tank_location: string | null
+          updated_at: string
+        }
+        Insert: {
+          as_built_notes?: string | null
+          drainage_notes?: string | null
+          gps_points?: string | null
+          id?: string
+          inspection_notes?: string | null
+          leach_field_layout?: string | null
+          maintenance_notes?: string | null
+          permit_notes?: string | null
+          project_id: string
+          sensor_status?: Json
+          setbacks?: string | null
+          soil_notes?: string | null
+          tank_location?: string | null
+          updated_at?: string
+        }
+        Update: {
+          as_built_notes?: string | null
+          drainage_notes?: string | null
+          gps_points?: string | null
+          id?: string
+          inspection_notes?: string | null
+          leach_field_layout?: string | null
+          maintenance_notes?: string | null
+          permit_notes?: string | null
+          project_id?: string
+          sensor_status?: Json
+          setbacks?: string | null
+          soil_notes?: string | null
+          tank_location?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "septic_projects_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
