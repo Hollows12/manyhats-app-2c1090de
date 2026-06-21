@@ -1,0 +1,185 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { ArrowRight, Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BrandMark } from "@/components/brand-mark";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
+import { COMPANY } from "@/lib/manyhats";
+
+export const Route = createFileRoute("/auth")({
+  head: () => ({
+    meta: [
+      { title: "Sign in — ManyHats Pro" },
+      { name: "description", content: "Sign in to your ManyHats Pro contractor dashboard." },
+    ],
+  }),
+  component: AuthPage,
+});
+
+function AuthPage() {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/dashboard", replace: true });
+    });
+  }, [navigate]);
+
+  async function handleEmail(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      if (tab === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Welcome back.");
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName } },
+        });
+        if (error) throw error;
+        toast.success("Account created. Signing you in...");
+      }
+      navigate({ to: "/dashboard", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setBusy(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      if (result.error) {
+        toast.error(result.error.message || "Google sign-in failed");
+        return;
+      }
+      if (result.redirected) return;
+      navigate({ to: "/dashboard", replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sign-in failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <div className="hidden bg-navy-gradient p-12 text-ivory lg:flex lg:flex-col lg:justify-between">
+        <BrandMark className="[&_.font-display]:text-white [&_.text-muted-foreground]:text-gold/70" />
+        <div>
+          <h2 className="font-display text-4xl font-semibold leading-tight">
+            From lead to closeout — every project, one source of truth.
+          </h2>
+          <p className="mt-4 text-ivory/70">
+            Field capture. Estimates with line-item costing. Proposals with Good / Better / Best.
+            Concept studio for client-facing renderings. Job costing that improves your next bid.
+          </p>
+        </div>
+        <div className="text-xs text-ivory/60">
+          {COMPANY.owner} · {COMPANY.ownerTitle} · {COMPANY.phone}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-center bg-background p-6">
+        <div className="w-full max-w-md space-y-6">
+          <div className="lg:hidden">
+            <BrandMark />
+          </div>
+          <div>
+            <h1 className="font-display text-3xl font-bold">Welcome to ManyHats Pro</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Sign in to manage leads, jobs, and proposals.
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleGoogle}
+            disabled={busy}
+          >
+            <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden>
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A10.99 10.99 0 0 0 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.1A6.61 6.61 0 0 1 5.5 12c0-.73.13-1.44.34-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.77.42 3.45 1.18 4.94l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.65l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/>
+            </svg>
+            Continue with Google
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or</span>
+            </div>
+          </div>
+
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Sign in</TabsTrigger>
+              <TabsTrigger value="signup">Create account</TabsTrigger>
+            </TabsList>
+            <TabsContent value="signin">
+              <form onSubmit={handleEmail} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={busy}>
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Sign in <ArrowRight className="ml-1 h-4 w-4" /></>}
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="signup">
+              <form onSubmit={handleEmail} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full name</Label>
+                  <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email2">Email</Label>
+                  <Input id="email2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password2">Password</Label>
+                  <Input id="password2" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button type="submit" className="w-full" disabled={busy}>
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  The first account becomes admin. Later accounts default to crew — admins can change roles in Settings.
+                </p>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          <p className="text-center text-xs text-muted-foreground">
+            <Link to="/" className="hover:underline">← Back to home</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
