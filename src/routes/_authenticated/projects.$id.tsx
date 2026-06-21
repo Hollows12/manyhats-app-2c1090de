@@ -43,7 +43,7 @@ function ProjectDetail() {
 
   const updateStatus = useMutation({
     mutationFn: async (status: string) => {
-      const { error } = await supabase.from("projects").update({ status }).eq("id", id);
+      const { error } = await supabase.from("projects").update({ status: status as any }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["project", id] }); toast.success("Status updated."); },

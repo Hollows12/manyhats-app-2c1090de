@@ -103,7 +103,7 @@ function PhotosSection({ projectId }: { projectId: string }) {
                 photo={p}
                 getUrl={getSignedUrl}
                 onDelete={() => remove.mutate(p)}
-                onToggleTag={(t) => toggleTag.mutate({ id: p.id, tags: p.tags.includes(t) ? p.tags.filter((x: string) => x !== t) : [...p.tags, t] })}
+                onToggleTag={(t: string) => toggleTag.mutate({ id: p.id, tags: p.tags.includes(t) ? p.tags.filter((x: string) => x !== t) : [...p.tags, t] })}
               />
             ))}
           </div>
