@@ -21,7 +21,7 @@ const COLUMNS = [
 function LeadsPage() {
   const projects = useQuery({
     queryKey: ["leads"],
-    queryFn: async () => (await supabase.from("projects").select("*, clients(name)").in("status", COLUMNS.map((c) => c.value)).order("updated_at", { ascending: false })).data ?? [],
+    queryFn: async () => (await supabase.from("projects").select("*, clients(name)").in("status", COLUMNS.map((c) => c.value) as any).order("updated_at", { ascending: false })).data ?? [],
   });
 
   return (

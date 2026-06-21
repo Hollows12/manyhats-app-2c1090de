@@ -178,7 +178,7 @@ function Footer({ proposalNumber }: { proposalNumber: string }) {
 export const Route = createFileRoute("/api/proposals/$id/pdf")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params }: { params: { id: string } }) => {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: proposal, error } = await supabaseAdmin
           .from("proposals")

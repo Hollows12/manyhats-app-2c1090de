@@ -1,11 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import { PROJECT_TYPE_LABEL, HOME_TYPES, CONTAINER_TYPES, HISTORIC_TYPES, SEPTIC_TYPES } from "@/lib/manyhats";
-import { Home, Container, Landmark, Droplets } from "lucide-react";
+import { PROJECT_TYPE_LABEL } from "@/lib/manyhats";
 
 export function SpecialtyList({ title, subtitle, icon: Icon, allowedTypes }: { title: string; subtitle: string; icon: LucideIcon; allowedTypes: Set<string> }) {
   const list = useQuery({
@@ -45,6 +44,3 @@ export function SpecialtyList({ title, subtitle, icon: Icon, allowedTypes }: { t
   );
 }
 
-export const HomeBuilderRoute = createFileRoute("/_authenticated/home-builder")({
-  component: () => <SpecialtyList title="Home Builder Pro" subtitle="Custom homes, additions, barndominiums, garages." icon={Home} allowedTypes={HOME_TYPES} />,
-});
