@@ -14,16 +14,784 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          county: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: []
+      }
+      concept_requests: {
+        Row: {
+          approved_for_proposal: boolean
+          created_at: string
+          created_by: string | null
+          generated_image_path: string | null
+          id: string
+          measurement_notes: string | null
+          must_keep: string | null
+          project_id: string
+          prompt: string
+          requested_changes: string | null
+          source_photo_id: string | null
+          status: Database["public"]["Enums"]["concept_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_for_proposal?: boolean
+          created_at?: string
+          created_by?: string | null
+          generated_image_path?: string | null
+          id?: string
+          measurement_notes?: string | null
+          must_keep?: string | null
+          project_id: string
+          prompt: string
+          requested_changes?: string | null
+          source_photo_id?: string | null
+          status?: Database["public"]["Enums"]["concept_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_for_proposal?: boolean
+          created_at?: string
+          created_by?: string | null
+          generated_image_path?: string | null
+          id?: string
+          measurement_notes?: string | null
+          must_keep?: string | null
+          project_id?: string
+          prompt?: string
+          requested_changes?: string | null
+          source_photo_id?: string | null
+          status?: Database["public"]["Enums"]["concept_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "concept_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "concept_requests_source_photo_id_fkey"
+            columns: ["source_photo_id"]
+            isOneToOne: false
+            referencedRelation: "project_photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estimate_line_items: {
+        Row: {
+          category: Database["public"]["Enums"]["estimate_category"]
+          created_at: string
+          description: string
+          estimate_id: string
+          id: string
+          quantity: number
+          sort_order: number
+          total: number | null
+          unit: string
+          unit_cost: number
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["estimate_category"]
+          created_at?: string
+          description: string
+          estimate_id: string
+          id?: string
+          quantity?: number
+          sort_order?: number
+          total?: number | null
+          unit?: string
+          unit_cost?: number
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["estimate_category"]
+          created_at?: string
+          description?: string
+          estimate_id?: string
+          id?: string
+          quantity?: number
+          sort_order?: number
+          total?: number | null
+          unit?: string
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimate_line_items_estimate_id_fkey"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estimates: {
+        Row: {
+          contingency_pct: number
+          created_at: string
+          created_by: string | null
+          estimate_number: string | null
+          grand_total: number
+          id: string
+          markup_pct: number
+          notes: string | null
+          project_id: string
+          status: string
+          subtotal: number
+          tax_pct: number
+          updated_at: string
+        }
+        Insert: {
+          contingency_pct?: number
+          created_at?: string
+          created_by?: string | null
+          estimate_number?: string | null
+          grand_total?: number
+          id?: string
+          markup_pct?: number
+          notes?: string | null
+          project_id: string
+          status?: string
+          subtotal?: number
+          tax_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          contingency_pct?: number
+          created_at?: string
+          created_by?: string | null
+          estimate_number?: string | null
+          grand_total?: number
+          id?: string
+          markup_pct?: number
+          notes?: string | null
+          project_id?: string
+          status?: string
+          subtotal?: number
+          tax_pct?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lidar_scans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          file_path: string | null
+          id: string
+          measurement_summary: string | null
+          project_id: string
+          scan_name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          file_path?: string | null
+          id?: string
+          measurement_summary?: string | null
+          project_id: string
+          scan_name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          file_path?: string | null
+          id?: string
+          measurement_summary?: string | null
+          project_id?: string
+          scan_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lidar_scans_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      measurements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          is_confirmed: boolean
+          notes: string | null
+          project_id: string
+          quantity: number
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          is_confirmed?: boolean
+          notes?: string | null
+          project_id: string
+          quantity?: number
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          is_confirmed?: boolean
+          notes?: string | null
+          project_id?: string
+          quantity?: number
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "measurements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          client_id: string | null
+          company: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_client_fk"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          is_real_site_photo: boolean
+          project_id: string
+          storage_path: string
+          tags: string[]
+          uploaded_by: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_real_site_photo?: boolean
+          project_id: string
+          storage_path: string
+          tags?: string[]
+          uploaded_by?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_real_site_photo?: boolean
+          project_id?: string
+          storage_path?: string
+          tags?: string[]
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_photos_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          budget_max: number | null
+          budget_min: number | null
+          city: string | null
+          client_id: string
+          county: string | null
+          created_at: string
+          created_by: string | null
+          desired_timeline: string | null
+          id: string
+          job_address: string | null
+          measurement_notes: string | null
+          name: string
+          project_type: Database["public"]["Enums"]["project_type"]
+          site_notes: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["project_status"]
+          summary: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          budget_max?: number | null
+          budget_min?: number | null
+          city?: string | null
+          client_id: string
+          county?: string | null
+          created_at?: string
+          created_by?: string | null
+          desired_timeline?: string | null
+          id?: string
+          job_address?: string | null
+          measurement_notes?: string | null
+          name: string
+          project_type?: Database["public"]["Enums"]["project_type"]
+          site_notes?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          summary?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          budget_max?: number | null
+          budget_min?: number | null
+          city?: string | null
+          client_id?: string
+          county?: string | null
+          created_at?: string
+          created_by?: string | null
+          desired_timeline?: string | null
+          id?: string
+          job_address?: string | null
+          measurement_notes?: string | null
+          name?: string
+          project_type?: Database["public"]["Enums"]["project_type"]
+          site_notes?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          summary?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_options: {
+        Row: {
+          description: string | null
+          id: string
+          is_recommended: boolean
+          price: number
+          proposal_id: string
+          sort_order: number
+          tier: string
+          title: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          is_recommended?: boolean
+          price?: number
+          proposal_id: string
+          sort_order?: number
+          tier: string
+          title: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          is_recommended?: boolean
+          price?: number
+          proposal_id?: string
+          sort_order?: number
+          tier?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_options_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_signatures: {
+        Row: {
+          id: string
+          ip_address: string | null
+          proposal_id: string
+          selected_option_id: string | null
+          signature_data: string | null
+          signed_at: string
+          signer_email: string | null
+          signer_name: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          proposal_id: string
+          selected_option_id?: string | null
+          signature_data?: string | null
+          signed_at?: string
+          signer_email?: string | null
+          signer_name: string
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          proposal_id?: string
+          selected_option_id?: string | null
+          signature_data?: string | null
+          signed_at?: string
+          signer_email?: string | null
+          signer_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_signatures_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_signatures_selected_option_id_fkey"
+            columns: ["selected_option_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposals: {
+        Row: {
+          approved_at: string | null
+          attached_concept_ids: string[]
+          attached_photo_ids: string[]
+          created_at: string
+          created_by: string | null
+          exclusions: string | null
+          executive_summary: string | null
+          existing_conditions: string | null
+          grant_friendly: boolean
+          id: string
+          payment_terms: string | null
+          pdf_path: string | null
+          project_id: string
+          proposal_number: string
+          recommendation: string | null
+          scope_of_work: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["proposal_status"]
+          timeline: string | null
+          updated_at: string
+          warranty_length: string | null
+          warranty_notes: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          attached_concept_ids?: string[]
+          attached_photo_ids?: string[]
+          created_at?: string
+          created_by?: string | null
+          exclusions?: string | null
+          executive_summary?: string | null
+          existing_conditions?: string | null
+          grant_friendly?: boolean
+          id?: string
+          payment_terms?: string | null
+          pdf_path?: string | null
+          project_id: string
+          proposal_number: string
+          recommendation?: string | null
+          scope_of_work?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["proposal_status"]
+          timeline?: string | null
+          updated_at?: string
+          warranty_length?: string | null
+          warranty_notes?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          attached_concept_ids?: string[]
+          attached_photo_ids?: string[]
+          created_at?: string
+          created_by?: string | null
+          exclusions?: string | null
+          executive_summary?: string | null
+          existing_conditions?: string | null
+          grant_friendly?: boolean
+          id?: string
+          payment_terms?: string | null
+          pdf_path?: string | null
+          project_id?: string
+          proposal_number?: string
+          recommendation?: string | null
+          scope_of_work?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["proposal_status"]
+          timeline?: string | null
+          updated_at?: string
+          warranty_length?: string | null
+          warranty_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      voice_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          project_id: string
+          scope_notes: string | null
+          storage_path: string | null
+          transcript: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          project_id: string
+          scope_notes?: string | null
+          storage_path?: string | null
+          transcript?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          project_id?: string
+          scope_notes?: string | null
+          storage_path?: string | null
+          transcript?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_notes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "crew" | "client"
+      concept_status:
+        | "draft"
+        | "ready_to_generate"
+        | "generated"
+        | "approved"
+        | "rejected"
+      estimate_category:
+        | "labor"
+        | "material"
+        | "equipment"
+        | "subcontractor"
+        | "fuel_travel"
+        | "permit"
+        | "disposal"
+        | "contingency"
+        | "markup"
+        | "other"
+      project_status:
+        | "lead"
+        | "site_visit_scheduled"
+        | "field_capture"
+        | "estimating"
+        | "proposal_draft"
+        | "proposal_sent"
+        | "approved"
+        | "active"
+        | "waiting_on_client"
+        | "waiting_on_materials"
+        | "complete"
+        | "lost"
+      project_type:
+        | "custom_home"
+        | "spec_home"
+        | "barndominium"
+        | "pole_barn_home"
+        | "addition"
+        | "garage"
+        | "basement_finish"
+        | "whole_home_remodel"
+        | "kitchen_remodel"
+        | "bathroom_remodel"
+        | "outdoor_living"
+        | "excavation"
+        | "site_development"
+        | "foundation"
+        | "retaining_wall"
+        | "utilities"
+        | "septic_install"
+        | "septic_repair"
+        | "driveway"
+        | "drainage"
+        | "stormwater"
+        | "decorative_concrete"
+        | "stamped_concrete"
+        | "concrete_flatwork"
+        | "cmu_block"
+        | "masonry_restoration"
+        | "historic_restoration"
+        | "chimney_repair"
+        | "stone_veneer"
+        | "commercial_buildout"
+        | "office_renovation"
+        | "retail_buildout"
+        | "restaurant_buildout"
+        | "museum_theater_church"
+        | "container_airbnb"
+        | "container_home"
+        | "container_game_room"
+        | "container_theater_room"
+        | "hunting_cabin"
+        | "short_term_rental"
+        | "other"
+      proposal_status:
+        | "draft"
+        | "ready"
+        | "sent"
+        | "approved"
+        | "rejected"
+        | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +918,92 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "crew", "client"],
+      concept_status: [
+        "draft",
+        "ready_to_generate",
+        "generated",
+        "approved",
+        "rejected",
+      ],
+      estimate_category: [
+        "labor",
+        "material",
+        "equipment",
+        "subcontractor",
+        "fuel_travel",
+        "permit",
+        "disposal",
+        "contingency",
+        "markup",
+        "other",
+      ],
+      project_status: [
+        "lead",
+        "site_visit_scheduled",
+        "field_capture",
+        "estimating",
+        "proposal_draft",
+        "proposal_sent",
+        "approved",
+        "active",
+        "waiting_on_client",
+        "waiting_on_materials",
+        "complete",
+        "lost",
+      ],
+      project_type: [
+        "custom_home",
+        "spec_home",
+        "barndominium",
+        "pole_barn_home",
+        "addition",
+        "garage",
+        "basement_finish",
+        "whole_home_remodel",
+        "kitchen_remodel",
+        "bathroom_remodel",
+        "outdoor_living",
+        "excavation",
+        "site_development",
+        "foundation",
+        "retaining_wall",
+        "utilities",
+        "septic_install",
+        "septic_repair",
+        "driveway",
+        "drainage",
+        "stormwater",
+        "decorative_concrete",
+        "stamped_concrete",
+        "concrete_flatwork",
+        "cmu_block",
+        "masonry_restoration",
+        "historic_restoration",
+        "chimney_repair",
+        "stone_veneer",
+        "commercial_buildout",
+        "office_renovation",
+        "retail_buildout",
+        "restaurant_buildout",
+        "museum_theater_church",
+        "container_airbnb",
+        "container_home",
+        "container_game_room",
+        "container_theater_room",
+        "hunting_cabin",
+        "short_term_rental",
+        "other",
+      ],
+      proposal_status: [
+        "draft",
+        "ready",
+        "sent",
+        "approved",
+        "rejected",
+        "expired",
+      ],
+    },
   },
 } as const
