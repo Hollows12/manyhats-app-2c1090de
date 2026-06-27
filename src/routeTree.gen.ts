@@ -9,38 +9,325 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiConceptImageRouteImport } from './routes/api/concept-image'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedSepticRouteImport } from './routes/_authenticated/septic'
+import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
+import { Route as AuthenticatedKnowledgeBaseRouteImport } from './routes/_authenticated/knowledge-base'
+import { Route as AuthenticatedJobManagementRouteImport } from './routes/_authenticated/job-management'
+import { Route as AuthenticatedJobCostingRouteImport } from './routes/_authenticated/job-costing'
+import { Route as AuthenticatedHomeBuilderRouteImport } from './routes/_authenticated/home-builder'
+import { Route as AuthenticatedHistoricRouteImport } from './routes/_authenticated/historic'
+import { Route as AuthenticatedFieldCaptureRouteImport } from './routes/_authenticated/field-capture'
+import { Route as AuthenticatedEstimatesRouteImport } from './routes/_authenticated/estimates'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedContainerBuildsRouteImport } from './routes/_authenticated/container-builds'
+import { Route as AuthenticatedConceptStudioRouteImport } from './routes/_authenticated/concept-studio'
+import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
+import { Route as ApiProposalsIdPdfRouteImport } from './routes/api/proposals.$id.pdf'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConceptImageRoute = ApiConceptImageRouteImport.update({
+  id: '/api/concept-image',
+  path: '/api/concept-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSepticRoute = AuthenticatedSepticRouteImport.update({
+  id: '/septic',
+  path: '/septic',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProposalsRoute = AuthenticatedProposalsRouteImport.update({
+  id: '/proposals',
+  path: '/proposals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedKnowledgeBaseRoute =
+  AuthenticatedKnowledgeBaseRouteImport.update({
+    id: '/knowledge-base',
+    path: '/knowledge-base',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedJobManagementRoute =
+  AuthenticatedJobManagementRouteImport.update({
+    id: '/job-management',
+    path: '/job-management',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedJobCostingRoute = AuthenticatedJobCostingRouteImport.update({
+  id: '/job-costing',
+  path: '/job-costing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomeBuilderRoute =
+  AuthenticatedHomeBuilderRouteImport.update({
+    id: '/home-builder',
+    path: '/home-builder',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHistoricRoute = AuthenticatedHistoricRouteImport.update({
+  id: '/historic',
+  path: '/historic',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFieldCaptureRoute =
+  AuthenticatedFieldCaptureRouteImport.update({
+    id: '/field-capture',
+    path: '/field-capture',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEstimatesRoute = AuthenticatedEstimatesRouteImport.update({
+  id: '/estimates',
+  path: '/estimates',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedContainerBuildsRoute =
+  AuthenticatedContainerBuildsRouteImport.update({
+    id: '/container-builds',
+    path: '/container-builds',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedConceptStudioRoute =
+  AuthenticatedConceptStudioRouteImport.update({
+    id: '/concept-studio',
+    path: '/concept-studio',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedProjectsRoute,
+} as any)
+const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedClientsRoute,
+} as any)
+const ApiProposalsIdPdfRoute = ApiProposalsIdPdfRouteImport.update({
+  id: '/api/proposals/$id/pdf',
+  path: '/api/proposals/$id/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/clients': typeof AuthenticatedClientsRouteWithChildren
+  '/concept-studio': typeof AuthenticatedConceptStudioRoute
+  '/container-builds': typeof AuthenticatedContainerBuildsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/estimates': typeof AuthenticatedEstimatesRoute
+  '/field-capture': typeof AuthenticatedFieldCaptureRoute
+  '/historic': typeof AuthenticatedHistoricRoute
+  '/home-builder': typeof AuthenticatedHomeBuilderRoute
+  '/job-costing': typeof AuthenticatedJobCostingRoute
+  '/job-management': typeof AuthenticatedJobManagementRoute
+  '/knowledge-base': typeof AuthenticatedKnowledgeBaseRoute
+  '/leads': typeof AuthenticatedLeadsRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
+  '/proposals': typeof AuthenticatedProposalsRoute
+  '/septic': typeof AuthenticatedSepticRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/api/concept-image': typeof ApiConceptImageRoute
+  '/clients/$id': typeof AuthenticatedClientsIdRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/api/proposals/$id/pdf': typeof ApiProposalsIdPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/clients': typeof AuthenticatedClientsRouteWithChildren
+  '/concept-studio': typeof AuthenticatedConceptStudioRoute
+  '/container-builds': typeof AuthenticatedContainerBuildsRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/estimates': typeof AuthenticatedEstimatesRoute
+  '/field-capture': typeof AuthenticatedFieldCaptureRoute
+  '/historic': typeof AuthenticatedHistoricRoute
+  '/home-builder': typeof AuthenticatedHomeBuilderRoute
+  '/job-costing': typeof AuthenticatedJobCostingRoute
+  '/job-management': typeof AuthenticatedJobManagementRoute
+  '/knowledge-base': typeof AuthenticatedKnowledgeBaseRoute
+  '/leads': typeof AuthenticatedLeadsRoute
+  '/projects': typeof AuthenticatedProjectsRouteWithChildren
+  '/proposals': typeof AuthenticatedProposalsRoute
+  '/septic': typeof AuthenticatedSepticRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/api/concept-image': typeof ApiConceptImageRoute
+  '/clients/$id': typeof AuthenticatedClientsIdRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/api/proposals/$id/pdf': typeof ApiProposalsIdPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/clients': typeof AuthenticatedClientsRouteWithChildren
+  '/_authenticated/concept-studio': typeof AuthenticatedConceptStudioRoute
+  '/_authenticated/container-builds': typeof AuthenticatedContainerBuildsRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/estimates': typeof AuthenticatedEstimatesRoute
+  '/_authenticated/field-capture': typeof AuthenticatedFieldCaptureRoute
+  '/_authenticated/historic': typeof AuthenticatedHistoricRoute
+  '/_authenticated/home-builder': typeof AuthenticatedHomeBuilderRoute
+  '/_authenticated/job-costing': typeof AuthenticatedJobCostingRoute
+  '/_authenticated/job-management': typeof AuthenticatedJobManagementRoute
+  '/_authenticated/knowledge-base': typeof AuthenticatedKnowledgeBaseRoute
+  '/_authenticated/leads': typeof AuthenticatedLeadsRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
+  '/_authenticated/proposals': typeof AuthenticatedProposalsRoute
+  '/_authenticated/septic': typeof AuthenticatedSepticRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/api/concept-image': typeof ApiConceptImageRoute
+  '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
+  '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/api/proposals/$id/pdf': typeof ApiProposalsIdPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/clients'
+    | '/concept-studio'
+    | '/container-builds'
+    | '/dashboard'
+    | '/estimates'
+    | '/field-capture'
+    | '/historic'
+    | '/home-builder'
+    | '/job-costing'
+    | '/job-management'
+    | '/knowledge-base'
+    | '/leads'
+    | '/projects'
+    | '/proposals'
+    | '/septic'
+    | '/settings'
+    | '/api/concept-image'
+    | '/clients/$id'
+    | '/projects/$id'
+    | '/api/proposals/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/clients'
+    | '/concept-studio'
+    | '/container-builds'
+    | '/dashboard'
+    | '/estimates'
+    | '/field-capture'
+    | '/historic'
+    | '/home-builder'
+    | '/job-costing'
+    | '/job-management'
+    | '/knowledge-base'
+    | '/leads'
+    | '/projects'
+    | '/proposals'
+    | '/septic'
+    | '/settings'
+    | '/api/concept-image'
+    | '/clients/$id'
+    | '/projects/$id'
+    | '/api/proposals/$id/pdf'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/clients'
+    | '/_authenticated/concept-studio'
+    | '/_authenticated/container-builds'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/estimates'
+    | '/_authenticated/field-capture'
+    | '/_authenticated/historic'
+    | '/_authenticated/home-builder'
+    | '/_authenticated/job-costing'
+    | '/_authenticated/job-management'
+    | '/_authenticated/knowledge-base'
+    | '/_authenticated/leads'
+    | '/_authenticated/projects'
+    | '/_authenticated/proposals'
+    | '/_authenticated/septic'
+    | '/_authenticated/settings'
+    | '/api/concept-image'
+    | '/_authenticated/clients/$id'
+    | '/_authenticated/projects/$id'
+    | '/api/proposals/$id/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  ApiConceptImageRoute: typeof ApiConceptImageRoute
+  ApiProposalsIdPdfRoute: typeof ApiProposalsIdPdfRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +335,220 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/concept-image': {
+      id: '/api/concept-image'
+      path: '/api/concept-image'
+      fullPath: '/api/concept-image'
+      preLoaderRoute: typeof ApiConceptImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/septic': {
+      id: '/_authenticated/septic'
+      path: '/septic'
+      fullPath: '/septic'
+      preLoaderRoute: typeof AuthenticatedSepticRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/proposals': {
+      id: '/_authenticated/proposals'
+      path: '/proposals'
+      fullPath: '/proposals'
+      preLoaderRoute: typeof AuthenticatedProposalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leads': {
+      id: '/_authenticated/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof AuthenticatedLeadsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/knowledge-base': {
+      id: '/_authenticated/knowledge-base'
+      path: '/knowledge-base'
+      fullPath: '/knowledge-base'
+      preLoaderRoute: typeof AuthenticatedKnowledgeBaseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/job-management': {
+      id: '/_authenticated/job-management'
+      path: '/job-management'
+      fullPath: '/job-management'
+      preLoaderRoute: typeof AuthenticatedJobManagementRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/job-costing': {
+      id: '/_authenticated/job-costing'
+      path: '/job-costing'
+      fullPath: '/job-costing'
+      preLoaderRoute: typeof AuthenticatedJobCostingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home-builder': {
+      id: '/_authenticated/home-builder'
+      path: '/home-builder'
+      fullPath: '/home-builder'
+      preLoaderRoute: typeof AuthenticatedHomeBuilderRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/historic': {
+      id: '/_authenticated/historic'
+      path: '/historic'
+      fullPath: '/historic'
+      preLoaderRoute: typeof AuthenticatedHistoricRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/field-capture': {
+      id: '/_authenticated/field-capture'
+      path: '/field-capture'
+      fullPath: '/field-capture'
+      preLoaderRoute: typeof AuthenticatedFieldCaptureRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/estimates': {
+      id: '/_authenticated/estimates'
+      path: '/estimates'
+      fullPath: '/estimates'
+      preLoaderRoute: typeof AuthenticatedEstimatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/container-builds': {
+      id: '/_authenticated/container-builds'
+      path: '/container-builds'
+      fullPath: '/container-builds'
+      preLoaderRoute: typeof AuthenticatedContainerBuildsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/concept-studio': {
+      id: '/_authenticated/concept-studio'
+      path: '/concept-studio'
+      fullPath: '/concept-studio'
+      preLoaderRoute: typeof AuthenticatedConceptStudioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clients': {
+      id: '/_authenticated/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AuthenticatedClientsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects/$id': {
+      id: '/_authenticated/projects/$id'
+      path: '/$id'
+      fullPath: '/projects/$id'
+      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedProjectsRoute
+    }
+    '/_authenticated/clients/$id': {
+      id: '/_authenticated/clients/$id'
+      path: '/$id'
+      fullPath: '/clients/$id'
+      preLoaderRoute: typeof AuthenticatedClientsIdRouteImport
+      parentRoute: typeof AuthenticatedClientsRoute
+    }
+    '/api/proposals/$id/pdf': {
+      id: '/api/proposals/$id/pdf'
+      path: '/api/proposals/$id/pdf'
+      fullPath: '/api/proposals/$id/pdf'
+      preLoaderRoute: typeof ApiProposalsIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedClientsRouteChildren {
+  AuthenticatedClientsIdRoute: typeof AuthenticatedClientsIdRoute
+}
+
+const AuthenticatedClientsRouteChildren: AuthenticatedClientsRouteChildren = {
+  AuthenticatedClientsIdRoute: AuthenticatedClientsIdRoute,
+}
+
+const AuthenticatedClientsRouteWithChildren =
+  AuthenticatedClientsRoute._addFileChildren(AuthenticatedClientsRouteChildren)
+
+interface AuthenticatedProjectsRouteChildren {
+  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+}
+
+const AuthenticatedProjectsRouteChildren: AuthenticatedProjectsRouteChildren = {
+  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+}
+
+const AuthenticatedProjectsRouteWithChildren =
+  AuthenticatedProjectsRoute._addFileChildren(
+    AuthenticatedProjectsRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedClientsRoute: typeof AuthenticatedClientsRouteWithChildren
+  AuthenticatedConceptStudioRoute: typeof AuthenticatedConceptStudioRoute
+  AuthenticatedContainerBuildsRoute: typeof AuthenticatedContainerBuildsRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEstimatesRoute: typeof AuthenticatedEstimatesRoute
+  AuthenticatedFieldCaptureRoute: typeof AuthenticatedFieldCaptureRoute
+  AuthenticatedHistoricRoute: typeof AuthenticatedHistoricRoute
+  AuthenticatedHomeBuilderRoute: typeof AuthenticatedHomeBuilderRoute
+  AuthenticatedJobCostingRoute: typeof AuthenticatedJobCostingRoute
+  AuthenticatedJobManagementRoute: typeof AuthenticatedJobManagementRoute
+  AuthenticatedKnowledgeBaseRoute: typeof AuthenticatedKnowledgeBaseRoute
+  AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
+  AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRoute
+  AuthenticatedSepticRoute: typeof AuthenticatedSepticRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedClientsRoute: AuthenticatedClientsRouteWithChildren,
+  AuthenticatedConceptStudioRoute: AuthenticatedConceptStudioRoute,
+  AuthenticatedContainerBuildsRoute: AuthenticatedContainerBuildsRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEstimatesRoute: AuthenticatedEstimatesRoute,
+  AuthenticatedFieldCaptureRoute: AuthenticatedFieldCaptureRoute,
+  AuthenticatedHistoricRoute: AuthenticatedHistoricRoute,
+  AuthenticatedHomeBuilderRoute: AuthenticatedHomeBuilderRoute,
+  AuthenticatedJobCostingRoute: AuthenticatedJobCostingRoute,
+  AuthenticatedJobManagementRoute: AuthenticatedJobManagementRoute,
+  AuthenticatedKnowledgeBaseRoute: AuthenticatedKnowledgeBaseRoute,
+  AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
+  AuthenticatedProposalsRoute: AuthenticatedProposalsRoute,
+  AuthenticatedSepticRoute: AuthenticatedSepticRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  ApiConceptImageRoute: ApiConceptImageRoute,
+  ApiProposalsIdPdfRoute: ApiProposalsIdPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
