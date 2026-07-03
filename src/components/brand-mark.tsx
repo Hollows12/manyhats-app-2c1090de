@@ -1,13 +1,14 @@
-import { HardHat } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logoAsset from "@/assets/manyhats-logo.png.asset.json";
 
 export function BrandMark({ className, hideTagline = false }: { className?: string; hideTagline?: boolean }) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <div className="relative flex h-11 w-11 items-center justify-center rounded-md border border-gold/40 bg-gradient-to-br from-charcoal to-black shadow-gold-glow">
-        <HardHat className="h-5 w-5 text-gold" strokeWidth={2.5} />
-        <span className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-gold/20" />
-      </div>
+      <img
+        src={logoAsset.url}
+        alt="ManyHats Pro shield logo"
+        className="h-11 w-11 object-contain drop-shadow-[0_2px_8px_rgba(212,175,55,0.35)]"
+      />
       <div className="leading-tight">
         <div className="font-display text-lg font-bold tracking-tight text-foreground">
           ManyHats{" "}

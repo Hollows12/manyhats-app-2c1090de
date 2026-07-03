@@ -3,6 +3,7 @@ import { ArrowRight, HardHat, ShieldCheck, Hammer } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { COMPANY } from "@/lib/manyhats";
+import bannerAsset from "@/assets/manyhats-banner.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
