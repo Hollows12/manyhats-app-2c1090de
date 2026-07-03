@@ -35,6 +35,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiProposalsIdPdfRouteImport } from './routes/api/proposals.$id.pdf'
 
 const McpRoute = McpRouteImport.update({
@@ -175,6 +176,11 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiProposalsIdPdfRoute = ApiProposalsIdPdfRouteImport.update({
   id: '/api/proposals/$id/pdf',
   path: '/api/proposals/$id/pdf',
@@ -204,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/septic': typeof AuthenticatedSepticRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/concept-image': typeof ApiConceptImageRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -232,6 +239,7 @@ export interface FileRoutesByTo {
   '/septic': typeof AuthenticatedSepticRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/concept-image': typeof ApiConceptImageRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/_authenticated/septic': typeof AuthenticatedSepticRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/api/concept-image': typeof ApiConceptImageRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/septic'
     | '/settings'
     | '/api/concept-image'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/clients/$id'
     | '/projects/$id'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/septic'
     | '/settings'
     | '/api/concept-image'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/clients/$id'
     | '/projects/$id'
@@ -349,6 +360,7 @@ export interface FileRouteTypes {
     | '/_authenticated/septic'
     | '/_authenticated/settings'
     | '/api/concept-image'
+    | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/clients/$id'
     | '/_authenticated/projects/$id'
@@ -363,6 +375,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiConceptImageRoute: typeof ApiConceptImageRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiProposalsIdPdfRoute: typeof ApiProposalsIdPdfRoute
 }
@@ -551,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/proposals/$id/pdf': {
       id: '/api/proposals/$id/pdf'
       path: '/api/proposals/$id/pdf'
@@ -635,6 +655,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiConceptImageRoute: ApiConceptImageRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiProposalsIdPdfRoute: ApiProposalsIdPdfRoute,
 }
