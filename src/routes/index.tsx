@@ -3,6 +3,7 @@ import { ArrowRight, HardHat, ShieldCheck, Hammer } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { COMPANY } from "@/lib/manyhats";
+import bannerAsset from "@/assets/manyhats-banner.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,6 +31,16 @@ function Landing() {
           </div>
         </div>
       </header>
+
+      <div className="border-b border-white/10">
+        <div className="mx-auto max-w-6xl px-6 py-6">
+          <img
+            src={bannerAsset.url}
+            alt="ManyHats Pro — Built in the field. Built for builders."
+            className="w-full rounded-lg border border-gold/20 shadow-gold-glow"
+          />
+        </div>
+      </div>
 
       <main className="mx-auto max-w-6xl px-6 py-20">
         <div className="grid items-center gap-14 md:grid-cols-[1.2fr_1fr]">

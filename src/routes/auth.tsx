@@ -11,6 +11,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { COMPANY } from "@/lib/manyhats";
+import logoAsset from "@/assets/manyhats-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -82,14 +83,17 @@ function AuthPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="hidden bg-navy-gradient p-12 text-ivory lg:flex lg:flex-col lg:justify-between">
         <BrandMark className="[&_.font-display]:text-white [&_.text-muted-foreground]:text-gold/70" />
-        <div>
-          <h2 className="font-display text-4xl font-semibold leading-tight">
-            From lead to closeout — every project, one source of truth.
-          </h2>
-          <p className="mt-4 text-ivory/70">
-            Field capture. Estimates with line-item costing. Proposals with Good / Better / Best.
-            Concept studio for client-facing renderings. Job costing that improves your next bid.
-          </p>
+        <div className="flex flex-col items-start gap-8">
+          <img src={logoAsset.url} alt="ManyHats Pro shield" className="h-40 w-40 object-contain drop-shadow-[0_8px_32px_rgba(212,175,55,0.35)]" />
+          <div>
+            <h2 className="font-display text-4xl font-semibold leading-tight">
+              From lead to closeout — every project, one source of truth.
+            </h2>
+            <p className="mt-4 text-ivory/70">
+              Field capture. Estimates with line-item costing. Proposals with Good / Better / Best.
+              Concept studio for client-facing renderings. Job costing that improves your next bid.
+            </p>
+          </div>
         </div>
         <div className="text-xs text-ivory/60">
           {COMPANY.owner} · {COMPANY.ownerTitle} · {COMPANY.phone}
