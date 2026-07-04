@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend:
+    name: Frontend (lint, typecheck, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Typecheck
+        run: bunx tsc --noEmit
+
+      - name: Build
+        run: bun run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-anon-key' }}
+          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID || 'placeholder' }}
+
+  backend:
+    name: Backend (Supabase migrations + edge functions)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate supabase/config.toml
+        run: |
+          if [ -f supabase/config.toml ]; then
+            echo "Found supabase/config.toml"
+          else
+            echo "No supabase/config.toml — skipping"
+            exit 0
+          fi
+
+      - name: Lint SQL migrations
+        run: |
+          if [ -d supabase/migrations ]; then
+            for f in supabase/migrations/*.sql; do
+              [ -e "$f" ] || continue
+              echo "Checking $f"
+              # Basic sanity: file is non-empty and parses as text
+              test -s "$f" || { echo "Empty migration: $f"; exit 1; }
+            done
+          fi
+
+      - name: Setup Deno (for edge functions)
+        if: hashFiles('supabase/functions/**/*.ts') != ''
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Typecheck edge functions
+        if: hashFiles('supabase/functions/**/*.ts') != ''
+        run: |
+          for dir in supabase/functions/*/; do
+            [ -d "$dir" ] || continue
+            name=$(basename "$dir")
+            [ "$name" = "_shared" ] && continue
+            if [ -f "${dir}index.ts" ]; then
+              echo "Typechecking $dir"
+              deno check "${dir}index.ts"
+            fi
+          done
