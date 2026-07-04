@@ -26,12 +26,14 @@ jobs:
       - name: Typecheck
         run: bunx tsc --noEmit
 
-      - name: Auth smoke test
+      - name: Auth smoke + E2E tests
         run: bun run test
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
+          # When unset (e.g. PRs from forks) the E2E suite skips itself.
+          MAILSLURP_API_KEY: ${{ secrets.MAILSLURP_API_KEY }}
 
       - name: Build
         run: bun run build

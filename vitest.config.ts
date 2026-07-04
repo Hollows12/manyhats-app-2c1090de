@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: false,
-    include: ["src/**/*.{test,spec,smoke.test}.{ts,tsx}"],
+    include: ["src/**/*.{test,spec,smoke.test,e2e.test}.{ts,tsx}"],
+    testTimeout: 30_000,
   },
 });
