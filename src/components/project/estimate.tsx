@@ -167,9 +167,12 @@ function EstimateEditor({ estimate }: { estimate: any }) {
           </div>
         </CardContent>
       </Card>
+      </div>
+      <AISuggestionsPanel projectId={estimate.project_id} estimateId={estimate.id} existingLineCount={lines.data?.length ?? 0} />
     </div>
   );
 }
+
 
 function Row({ label, value }: { label: string; value: number }) {
   return <div className="flex justify-between"><span className="text-muted-foreground">{label}</span><span className="tabular-nums">{formatMoney(value)}</span></div>;
