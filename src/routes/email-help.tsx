@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Copy, Loader2, Mail, RefreshCw, PlugZap } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Copy, Github, Loader2, Mail, RefreshCw, PlugZap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,6 +77,20 @@ function EmailHelpPage() {
     | { state: "idle" }
     | { state: "ok"; auth: string; db: string; checkedAt: string }
     | { state: "error"; auth: string; db: string; checkedAt: string; message: string }
+  >({ state: "idle" });
+  const [repo, setRepo] = useState("");
+  const [checkingRepo, setCheckingRepo] = useState(false);
+  const [repoStatus, setRepoStatus] = useState<
+    | { state: "idle" }
+    | {
+        state: "ok";
+        repo: string;
+        defaultBranch: string;
+        visibility: string;
+        pushedAt: string;
+        checkedAt: string;
+      }
+    | { state: "error"; repo: string; httpStatus: number | null; message: string; checkedAt: string }
   >({ state: "idle" });
 
   useEffect(() => {
@@ -182,6 +196,68 @@ function EmailHelpPage() {
     setCheckingConn(false);
   }
 
+  async function handleCheckRepo() {
+    const trimmed = repo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
+    const match = trimmed.match(/^([\w.-]+)\/([\w.-]+)$/);
+    const checkedAt = new Date().toLocaleString();
+    if (!match) {
+      setRepoStatus({
+        state: "error",
+        repo: trimmed || repo,
+        httpStatus: null,
+        message: "Enter as owner/repo (e.g. vercel/next.js) or a full github.com URL.",
+        checkedAt,
+      });
+      toast.error("Invalid repository");
+      return;
+    }
+    const slug = `${match[1]}/${match[2]}`;
+    setCheckingRepo(true);
+    try {
+      const res = await fetch(`https://api.github.com/repos/${slug}`, {
+        headers: { Accept: "application/vnd.github+json" },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}) as { message?: string });
+        const message =
+          res.status === 404
+            ? "Repository not found or is private (no access with unauthenticated check)."
+            : res.status === 403
+              ? "GitHub API rate limit or access forbidden — try again later."
+              : body?.message || `GitHub returned HTTP ${res.status}`;
+        setRepoStatus({ state: "error", repo: slug, httpStatus: res.status, message, checkedAt });
+        toast.error("Repository check failed");
+      } else {
+        const data = (await res.json()) as {
+          full_name: string;
+          default_branch: string;
+          visibility?: string;
+          private?: boolean;
+          pushed_at: string;
+        };
+        setRepoStatus({
+          state: "ok",
+          repo: data.full_name,
+          defaultBranch: data.default_branch,
+          visibility: data.visibility ?? (data.private ? "private" : "public"),
+          pushedAt: new Date(data.pushed_at).toLocaleString(),
+          checkedAt,
+        });
+        toast.success("Repository reachable");
+      }
+    } catch (e) {
+      setRepoStatus({
+        state: "error",
+        repo: slug,
+        httpStatus: null,
+        message: e instanceof Error ? e.message : "Network error contacting GitHub",
+        checkedAt,
+      });
+      toast.error("GitHub unreachable");
+    } finally {
+      setCheckingRepo(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -288,6 +364,82 @@ function EmailHelpPage() {
             )}
           </CardContent>
         </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Github className="h-4 w-4" /> GitHub repository check
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Verifies that a GitHub repository is reachable via the public API. Private repos will
+              report as "not found" from this unauthenticated check.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!checkingRepo) handleCheckRepo();
+              }}
+              className="space-y-3"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="repo">Repository (owner/repo or GitHub URL)</Label>
+                <Input
+                  id="repo"
+                  placeholder="vercel/next.js"
+                  value={repo}
+                  onChange={(e) => setRepo(e.target.value)}
+                />
+              </div>
+              <Button type="submit" variant="outline" disabled={checkingRepo || !repo.trim()}>
+                {checkingRepo ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Checking...</>
+                ) : (
+                  <>Check repository</>
+                )}
+              </Button>
+            </form>
+            {repoStatus.state !== "idle" && (
+              <div
+                className={
+                  "rounded-md border p-3 text-sm " +
+                  (repoStatus.state === "ok"
+                    ? "border-green-500/30 bg-green-500/5"
+                    : "border-destructive/40 bg-destructive/5")
+                }
+              >
+                <div className="flex items-center gap-2 font-medium">
+                  {repoStatus.state === "ok" ? (
+                    <><CheckCircle2 className="h-4 w-4 text-green-600" /> Repository reachable</>
+                  ) : (
+                    <><AlertCircle className="h-4 w-4 text-destructive" /> Check failed</>
+                  )}
+                </div>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <li>Repo: <span className="font-mono">{repoStatus.repo}</span></li>
+                  {repoStatus.state === "ok" ? (
+                    <>
+                      <li>Default branch: <span className="font-mono">{repoStatus.defaultBranch}</span></li>
+                      <li>Visibility: <span className="font-mono">{repoStatus.visibility}</span></li>
+                      <li>Last push: {repoStatus.pushedAt}</li>
+                    </>
+                  ) : (
+                    <>
+                      {repoStatus.httpStatus !== null && (
+                        <li>HTTP status: <span className="font-mono">{repoStatus.httpStatus}</span></li>
+                      )}
+                      <li className="text-destructive">Details: {repoStatus.message}</li>
+                    </>
+                  )}
+                  <li>Checked: {repoStatus.checkedAt}</li>
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+
 
 
 
