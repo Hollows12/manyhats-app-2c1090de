@@ -243,6 +243,54 @@ function EmailHelpPage() {
           </CardContent>
         </Card>
 
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <PlugZap className="h-4 w-4" /> Test backend connection
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Runs a quick check against auth and the database. Useful if resends fail or the app feels offline.
+            </p>
+            <Button type="button" onClick={handleTestConnection} disabled={checkingConn} variant="outline">
+              {checkingConn ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Checking...</>
+              ) : (
+                <>Test connection</>
+              )}
+            </Button>
+            {connStatus.state !== "idle" && (
+              <div
+                className={
+                  "rounded-md border p-3 text-sm " +
+                  (connStatus.state === "ok"
+                    ? "border-green-500/30 bg-green-500/5"
+                    : "border-destructive/40 bg-destructive/5")
+                }
+              >
+                <div className="flex items-center gap-2 font-medium">
+                  {connStatus.state === "ok" ? (
+                    <><CheckCircle2 className="h-4 w-4 text-green-600" /> All systems reachable</>
+                  ) : (
+                    <><AlertCircle className="h-4 w-4 text-destructive" /> Connection issue detected</>
+                  )}
+                </div>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <li>Auth: <span className="font-mono">{connStatus.auth}</span></li>
+                  <li>Database: <span className="font-mono">{connStatus.db}</span></li>
+                  <li>Checked: {connStatus.checkedAt}</li>
+                  {connStatus.state === "error" && (
+                    <li className="text-destructive">Details: {connStatus.message}</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+
+
         {attempts.length > 0 && (
           <Card className="mt-6">
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
