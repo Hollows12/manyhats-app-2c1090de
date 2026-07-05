@@ -337,6 +337,19 @@ export const recommendEstimate = createServerFn({ method: "POST" })
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
+    // Supersede any prior pending recommendations for this project so the
+    // proposal draft-lock counts only the freshest advisory set.
+    await context.supabase
+      .from("ai_estimate_recommendations")
+      .update({
+        status: "rejected",
+        notes: "Superseded by re-run after scope edit",
+        reviewed_by: context.userId,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("project_id", data.project_id)
+      .eq("status", "pending");
+
     const { data: project, error: pErr } = await context.supabase
       .from("projects")
       .select("*, clients(name, city, state, zip)")
