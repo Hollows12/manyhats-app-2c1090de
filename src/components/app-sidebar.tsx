@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
   Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
-  BookOpen, Settings, LogOut, Phone, DollarSign,
+  BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus,
 } from "lucide-react";
 
 
