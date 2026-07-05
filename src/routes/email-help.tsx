@@ -149,6 +149,40 @@ function EmailHelpPage() {
     );
   }
 
+  async function handleTestConnection() {
+    setCheckingConn(true);
+    const checkedAt = new Date().toLocaleString();
+    let authLabel = "unknown";
+    let dbLabel = "unknown";
+    let errorMsg = "";
+    try {
+      const { error: authErr } = await supabase.auth.getSession();
+      authLabel = authErr ? `failed: ${authErr.message}` : "reachable";
+      if (authErr) errorMsg = authErr.message;
+    } catch (e) {
+      authLabel = "unreachable";
+      errorMsg = e instanceof Error ? e.message : "auth error";
+    }
+    try {
+      const { error: dbErr } = await supabase.from("profiles").select("id", { count: "exact", head: true }).limit(1);
+      dbLabel = dbErr ? `failed: ${dbErr.message}` : "reachable";
+      if (dbErr && !errorMsg) errorMsg = dbErr.message;
+    } catch (e) {
+      dbLabel = "unreachable";
+      if (!errorMsg) errorMsg = e instanceof Error ? e.message : "db error";
+    }
+    const ok = authLabel === "reachable" && dbLabel === "reachable";
+    if (ok) {
+      setConnStatus({ state: "ok", auth: authLabel, db: dbLabel, checkedAt });
+      toast.success("Backend connection healthy");
+    } else {
+      setConnStatus({ state: "error", auth: authLabel, db: dbLabel, checkedAt, message: errorMsg || "Connection issue" });
+      toast.error("Backend connection issue");
+    }
+    setCheckingConn(false);
+  }
+
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-3xl px-4 py-10 md:py-16">
