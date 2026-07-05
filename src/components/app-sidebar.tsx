@@ -97,6 +97,14 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive("/team")} tooltip="Team">
+                  <Link to="/team" className="flex items-center gap-3">
+                    <UserPlus className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span>Team</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/settings")} tooltip="Settings">
                   <Link to="/settings" className="flex items-center gap-3">
                     <Settings className="h-4 w-4 shrink-0" />
