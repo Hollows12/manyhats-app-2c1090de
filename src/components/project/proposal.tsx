@@ -139,6 +139,9 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
             {!canMarkReady && (
               <p className="text-xs text-amber-700 mt-1">⚠ No confirmed measurements yet. Final pricing requires at least one confirmed measurement.</p>
             )}
+            {pendingRecCount > 0 && (
+              <p className="text-xs text-amber-700 mt-1">⚠ {pendingRecCount} AI recommendation{pendingRecCount === 1 ? "" : "s"} pending contractor approval. Review in the Estimate tab before sending.</p>
+            )}
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" size="sm">
