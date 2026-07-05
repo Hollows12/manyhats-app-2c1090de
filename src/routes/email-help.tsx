@@ -72,6 +72,12 @@ function EmailHelpPage() {
   const [busy, setBusy] = useState(false);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [checkingConn, setCheckingConn] = useState(false);
+  const [connStatus, setConnStatus] = useState<
+    | { state: "idle" }
+    | { state: "ok"; auth: string; db: string; checkedAt: string }
+    | { state: "error"; auth: string; db: string; checkedAt: string; message: string }
+  >({ state: "idle" });
 
   useEffect(() => {
     try {
