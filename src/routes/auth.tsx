@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { COMPANY } from "@/lib/manyhats";
 import logoAsset from "@/assets/manyhats-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>) => ({ invite: typeof s.invite === "string" ? s.invite : undefined }),
   head: () => ({
     meta: [
       { title: "Sign in — ManyHats Pro" },
@@ -23,19 +24,48 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+type InvitePreview = { email: string; role: "admin" | "crew"; expires_at: string; accepted_at: string | null };
+
 function AuthPage() {
   const navigate = useNavigate();
+  const { invite } = Route.useSearch();
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"signin" | "signup" | "forgot">("signin");
+  const [tab, setTab] = useState<"signin" | "signup" | "forgot">(invite ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-
+  const [invitePreview, setInvitePreview] = useState<InvitePreview | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard", replace: true });
+    if (!invite) return;
+    supabase.rpc("get_invitation_preview", { _token: invite }).then(({ data, error }) => {
+      if (error || !data) {
+        setInviteError("This invitation link is invalid.");
+        return;
+      }
+      const preview = data as unknown as InvitePreview;
+      if (preview.accepted_at) { setInviteError("This invitation has already been accepted."); return; }
+      if (new Date(preview.expires_at) < new Date()) { setInviteError("This invitation has expired."); return; }
+      setInvitePreview(preview);
+      setEmail(preview.email);
     });
+  }, [invite]);
+
+  async function acceptIfInvited() {
+    if (!invite) return;
+    const { error } = await supabase.rpc("accept_invitation", { _token: invite });
+    if (error) toast.error(error.message || "Could not accept invitation");
+    else toast.success("Invitation accepted.");
+  }
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      if (invite) await acceptIfInvited();
+      navigate({ to: "/dashboard", replace: true });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   async function handleEmail(e: React.FormEvent) {
@@ -50,11 +80,12 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName } },
+          options: { data: { full_name: fullName }, emailRedirectTo: `${window.location.origin}/auth${invite ? `?invite=${invite}` : ""}` },
         });
         if (error) throw error;
         toast.success("Account created. Signing you in...");
       }
+      await acceptIfInvited();
       navigate({ to: "/dashboard", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -84,12 +115,14 @@ function AuthPage() {
   async function handleGoogle() {
     setBusy(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      const redirect = `${window.location.origin}${invite ? `/auth?invite=${invite}` : ""}`;
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirect });
       if (result.error) {
         toast.error(result.error.message || "Google sign-in failed");
         return;
       }
       if (result.redirected) return;
+      await acceptIfInvited();
       navigate({ to: "/dashboard", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign-in failed");
@@ -130,6 +163,21 @@ function AuthPage() {
               Sign in to manage leads, jobs, and proposals.
             </p>
           </div>
+
+          {invite && (invitePreview || inviteError) && (
+            <div className={`rounded-md border p-3 text-sm ${inviteError ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-gold/40 bg-gold/10"}`}>
+              <div className="flex items-center gap-2 font-semibold">
+                <Mail className="h-4 w-4" />
+                {inviteError ? "Invitation unavailable" : "You've been invited"}
+              </div>
+              {invitePreview && !inviteError && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Create an account for <span className="font-semibold text-foreground">{invitePreview.email}</span> to join as <span className="font-semibold capitalize text-foreground">{invitePreview.role}</span>.
+                </p>
+              )}
+              {inviteError && <p className="mt-1 text-xs">{inviteError}</p>}
+            </div>
+          )}
 
           <Button
             type="button"

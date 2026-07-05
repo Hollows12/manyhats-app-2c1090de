@@ -618,6 +618,45 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_costs: {
         Row: {
           actual: number
@@ -1624,6 +1663,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: { Args: { _token: string }; Returns: Json }
+      get_invitation_preview: { Args: { _token: string }; Returns: Json }
       get_public_schema_snapshot: { Args: never; Returns: Json }
       has_role: {
         Args: {

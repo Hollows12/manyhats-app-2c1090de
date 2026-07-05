@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
   Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
-  BookOpen, Settings, LogOut, Phone, DollarSign,
+  BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus,
 } from "lucide-react";
 
 
@@ -96,6 +96,14 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive("/team")} tooltip="Team">
+                  <Link to="/team" className="flex items-center gap-3">
+                    <UserPlus className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span>Team</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/settings")} tooltip="Settings">
                   <Link to="/settings" className="flex items-center gap-3">
