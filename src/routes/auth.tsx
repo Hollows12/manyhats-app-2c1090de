@@ -154,19 +154,6 @@ function AuthPage() {
             </div>
           </div>
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign in</TabsTrigger>
-              <TabsTrigger value="signup">Create account</TabsTrigger>
-            </TabsList>
-            <TabsContent value="signin">
-              <form onSubmit={handleEmail} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
           <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup" | "forgot")}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
