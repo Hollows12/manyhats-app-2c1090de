@@ -115,12 +115,14 @@ function AuthPage() {
   async function handleGoogle() {
     setBusy(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      const redirect = `${window.location.origin}${invite ? `/auth?invite=${invite}` : ""}`;
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirect });
       if (result.error) {
         toast.error(result.error.message || "Google sign-in failed");
         return;
       }
       if (result.redirected) return;
+      await acceptIfInvited();
       navigate({ to: "/dashboard", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign-in failed");
