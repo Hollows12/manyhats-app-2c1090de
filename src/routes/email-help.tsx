@@ -78,6 +78,20 @@ function EmailHelpPage() {
     | { state: "ok"; auth: string; db: string; checkedAt: string }
     | { state: "error"; auth: string; db: string; checkedAt: string; message: string }
   >({ state: "idle" });
+  const [repo, setRepo] = useState("");
+  const [checkingRepo, setCheckingRepo] = useState(false);
+  const [repoStatus, setRepoStatus] = useState<
+    | { state: "idle" }
+    | {
+        state: "ok";
+        repo: string;
+        defaultBranch: string;
+        visibility: string;
+        pushedAt: string;
+        checkedAt: string;
+      }
+    | { state: "error"; repo: string; httpStatus: number | null; message: string; checkedAt: string }
+  >({ state: "idle" });
 
   useEffect(() => {
     try {
