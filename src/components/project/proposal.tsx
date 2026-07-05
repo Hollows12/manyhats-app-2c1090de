@@ -63,10 +63,10 @@ export function ProjectProposal({ projectId }: { projectId: string }) {
       </Card>
     );
   }
-  return <ProposalEditor proposal={proposal.data} confirmedCount={measurementsCount.data ?? 0} />;
+  return <ProposalEditor proposal={proposal.data} confirmedCount={measurementsCount.data ?? 0} pendingRecCount={pendingRecs.data ?? 0} />;
 }
 
-function ProposalEditor({ proposal, confirmedCount }: { proposal: any; confirmedCount: number }) {
+function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposal: any; confirmedCount: number; pendingRecCount: number }) {
   const qc = useQueryClient();
   const [form, setForm] = useState(proposal);
   const writeScopeFn = useServerFn(writeScope);
