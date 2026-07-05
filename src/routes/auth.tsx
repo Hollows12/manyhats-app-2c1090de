@@ -181,6 +181,8 @@ function AuthPage() {
 
           <p className="text-center text-xs text-muted-foreground">
             <Link to="/" className="hover:underline">← Back to home</Link>
+            <span className="mx-2">·</span>
+            <Link to="/email-help" className="hover:underline">Didn't get the email?</Link>
           </p>
         </div>
       </div>
