@@ -204,7 +204,17 @@ function TeamPage() {
   );
 }
 
-function InviteRow({ inv, onRevoke }: { inv: Invite; onRevoke: () => void }) {
+function InviteRow({
+  inv,
+  onRevoke,
+  onResend,
+  resending,
+}: {
+  inv: Invite;
+  onRevoke: () => void;
+  onResend: () => void;
+  resending: boolean;
+}) {
   const link = `${window.location.origin}/auth?invite=${inv.token}`;
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
@@ -219,6 +229,9 @@ function InviteRow({ inv, onRevoke }: { inv: Invite; onRevoke: () => void }) {
         </div>
       </div>
       <div className="flex gap-2">
+        <Button type="button" size="sm" variant="default" onClick={onResend} disabled={resending}>
+          <Send className="mr-1 h-3 w-3" /> {resending ? "Resending…" : "Resend"}
+        </Button>
         <Button
           type="button"
           size="sm"
