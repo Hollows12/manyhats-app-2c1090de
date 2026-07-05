@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiConceptImageRouteImport } from './routes/api/concept-image'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSepticRouteImport } from './routes/_authenticated/septic'
+import { Route as AuthenticatedSchemaDiffRouteImport } from './routes/_authenticated/schema-diff'
 import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
@@ -76,6 +77,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedSepticRoute = AuthenticatedSepticRouteImport.update({
   id: '/septic',
   path: '/septic',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSchemaDiffRoute = AuthenticatedSchemaDiffRouteImport.update({
+  id: '/schema-diff',
+  path: '/schema-diff',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProposalsRoute = AuthenticatedProposalsRouteImport.update({
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/proposals': typeof AuthenticatedProposalsRoute
+  '/schema-diff': typeof AuthenticatedSchemaDiffRoute
   '/septic': typeof AuthenticatedSepticRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/concept-image': typeof ApiConceptImageRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/proposals': typeof AuthenticatedProposalsRoute
+  '/schema-diff': typeof AuthenticatedSchemaDiffRoute
   '/septic': typeof AuthenticatedSepticRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/concept-image': typeof ApiConceptImageRoute
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/_authenticated/proposals': typeof AuthenticatedProposalsRoute
+  '/_authenticated/schema-diff': typeof AuthenticatedSchemaDiffRoute
   '/_authenticated/septic': typeof AuthenticatedSepticRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/api/concept-image': typeof ApiConceptImageRoute
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/projects'
     | '/proposals'
+    | '/schema-diff'
     | '/septic'
     | '/settings'
     | '/api/concept-image'
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/projects'
     | '/proposals'
+    | '/schema-diff'
     | '/septic'
     | '/settings'
     | '/api/concept-image'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/projects'
     | '/_authenticated/proposals'
+    | '/_authenticated/schema-diff'
     | '/_authenticated/septic'
     | '/_authenticated/settings'
     | '/api/concept-image'
@@ -449,6 +461,13 @@ declare module '@tanstack/react-router' {
       path: '/septic'
       fullPath: '/septic'
       preLoaderRoute: typeof AuthenticatedSepticRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/schema-diff': {
+      id: '/_authenticated/schema-diff'
+      path: '/schema-diff'
+      fullPath: '/schema-diff'
+      preLoaderRoute: typeof AuthenticatedSchemaDiffRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/proposals': {
@@ -640,6 +659,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
   AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRoute
+  AuthenticatedSchemaDiffRoute: typeof AuthenticatedSchemaDiffRoute
   AuthenticatedSepticRoute: typeof AuthenticatedSepticRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
 }
@@ -659,6 +679,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
   AuthenticatedProposalsRoute: AuthenticatedProposalsRoute,
+  AuthenticatedSchemaDiffRoute: AuthenticatedSchemaDiffRoute,
   AuthenticatedSepticRoute: AuthenticatedSepticRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
 }
