@@ -60,6 +60,7 @@ function AuthPage() {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setBusy(false);
+    }
   }
 
   async function handleForgot(e: React.FormEvent) {
@@ -79,7 +80,6 @@ function AuthPage() {
     }
   }
 
-  }
 
   async function handleGoogle() {
     setBusy(true);
