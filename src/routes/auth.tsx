@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { COMPANY } from "@/lib/manyhats";
 import logoAsset from "@/assets/manyhats-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>) => ({ invite: typeof s.invite === "string" ? s.invite : undefined }),
   head: () => ({
     meta: [
       { title: "Sign in — ManyHats Pro" },
@@ -22,6 +23,8 @@ export const Route = createFileRoute("/auth")({
   }),
   component: AuthPage,
 });
+
+type InvitePreview = { email: string; role: "admin" | "crew"; expires_at: string; accepted_at: string | null };
 
 function AuthPage() {
   const navigate = useNavigate();
