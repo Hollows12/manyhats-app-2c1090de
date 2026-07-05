@@ -99,7 +99,10 @@ function EstimateEditor({ estimate }: { estimate: any }) {
   });
 
   return (
+  return (
+    <div className="space-y-4">
     <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+
       <Card>
         <CardHeader>
           <CardTitle className="font-display">Estimate {estimate.estimate_number || estimate.id.slice(0, 8)}</CardTitle>
