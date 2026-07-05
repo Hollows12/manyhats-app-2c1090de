@@ -28,6 +28,13 @@ export function ProjectProposal({ projectId }: { projectId: string }) {
       return count ?? 0;
     },
   });
+  const pendingRecs = useQuery({
+    queryKey: ["ai-recs-pending", projectId],
+    queryFn: async () => {
+      const { count } = await supabase.from("ai_estimate_recommendations").select("id", { count: "exact", head: true }).eq("project_id", projectId).eq("status", "pending");
+      return count ?? 0;
+    },
+  });
 
   const create = useMutation({
     mutationFn: async () => {
