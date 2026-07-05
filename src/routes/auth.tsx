@@ -164,6 +164,21 @@ function AuthPage() {
             </p>
           </div>
 
+          {invite && (invitePreview || inviteError) && (
+            <div className={`rounded-md border p-3 text-sm ${inviteError ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-gold/40 bg-gold/10"}`}>
+              <div className="flex items-center gap-2 font-semibold">
+                <Mail className="h-4 w-4" />
+                {inviteError ? "Invitation unavailable" : "You've been invited"}
+              </div>
+              {invitePreview && !inviteError && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Create an account for <span className="font-semibold text-foreground">{invitePreview.email}</span> to join as <span className="font-semibold capitalize text-foreground">{invitePreview.role}</span>.
+                </p>
+              )}
+              {inviteError && <p className="mt-1 text-xs">{inviteError}</p>}
+            </div>
+          )}
+
           <Button
             type="button"
             variant="outline"
