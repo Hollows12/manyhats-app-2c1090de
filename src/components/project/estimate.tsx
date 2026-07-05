@@ -99,9 +99,9 @@ function EstimateEditor({ estimate }: { estimate: any }) {
   });
 
   return (
-  return (
     <div className="space-y-4">
-    <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+
 
       <Card>
         <CardHeader>
