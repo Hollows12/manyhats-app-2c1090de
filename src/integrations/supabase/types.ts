@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_estimate_recommendations: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          id: string
+          notes: string | null
+          payload: Json
+          project_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["ai_recommendation_status"]
+          updated_at: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payload: Json
+          project_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["ai_recommendation_status"]
+          updated_at?: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payload?: Json
+          project_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["ai_recommendation_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_estimate_recommendations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       change_orders: {
         Row: {
           approved_at: string | null
@@ -249,6 +296,36 @@ export type Database = {
           },
         ]
       }
+      contractor_service_areas: {
+        Row: {
+          contractor_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          radius_mi: number
+          updated_at: string
+          zip: string
+        }
+        Insert: {
+          contractor_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          radius_mi?: number
+          updated_at?: string
+          zip: string
+        }
+        Update: {
+          contractor_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          radius_mi?: number
+          updated_at?: string
+          zip?: string
+        }
+        Relationships: []
+      }
       daily_logs: {
         Row: {
           client_communication: string | null
@@ -407,6 +484,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      firecrawl_jobs: {
+        Row: {
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["firecrawl_job_kind"]
+          result_summary: Json | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["firecrawl_job_status"]
+          target: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["firecrawl_job_kind"]
+          result_summary?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["firecrawl_job_status"]
+          target: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["firecrawl_job_kind"]
+          result_summary?: Json | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["firecrawl_job_status"]
+          target?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
       }
       historic_projects: {
         Row: {
@@ -584,6 +700,45 @@ export type Database = {
           },
         ]
       }
+      knowledge_docs: {
+        Row: {
+          body_md: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["knowledge_doc_kind"]
+          retrieved_at: string
+          source_url: string | null
+          summary: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body_md: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["knowledge_doc_kind"]
+          retrieved_at?: string
+          source_url?: string | null
+          summary?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body_md?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["knowledge_doc_kind"]
+          retrieved_at?: string
+          source_url?: string | null
+          summary?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_entries: {
         Row: {
           actual_total: number | null
@@ -720,6 +875,138 @@ export type Database = {
         }
         Relationships: []
       }
+      material_prices: {
+        Row: {
+          availability: string | null
+          created_at: string
+          id: string
+          material_id: string
+          price: number
+          price_confidence: number | null
+          price_date: string
+          product_url: string | null
+          retrieved_at: string
+          source: string
+          supplier_id: string | null
+          unit: string
+        }
+        Insert: {
+          availability?: string | null
+          created_at?: string
+          id?: string
+          material_id: string
+          price: number
+          price_confidence?: number | null
+          price_date?: string
+          product_url?: string | null
+          retrieved_at?: string
+          source?: string
+          supplier_id?: string | null
+          unit: string
+        }
+        Update: {
+          availability?: string | null
+          created_at?: string
+          id?: string
+          material_id?: string
+          price?: number
+          price_confidence?: number | null
+          price_date?: string
+          product_url?: string | null
+          retrieved_at?: string
+          source?: string
+          supplier_id?: string | null
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_prices_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_prices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materials: {
+        Row: {
+          colors: string[]
+          compatible_with: string[]
+          coverage: string | null
+          created_at: string
+          description: string | null
+          dimensions: string | null
+          id: string
+          image_url: string | null
+          install_instructions: string | null
+          manufacturer: string | null
+          name: string
+          sds_url: string | null
+          sku: string | null
+          source_url: string | null
+          spec: Json
+          tds_url: string | null
+          upc: string | null
+          updated_at: string
+          warranty: string | null
+          weight: string | null
+          yield: string | null
+        }
+        Insert: {
+          colors?: string[]
+          compatible_with?: string[]
+          coverage?: string | null
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          id?: string
+          image_url?: string | null
+          install_instructions?: string | null
+          manufacturer?: string | null
+          name: string
+          sds_url?: string | null
+          sku?: string | null
+          source_url?: string | null
+          spec?: Json
+          tds_url?: string | null
+          upc?: string | null
+          updated_at?: string
+          warranty?: string | null
+          weight?: string | null
+          yield?: string | null
+        }
+        Update: {
+          colors?: string[]
+          compatible_with?: string[]
+          coverage?: string | null
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          id?: string
+          image_url?: string | null
+          install_instructions?: string | null
+          manufacturer?: string | null
+          name?: string
+          sds_url?: string | null
+          sku?: string | null
+          source_url?: string | null
+          spec?: Json
+          tds_url?: string | null
+          upc?: string | null
+          updated_at?: string
+          warranty?: string | null
+          weight?: string | null
+          yield?: string | null
+        }
+        Relationships: []
+      }
       measurements: {
         Row: {
           created_at: string
@@ -760,6 +1047,38 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preferred_vendors: {
+        Row: {
+          contractor_id: string
+          created_at: string
+          id: string
+          supplier_id: string
+          trade: string | null
+        }
+        Insert: {
+          contractor_id: string
+          created_at?: string
+          id?: string
+          supplier_id: string
+          trade?: string | null
+        }
+        Update: {
+          contractor_id?: string
+          created_at?: string
+          id?: string
+          supplier_id?: string
+          trade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preferred_vendors_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -1184,6 +1503,63 @@ export type Database = {
           },
         ]
       }
+      suppliers: {
+        Row: {
+          address: string | null
+          categories: string[]
+          county: string | null
+          created_at: string
+          distance_mi: number | null
+          hours: string | null
+          id: string
+          is_favorite: boolean
+          last_updated: string
+          name: string
+          phone: string | null
+          source_url: string | null
+          state: string | null
+          updated_at: string
+          website: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          categories?: string[]
+          county?: string | null
+          created_at?: string
+          distance_mi?: number | null
+          hours?: string | null
+          id?: string
+          is_favorite?: boolean
+          last_updated?: string
+          name: string
+          phone?: string | null
+          source_url?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          categories?: string[]
+          county?: string | null
+          created_at?: string
+          distance_mi?: number | null
+          hours?: string | null
+          id?: string
+          is_favorite?: boolean
+          last_updated?: string
+          name?: string
+          phone?: string | null
+          source_url?: string | null
+          state?: string | null
+          updated_at?: string
+          website?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1259,6 +1635,7 @@ export type Database = {
       is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      ai_recommendation_status: "pending" | "approved" | "rejected"
       app_role: "admin" | "crew" | "client"
       concept_status:
         | "draft"
@@ -1276,6 +1653,20 @@ export type Database = {
         | "disposal"
         | "contingency"
         | "markup"
+        | "other"
+      firecrawl_job_kind:
+        | "supplier_discovery"
+        | "material_enrichment"
+        | "price_refresh"
+        | "knowledge_import"
+      firecrawl_job_status: "queued" | "running" | "succeeded" | "failed"
+      knowledge_doc_kind:
+        | "install"
+        | "spec"
+        | "sds"
+        | "warranty"
+        | "practice"
+        | "safety"
         | "other"
       project_status:
         | "lead"
@@ -1466,6 +1857,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ai_recommendation_status: ["pending", "approved", "rejected"],
       app_role: ["admin", "crew", "client"],
       concept_status: [
         "draft",
@@ -1484,6 +1876,22 @@ export const Constants = {
         "disposal",
         "contingency",
         "markup",
+        "other",
+      ],
+      firecrawl_job_kind: [
+        "supplier_discovery",
+        "material_enrichment",
+        "price_refresh",
+        "knowledge_import",
+      ],
+      firecrawl_job_status: ["queued", "running", "succeeded", "failed"],
+      knowledge_doc_kind: [
+        "install",
+        "spec",
+        "sds",
+        "warranty",
+        "practice",
+        "safety",
         "other",
       ],
       project_status: [
