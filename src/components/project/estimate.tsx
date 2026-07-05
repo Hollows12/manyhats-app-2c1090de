@@ -298,10 +298,11 @@ function AISuggestionsPanel({ projectId, estimateId, existingLineCount }: { proj
           {payload && <Badge variant="outline">confidence {(payload.confidence * 100).toFixed(0)}%</Badge>}
         </CardTitle>
         <div className="flex gap-2">
-          <Button size="sm" onClick={() => generate.mutate()} disabled={generate.isPending}>
+          <Button size="sm" onClick={() => generate.mutate()} disabled={generate.isPending} title="Regenerate advisory recommendations from the current project scope, measurements, and cached pricing. Any prior pending suggestions are superseded; the proposal draft lock stays in effect until you review the new set.">
             {generate.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin"/> : <Sparkles className="mr-1 h-4 w-4"/>}
-            {rec.data ? "Regenerate" : "Generate"}
+            {rec.data ? "Re-run AI recommendations" : "Generate AI recommendations"}
           </Button>
+
           {rec.data && rec.data.status === "pending" && (
             <>
               <Button size="sm" variant="outline" onClick={() => review.mutate({ status: "approved" })}>
