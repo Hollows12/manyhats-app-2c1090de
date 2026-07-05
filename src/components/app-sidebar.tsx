@@ -2,8 +2,9 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
   Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
-  BookOpen, Settings, LogOut, Phone,
+  BookOpen, Settings, LogOut, Phone, DollarSign,
 } from "lucide-react";
+
 
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -35,10 +36,12 @@ const PRO = [
   { title: "Sentinel Septic Pro", url: "/septic", icon: Droplets },
 ];
 const OPS = [
+  { title: "Smart Pricing", url: "/pricing", icon: DollarSign },
   { title: "Job Management", url: "/job-management", icon: ClipboardList },
   { title: "Job Costing", url: "/job-costing", icon: TrendingUp },
   { title: "Knowledge Base", url: "/knowledge-base", icon: BookOpen },
 ];
+
 
 export function AppSidebar() {
   const { state } = useSidebar();

@@ -20,6 +20,7 @@ import { Route as AuthenticatedSepticRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedSchemaDiffRouteImport } from './routes/_authenticated/schema-diff'
 import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedPricingRouteImport } from './routes/_authenticated/pricing'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedKnowledgeBaseRouteImport } from './routes/_authenticated/knowledge-base'
 import { Route as AuthenticatedJobManagementRouteImport } from './routes/_authenticated/job-management'
@@ -92,6 +93,11 @@ const AuthenticatedProposalsRoute = AuthenticatedProposalsRouteImport.update({
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPricingRoute = AuthenticatedPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/job-management': typeof AuthenticatedJobManagementRoute
   '/knowledge-base': typeof AuthenticatedKnowledgeBaseRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/pricing': typeof AuthenticatedPricingRoute
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/proposals': typeof AuthenticatedProposalsRoute
   '/schema-diff': typeof AuthenticatedSchemaDiffRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/job-management': typeof AuthenticatedJobManagementRoute
   '/knowledge-base': typeof AuthenticatedKnowledgeBaseRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/pricing': typeof AuthenticatedPricingRoute
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/proposals': typeof AuthenticatedProposalsRoute
   '/schema-diff': typeof AuthenticatedSchemaDiffRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/_authenticated/job-management': typeof AuthenticatedJobManagementRoute
   '/_authenticated/knowledge-base': typeof AuthenticatedKnowledgeBaseRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
+  '/_authenticated/pricing': typeof AuthenticatedPricingRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/_authenticated/proposals': typeof AuthenticatedProposalsRoute
   '/_authenticated/schema-diff': typeof AuthenticatedSchemaDiffRoute
@@ -315,6 +324,7 @@ export interface FileRouteTypes {
     | '/job-management'
     | '/knowledge-base'
     | '/leads'
+    | '/pricing'
     | '/projects'
     | '/proposals'
     | '/schema-diff'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/job-management'
     | '/knowledge-base'
     | '/leads'
+    | '/pricing'
     | '/projects'
     | '/proposals'
     | '/schema-diff'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
     | '/_authenticated/job-management'
     | '/_authenticated/knowledge-base'
     | '/_authenticated/leads'
+    | '/_authenticated/pricing'
     | '/_authenticated/projects'
     | '/_authenticated/proposals'
     | '/_authenticated/schema-diff'
@@ -482,6 +494,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pricing': {
+      id: '/_authenticated/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof AuthenticatedPricingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads': {
@@ -657,6 +676,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedJobManagementRoute: typeof AuthenticatedJobManagementRoute
   AuthenticatedKnowledgeBaseRoute: typeof AuthenticatedKnowledgeBaseRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
+  AuthenticatedPricingRoute: typeof AuthenticatedPricingRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
   AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRoute
   AuthenticatedSchemaDiffRoute: typeof AuthenticatedSchemaDiffRoute
@@ -677,6 +697,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJobManagementRoute: AuthenticatedJobManagementRoute,
   AuthenticatedKnowledgeBaseRoute: AuthenticatedKnowledgeBaseRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
+  AuthenticatedPricingRoute: AuthenticatedPricingRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
   AuthenticatedProposalsRoute: AuthenticatedProposalsRoute,
   AuthenticatedSchemaDiffRoute: AuthenticatedSchemaDiffRoute,
