@@ -196,6 +196,68 @@ function EmailHelpPage() {
     setCheckingConn(false);
   }
 
+  async function handleCheckRepo() {
+    const trimmed = repo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
+    const match = trimmed.match(/^([\w.-]+)\/([\w.-]+)$/);
+    const checkedAt = new Date().toLocaleString();
+    if (!match) {
+      setRepoStatus({
+        state: "error",
+        repo: trimmed || repo,
+        httpStatus: null,
+        message: "Enter as owner/repo (e.g. vercel/next.js) or a full github.com URL.",
+        checkedAt,
+      });
+      toast.error("Invalid repository");
+      return;
+    }
+    const slug = `${match[1]}/${match[2]}`;
+    setCheckingRepo(true);
+    try {
+      const res = await fetch(`https://api.github.com/repos/${slug}`, {
+        headers: { Accept: "application/vnd.github+json" },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}) as { message?: string });
+        const message =
+          res.status === 404
+            ? "Repository not found or is private (no access with unauthenticated check)."
+            : res.status === 403
+              ? "GitHub API rate limit or access forbidden — try again later."
+              : body?.message || `GitHub returned HTTP ${res.status}`;
+        setRepoStatus({ state: "error", repo: slug, httpStatus: res.status, message, checkedAt });
+        toast.error("Repository check failed");
+      } else {
+        const data = (await res.json()) as {
+          full_name: string;
+          default_branch: string;
+          visibility?: string;
+          private?: boolean;
+          pushed_at: string;
+        };
+        setRepoStatus({
+          state: "ok",
+          repo: data.full_name,
+          defaultBranch: data.default_branch,
+          visibility: data.visibility ?? (data.private ? "private" : "public"),
+          pushedAt: new Date(data.pushed_at).toLocaleString(),
+          checkedAt,
+        });
+        toast.success("Repository reachable");
+      }
+    } catch (e) {
+      setRepoStatus({
+        state: "error",
+        repo: slug,
+        httpStatus: null,
+        message: e instanceof Error ? e.message : "Network error contacting GitHub",
+        checkedAt,
+      });
+      toast.error("GitHub unreachable");
+    } finally {
+      setCheckingRepo(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
