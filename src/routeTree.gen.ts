@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiConceptImageRouteImport } from './routes/api/concept-image'
+import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSepticRouteImport } from './routes/_authenticated/septic'
 import { Route as AuthenticatedSchemaDiffRouteImport } from './routes/_authenticated/schema-diff'
@@ -75,6 +76,11 @@ const ApiConceptImageRoute = ApiConceptImageRouteImport.update({
   id: '/api/concept-image',
   path: '/api/concept-image',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/schema-diff': typeof AuthenticatedSchemaDiffRoute
   '/septic': typeof AuthenticatedSepticRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/team': typeof AuthenticatedTeamRoute
   '/api/concept-image': typeof ApiConceptImageRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/schema-diff': typeof AuthenticatedSchemaDiffRoute
   '/septic': typeof AuthenticatedSepticRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/team': typeof AuthenticatedTeamRoute
   '/api/concept-image': typeof ApiConceptImageRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -305,6 +313,7 @@ export interface FileRoutesById {
   '/_authenticated/schema-diff': typeof AuthenticatedSchemaDiffRoute
   '/_authenticated/septic': typeof AuthenticatedSepticRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/api/concept-image': typeof ApiConceptImageRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -340,6 +349,7 @@ export interface FileRouteTypes {
     | '/schema-diff'
     | '/septic'
     | '/settings'
+    | '/team'
     | '/api/concept-image'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/schema-diff'
     | '/septic'
     | '/settings'
+    | '/team'
     | '/api/concept-image'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -407,6 +418,7 @@ export interface FileRouteTypes {
     | '/_authenticated/schema-diff'
     | '/_authenticated/septic'
     | '/_authenticated/settings'
+    | '/_authenticated/team'
     | '/api/concept-image'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -480,6 +492,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/concept-image'
       preLoaderRoute: typeof ApiConceptImageRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/team': {
+      id: '/_authenticated/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof AuthenticatedTeamRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -702,6 +721,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSchemaDiffRoute: typeof AuthenticatedSchemaDiffRoute
   AuthenticatedSepticRoute: typeof AuthenticatedSepticRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -723,6 +743,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSchemaDiffRoute: AuthenticatedSchemaDiffRoute,
   AuthenticatedSepticRoute: AuthenticatedSepticRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedTeamRoute: AuthenticatedTeamRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
