@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Copy, Loader2, Mail, RefreshCw } from "lucide-react";
 
@@ -52,10 +52,37 @@ function makeRequestId() {
   return `req_${stamp}_${rand}`.toLowerCase();
 }
 
+const STORAGE_KEY = "manyhats.emailHelp.resendAttempts.v1";
+const MAX_ATTEMPTS = 10;
+
+
 function EmailHelpPage() {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setAttempts(parsed.slice(0, MAX_ATTEMPTS));
+      }
+    } catch {
+      // ignore malformed storage
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(attempts));
+    } catch {
+      // storage full or unavailable
+    }
+  }, [attempts, hydrated]);
 
   const isOutlookish = OUTLOOK_DOMAINS.some((d) => email.toLowerCase().includes(d));
 
