@@ -365,6 +365,82 @@ function EmailHelpPage() {
           </CardContent>
         </Card>
 
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Github className="h-4 w-4" /> GitHub repository check
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Verifies that a GitHub repository is reachable via the public API. Private repos will
+              report as "not found" from this unauthenticated check.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!checkingRepo) handleCheckRepo();
+              }}
+              className="space-y-3"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="repo">Repository (owner/repo or GitHub URL)</Label>
+                <Input
+                  id="repo"
+                  placeholder="vercel/next.js"
+                  value={repo}
+                  onChange={(e) => setRepo(e.target.value)}
+                />
+              </div>
+              <Button type="submit" variant="outline" disabled={checkingRepo || !repo.trim()}>
+                {checkingRepo ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Checking...</>
+                ) : (
+                  <>Check repository</>
+                )}
+              </Button>
+            </form>
+            {repoStatus.state !== "idle" && (
+              <div
+                className={
+                  "rounded-md border p-3 text-sm " +
+                  (repoStatus.state === "ok"
+                    ? "border-green-500/30 bg-green-500/5"
+                    : "border-destructive/40 bg-destructive/5")
+                }
+              >
+                <div className="flex items-center gap-2 font-medium">
+                  {repoStatus.state === "ok" ? (
+                    <><CheckCircle2 className="h-4 w-4 text-green-600" /> Repository reachable</>
+                  ) : (
+                    <><AlertCircle className="h-4 w-4 text-destructive" /> Check failed</>
+                  )}
+                </div>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <li>Repo: <span className="font-mono">{repoStatus.repo}</span></li>
+                  {repoStatus.state === "ok" ? (
+                    <>
+                      <li>Default branch: <span className="font-mono">{repoStatus.defaultBranch}</span></li>
+                      <li>Visibility: <span className="font-mono">{repoStatus.visibility}</span></li>
+                      <li>Last push: {repoStatus.pushedAt}</li>
+                    </>
+                  ) : (
+                    <>
+                      {repoStatus.httpStatus !== null && (
+                        <li>HTTP status: <span className="font-mono">{repoStatus.httpStatus}</span></li>
+                      )}
+                      <li className="text-destructive">Details: {repoStatus.message}</li>
+                    </>
+                  )}
+                  <li>Checked: {repoStatus.checkedAt}</li>
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+
+
 
 
         {attempts.length > 0 && (
