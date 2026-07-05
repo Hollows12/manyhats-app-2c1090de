@@ -362,11 +362,12 @@ Cite public reference prices when using them; otherwise mark cost as null.`;
     const prompt = `Project: ${JSON.stringify({
       name: project.name,
       type: project.project_type,
-      status: project.project_status,
-      description: project.description,
-      city: project.clients?.city,
-      state: project.clients?.state,
-      zip: project.clients?.zip,
+      status: (project as any).status,
+      description: (project as any).summary,
+      city: (project as any).city ?? project.clients?.city,
+      state: (project as any).state ?? project.clients?.state,
+      zip: (project as any).zip ?? (project.clients as any)?.zip,
+
       measurements: (measurements ?? []).map((m: any) => ({ label: m.label, value: m.value, unit: m.unit, confirmed: m.is_confirmed })),
       photo_count: photos?.length ?? 0,
     }, null, 2)}
