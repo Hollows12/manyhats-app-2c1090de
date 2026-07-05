@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as EmailHelpRouteImport } from './routes/email-help'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -41,6 +42,11 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiProposalsIdPdfRouteImport } from './routes/api/proposals.$id.pdf'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/email-help': typeof EmailHelpRoute
   '/mcp': typeof McpRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/clients': typeof AuthenticatedClientsRouteWithChildren
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/email-help': typeof EmailHelpRoute
   '/mcp': typeof McpRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/clients': typeof AuthenticatedClientsRouteWithChildren
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/email-help': typeof EmailHelpRoute
   '/mcp': typeof McpRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRouteWithChildren
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/email-help'
     | '/mcp'
+    | '/reset-password'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/clients'
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/email-help'
     | '/mcp'
+    | '/reset-password'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/clients'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/email-help'
     | '/mcp'
+    | '/reset-password'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/clients'
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   EmailHelpRoute: typeof EmailHelpRoute
   McpRoute: typeof McpRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiConceptImageRoute: typeof ApiConceptImageRoute
@@ -419,6 +432,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
@@ -714,6 +734,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   EmailHelpRoute: EmailHelpRoute,
   McpRoute: McpRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
