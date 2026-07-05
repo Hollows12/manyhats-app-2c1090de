@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, Copy, Trash2, Mail, ShieldCheck, HardHat, Clock, Check } from "lucide-react";
+import { UserPlus, Copy, Trash2, Mail, ShieldCheck, HardHat, Clock, Check, Send } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
