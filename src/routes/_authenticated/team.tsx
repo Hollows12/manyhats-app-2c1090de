@@ -87,6 +87,25 @@ function TeamPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not revoke"),
   });
 
+  const resend = useMutation({
+    mutationFn: async (inv: Invite) => {
+      const newExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await supabase
+        .from("invitations")
+        .update({ expires_at: newExpiry })
+        .eq("id", inv.id);
+      if (error) throw error;
+      const link = `${window.location.origin}/auth?invite=${inv.token}`;
+      await navigator.clipboard.writeText(link).catch(() => {});
+      return link;
+    },
+    onSuccess: () => {
+      toast.success("Invitation refreshed — link copied. Send it to your teammate.");
+      qc.invalidateQueries({ queryKey: ["invitations"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not resend"),
+  });
+
   const pending = (invites.data ?? []).filter((i) => !i.accepted_at && new Date(i.expires_at) > new Date());
   const past = (invites.data ?? []).filter((i) => i.accepted_at || new Date(i.expires_at) <= new Date());
 
