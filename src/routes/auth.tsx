@@ -26,10 +26,11 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"signin" | "signup">("signin");
+  const [tab, setTab] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -61,6 +62,24 @@ function AuthPage() {
       setBusy(false);
     }
   }
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Password reset email sent. Check your inbox.");
+      setTab("signin");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send reset email");
+    } finally {
+      setBusy(false);
+    }
+  }
+
 
   async function handleGoogle() {
     setBusy(true);
@@ -135,25 +154,49 @@ function AuthPage() {
             </div>
           </div>
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup")}>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup" | "forgot")}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
               <TabsTrigger value="signup">Create account</TabsTrigger>
             </TabsList>
             <TabsContent value="signin">
-              <form onSubmit={handleEmail} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <Button type="submit" className="w-full" disabled={busy}>
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Sign in <ArrowRight className="ml-1 h-4 w-4" /></>}
-                </Button>
-              </form>
+              {tab === "forgot" ? (
+                <form onSubmit={handleForgot} className="space-y-4">
+                  <div>
+                    <h2 className="font-display text-lg font-semibold">Reset your password</h2>
+                    <p className="text-xs text-muted-foreground">Enter the email on your account and we'll send a reset link.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="forgot-email">Email</Label>
+                    <Input id="forgot-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={busy}>
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
+                  </Button>
+                  <button type="button" className="w-full text-xs text-muted-foreground hover:underline" onClick={() => setTab("signin")}>
+                    ← Back to sign in
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleEmail} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <button type="button" className="text-xs text-muted-foreground hover:text-foreground hover:underline" onClick={() => setTab("forgot")}>
+                        Forgot password?
+                      </button>
+                    </div>
+                    <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={busy}>
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Sign in <ArrowRight className="ml-1 h-4 w-4" /></>}
+                  </Button>
+                </form>
+              )}
             </TabsContent>
             <TabsContent value="signup">
               <form onSubmit={handleEmail} className="space-y-4">
@@ -178,6 +221,7 @@ function AuthPage() {
               </form>
             </TabsContent>
           </Tabs>
+
 
           <p className="text-center text-xs text-muted-foreground">
             <Link to="/" className="hover:underline">← Back to home</Link>
