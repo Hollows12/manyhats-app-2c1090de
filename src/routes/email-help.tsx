@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Copy, Loader2, Mail, RefreshCw, PlugZap } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Copy, Github, Loader2, Mail, RefreshCw, PlugZap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
