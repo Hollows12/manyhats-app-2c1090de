@@ -168,7 +168,13 @@ function TeamPage() {
             <div className="py-6 text-sm text-muted-foreground">No pending invitations.</div>
           )}
           {pending.map((inv) => (
-            <InviteRow key={inv.id} inv={inv} onRevoke={() => revoke.mutate(inv.id)} />
+            <InviteRow
+              key={inv.id}
+              inv={inv}
+              onRevoke={() => revoke.mutate(inv.id)}
+              onResend={() => resend.mutate(inv)}
+              resending={resend.isPending && resend.variables?.id === inv.id}
+            />
           ))}
         </CardContent>
       </Card>
