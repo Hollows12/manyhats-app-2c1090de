@@ -55,7 +55,6 @@ function makeRequestId() {
 const STORAGE_KEY = "manyhats.emailHelp.resendAttempts.v1";
 const MAX_ATTEMPTS = 10;
 
-function FunctionEmailHelpPage_placeholder() {}
 
 function EmailHelpPage() {
   const [email, setEmail] = useState("");
