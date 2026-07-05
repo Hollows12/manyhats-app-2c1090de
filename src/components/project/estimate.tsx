@@ -1,14 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, Trash2, Calculator } from "lucide-react";
+import { Plus, Trash2, Calculator, Sparkles, Loader2, Check, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ESTIMATE_CATEGORIES, formatMoney } from "@/lib/manyhats";
+import { useServerFn } from "@tanstack/react-start";
+import { recommendEstimate, reviewRecommendation } from "@/lib/firecrawl/pricing.functions";
 
 export function ProjectEstimate({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
