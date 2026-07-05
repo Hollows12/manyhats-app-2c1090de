@@ -28,17 +28,44 @@ type InvitePreview = { email: string; role: "admin" | "crew"; expires_at: string
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { invite } = Route.useSearch();
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"signin" | "signup" | "forgot">("signin");
+  const [tab, setTab] = useState<"signin" | "signup" | "forgot">(invite ? "signup" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-
+  const [invitePreview, setInvitePreview] = useState<InvitePreview | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard", replace: true });
+    if (!invite) return;
+    supabase.rpc("get_invitation_preview", { _token: invite }).then(({ data, error }) => {
+      if (error || !data) {
+        setInviteError("This invitation link is invalid.");
+        return;
+      }
+      const preview = data as unknown as InvitePreview;
+      if (preview.accepted_at) { setInviteError("This invitation has already been accepted."); return; }
+      if (new Date(preview.expires_at) < new Date()) { setInviteError("This invitation has expired."); return; }
+      setInvitePreview(preview);
+      setEmail(preview.email);
     });
+  }, [invite]);
+
+  async function acceptIfInvited() {
+    if (!invite) return;
+    const { error } = await supabase.rpc("accept_invitation", { _token: invite });
+    if (error) toast.error(error.message || "Could not accept invitation");
+    else toast.success("Invitation accepted.");
+  }
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      if (invite) await acceptIfInvited();
+      navigate({ to: "/dashboard", replace: true });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   async function handleEmail(e: React.FormEvent) {
@@ -53,11 +80,12 @@ function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName } },
+          options: { data: { full_name: fullName }, emailRedirectTo: `${window.location.origin}/auth${invite ? `?invite=${invite}` : ""}` },
         });
         if (error) throw error;
         toast.success("Account created. Signing you in...");
       }
+      await acceptIfInvited();
       navigate({ to: "/dashboard", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
