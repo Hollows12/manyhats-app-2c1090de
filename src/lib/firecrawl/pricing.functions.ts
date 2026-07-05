@@ -114,7 +114,7 @@ export const discoverSuppliersByZip = createServerFn({ method: "POST" })
           finished_at: new Date().toISOString(),
           result_summary: { found: items.length, saved: inserted.length },
         })
-        .eq("id", job.data?.id);
+        .eq("id", job.data?.id ?? "");
 
       return { found: items.length, saved: inserted.length, suppliers: inserted };
     } catch (e: any) {
@@ -125,7 +125,7 @@ export const discoverSuppliersByZip = createServerFn({ method: "POST" })
           finished_at: new Date().toISOString(),
           error: String(e?.message ?? e),
         })
-        .eq("id", job.data?.id);
+        .eq("id", job.data?.id ?? "");
       throw e;
     }
   });
@@ -216,7 +216,7 @@ export const enrichMaterialFromUrl = createServerFn({ method: "POST" })
           finished_at: new Date().toISOString(),
           result_summary: { material_id: mat.id, price_saved },
         })
-        .eq("id", job.data?.id);
+        .eq("id", job.data?.id ?? "");
 
       return { material: mat, price_saved };
     } catch (e: any) {
@@ -227,7 +227,7 @@ export const enrichMaterialFromUrl = createServerFn({ method: "POST" })
           finished_at: new Date().toISOString(),
           error: String(e?.message ?? e),
         })
-        .eq("id", job.data?.id);
+        .eq("id", job.data?.id ?? "");
       throw e;
     }
   });
@@ -289,7 +289,7 @@ export const importKnowledgeDoc = createServerFn({ method: "POST" })
           finished_at: new Date().toISOString(),
           result_summary: { doc_id: doc.id },
         })
-        .eq("id", job.data?.id);
+        .eq("id", job.data?.id ?? "");
 
       return doc;
     } catch (e: any) {
@@ -300,7 +300,7 @@ export const importKnowledgeDoc = createServerFn({ method: "POST" })
           finished_at: new Date().toISOString(),
           error: String(e?.message ?? e),
         })
-        .eq("id", job.data?.id);
+        .eq("id", job.data?.id ?? "");
       throw e;
     }
   });
