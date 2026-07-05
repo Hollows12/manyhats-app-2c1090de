@@ -28,6 +28,13 @@ export function ProjectProposal({ projectId }: { projectId: string }) {
       return count ?? 0;
     },
   });
+  const pendingRecs = useQuery({
+    queryKey: ["ai-recs-pending", projectId],
+    queryFn: async () => {
+      const { count } = await supabase.from("ai_estimate_recommendations").select("id", { count: "exact", head: true }).eq("project_id", projectId).eq("status", "pending");
+      return count ?? 0;
+    },
+  });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -56,10 +63,10 @@ export function ProjectProposal({ projectId }: { projectId: string }) {
       </Card>
     );
   }
-  return <ProposalEditor proposal={proposal.data} confirmedCount={measurementsCount.data ?? 0} />;
+  return <ProposalEditor proposal={proposal.data} confirmedCount={measurementsCount.data ?? 0} pendingRecCount={pendingRecs.data ?? 0} />;
 }
 
-function ProposalEditor({ proposal, confirmedCount }: { proposal: any; confirmedCount: number }) {
+function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposal: any; confirmedCount: number; pendingRecCount: number }) {
   const qc = useQueryClient();
   const [form, setForm] = useState(proposal);
   const writeScopeFn = useServerFn(writeScope);
@@ -69,17 +76,23 @@ function ProposalEditor({ proposal, confirmedCount }: { proposal: any; confirmed
 
   const save = useMutation({
     mutationFn: async () => {
+      const nextStatus = form.status ?? proposal.status;
+      const promoting = nextStatus !== "draft" && proposal.status === "draft";
+      if (promoting && pendingRecCount > 0) {
+        throw new Error(`Blocked: ${pendingRecCount} AI recommendation${pendingRecCount === 1 ? "" : "s"} still pending contractor review.`);
+      }
       const { error } = await supabase.from("proposals").update({
         executive_summary: form.executive_summary, existing_conditions: form.existing_conditions,
         scope_of_work: form.scope_of_work, recommendation: form.recommendation,
         timeline: form.timeline, warranty_length: form.warranty_length,
         warranty_notes: form.warranty_notes, exclusions: form.exclusions,
         payment_terms: form.payment_terms, grant_friendly: form.grant_friendly,
-        status: form.status,
+        status: nextStatus,
       }).eq("id", proposal.id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["proposal", proposal.project_id] }); toast.success("Saved."); },
+    onError: (e: any) => toast.error(e?.message ?? "Save failed"),
   });
 
   const addOption = useMutation({
@@ -125,6 +138,9 @@ function ProposalEditor({ proposal, confirmedCount }: { proposal: any; confirmed
             </CardTitle>
             {!canMarkReady && (
               <p className="text-xs text-amber-700 mt-1">⚠ No confirmed measurements yet. Final pricing requires at least one confirmed measurement.</p>
+            )}
+            {pendingRecCount > 0 && (
+              <p className="text-xs text-amber-700 mt-1">⚠ {pendingRecCount} AI recommendation{pendingRecCount === 1 ? "" : "s"} pending contractor approval. Review in the Estimate tab before sending.</p>
             )}
           </div>
           <div className="flex gap-2">
