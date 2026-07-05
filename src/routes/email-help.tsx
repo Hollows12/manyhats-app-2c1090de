@@ -9,6 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/email-help")({
@@ -198,22 +209,38 @@ function EmailHelpPage() {
               <CardTitle className="flex items-center gap-2 text-base">
                 <Clock className="h-4 w-4" /> Recent resend attempts
               </CardTitle>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setAttempts([]);
-                  try {
-                    localStorage.removeItem(STORAGE_KEY);
-                  } catch {
-                    // ignore
-                  }
-                  toast.success("History cleared");
-                }}
-              >
-                Clear history
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button type="button" size="sm" variant="ghost">
+                    Clear history
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear resend history?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This removes all saved resend attempts and request IDs from this browser.
+                      You won't be able to reference them for support afterwards.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        setAttempts([]);
+                        try {
+                          localStorage.removeItem(STORAGE_KEY);
+                        } catch {
+                          // ignore
+                        }
+                        toast.success("Resend history cleared");
+                      }}
+                    >
+                      Clear history
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardHeader>
             <CardContent className="divide-y">
               {attempts.map((a) => (
