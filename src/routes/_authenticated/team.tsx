@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { UserPlus, Copy, Trash2, Mail, ShieldCheck, HardHat, Clock, Check } from "lucide-react";
+import { UserPlus, Copy, Trash2, Mail, ShieldCheck, HardHat, Clock, Check, Send } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,6 +87,25 @@ function TeamPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not revoke"),
   });
 
+  const resend = useMutation({
+    mutationFn: async (inv: Invite) => {
+      const newExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await supabase
+        .from("invitations")
+        .update({ expires_at: newExpiry })
+        .eq("id", inv.id);
+      if (error) throw error;
+      const link = `${window.location.origin}/auth?invite=${inv.token}`;
+      await navigator.clipboard.writeText(link).catch(() => {});
+      return link;
+    },
+    onSuccess: () => {
+      toast.success("Invitation refreshed — link copied. Send it to your teammate.");
+      qc.invalidateQueries({ queryKey: ["invitations"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not resend"),
+  });
+
   const pending = (invites.data ?? []).filter((i) => !i.accepted_at && new Date(i.expires_at) > new Date());
   const past = (invites.data ?? []).filter((i) => i.accepted_at || new Date(i.expires_at) <= new Date());
 
@@ -149,7 +168,13 @@ function TeamPage() {
             <div className="py-6 text-sm text-muted-foreground">No pending invitations.</div>
           )}
           {pending.map((inv) => (
-            <InviteRow key={inv.id} inv={inv} onRevoke={() => revoke.mutate(inv.id)} />
+            <InviteRow
+              key={inv.id}
+              inv={inv}
+              onRevoke={() => revoke.mutate(inv.id)}
+              onResend={() => resend.mutate(inv)}
+              resending={resend.isPending && resend.variables?.id === inv.id}
+            />
           ))}
         </CardContent>
       </Card>
@@ -179,7 +204,17 @@ function TeamPage() {
   );
 }
 
-function InviteRow({ inv, onRevoke }: { inv: Invite; onRevoke: () => void }) {
+function InviteRow({
+  inv,
+  onRevoke,
+  onResend,
+  resending,
+}: {
+  inv: Invite;
+  onRevoke: () => void;
+  onResend: () => void;
+  resending: boolean;
+}) {
   const link = `${window.location.origin}/auth?invite=${inv.token}`;
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
@@ -194,6 +229,9 @@ function InviteRow({ inv, onRevoke }: { inv: Invite; onRevoke: () => void }) {
         </div>
       </div>
       <div className="flex gap-2">
+        <Button type="button" size="sm" variant="default" onClick={onResend} disabled={resending}>
+          <Send className="mr-1 h-3 w-3" /> {resending ? "Resending…" : "Resend"}
+        </Button>
         <Button
           type="button"
           size="sm"
