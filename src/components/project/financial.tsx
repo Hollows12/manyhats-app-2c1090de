@@ -23,6 +23,7 @@ import {
   INVOICE_STATUS_META, DEPOSIT_STATUS_META, PAYMENT_METHODS,
   generateInvoiceNumber, type ProfitSnapshot,
 } from "@/lib/finance";
+import { GenerateInvoiceDialog } from "./generate-invoice-dialog";
 
 export function ProjectFinancial({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
@@ -222,41 +223,6 @@ function DepositsSection({ projectId, proposalId, deposits, onChanged }: {
 function InvoicesSection({ projectId, proposal, invoices, onChanged }: {
   projectId: string; proposal: any; invoices: any[]; onChanged: () => void;
 }) {
-  const generateFromProposal = useMutation({
-    mutationFn: async () => {
-      if (!proposal) throw new Error("Approve a proposal before generating an invoice.");
-      const selected = (proposal.proposal_options ?? []).find((o: any) => o.is_selected)
-        ?? proposal.proposal_options?.[0];
-      const total = Number(selected?.price ?? 0);
-      const seq = Math.floor(Math.random() * 9000) + 1000;
-      const { data: inv, error } = await supabase.from("invoices").insert({
-        project_id: projectId,
-        proposal_id: proposal.id,
-        invoice_number: generateInvoiceNumber(seq),
-        subtotal: total,
-        tax: 0,
-        total,
-        status: "draft",
-        is_final: false,
-      }).select().single();
-      if (error) throw error;
-      // Copy proposal scope as a single line item
-      if (selected) {
-        await supabase.from("invoice_line_items").insert({
-          invoice_id: inv.id,
-          description: selected.title ?? "Contracted work",
-          quantity: 1,
-          unit_price: total,
-          line_total: total,
-          sort_order: 1,
-        });
-      }
-      return inv;
-    },
-    onSuccess: () => { toast.success("Invoice generated from proposal."); onChanged(); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
   const createBlank = useMutation({
     mutationFn: async () => {
       const seq = Math.floor(Math.random() * 9000) + 1000;
@@ -276,10 +242,7 @@ function InvoicesSection({ projectId, proposal, invoices, onChanged }: {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2 text-sm"><Receipt className="h-4 w-4 text-gold" />Invoices</CardTitle>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => generateFromProposal.mutate()}
-            disabled={!proposal || generateFromProposal.isPending}>
-            <FileText className="mr-1 h-3 w-3" />From proposal
-          </Button>
+          <GenerateInvoiceDialog projectId={projectId} proposal={proposal} onCreated={onChanged} />
           <Button size="sm" variant="ghost" onClick={() => createBlank.mutate()}>
             <Plus className="mr-1 h-3 w-3" />Blank
           </Button>
