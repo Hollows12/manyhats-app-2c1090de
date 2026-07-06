@@ -223,8 +223,8 @@ function AcceptForm({ token, options, onAccepted }: {
       const { data, error } = await supabase.rpc("portal_accept_proposal", {
         _token: token,
         _signer_name: name,
-        _signer_email: email || null,
-        _selected_option_id: selected,
+        _signer_email: email || (null as unknown as string),
+        _selected_option_id: (selected ?? null) as unknown as string,
       });
       if (error) throw error;
       const r = data as any;
