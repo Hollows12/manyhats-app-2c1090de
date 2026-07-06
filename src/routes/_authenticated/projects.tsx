@@ -43,13 +43,26 @@ function ProjectsPage() {
 
   const create = useMutation({
     mutationFn: async (vals: any) => {
-      const { data, error } = await supabase.from("projects").insert(vals).select().single();
+      let clientId = vals.client_id;
+      if (!clientId && vals.new_client_name?.trim()) {
+        const { data: c, error: cErr } = await supabase
+          .from("clients")
+          .insert({ name: vals.new_client_name.trim() })
+          .select("id")
+          .single();
+        if (cErr) throw cErr;
+        clientId = c.id;
+      }
+      if (!clientId) throw new Error("Select an existing client or enter a new client name.");
+      const { new_client_name: _n, ...rest } = vals;
+      const { data, error } = await supabase.from("projects").insert({ ...rest, client_id: clientId }).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["projects"] }); toast.success("Project created."); setOpen(false); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["projects"] }); qc.invalidateQueries({ queryKey: ["clients-list"] }); toast.success("Project created. You can fill in client details from the Clients page."); setOpen(false); },
     onError: (e) => toast.error(e.message),
   });
+
 
   const filtered = (projects.data ?? []).filter((p: any) => {
     if (statusFilter !== "all" && p.status !== statusFilter) return false;
