@@ -507,6 +507,10 @@ export type Database = {
           estimate_number: string | null
           grand_total: number
           id: string
+          invoice_id: string | null
+          invoice_number: string | null
+          invoice_status: Database["public"]["Enums"]["invoice_status"] | null
+          invoiced_at: string | null
           markup_pct: number
           notes: string | null
           project_id: string
@@ -522,6 +526,10 @@ export type Database = {
           estimate_number?: string | null
           grand_total?: number
           id?: string
+          invoice_id?: string | null
+          invoice_number?: string | null
+          invoice_status?: Database["public"]["Enums"]["invoice_status"] | null
+          invoiced_at?: string | null
           markup_pct?: number
           notes?: string | null
           project_id: string
@@ -537,6 +545,10 @@ export type Database = {
           estimate_number?: string | null
           grand_total?: number
           id?: string
+          invoice_id?: string | null
+          invoice_number?: string | null
+          invoice_status?: Database["public"]["Enums"]["invoice_status"] | null
+          invoiced_at?: string | null
           markup_pct?: number
           notes?: string | null
           project_id?: string
@@ -546,6 +558,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "estimates_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "estimates_project_id_fkey"
             columns: ["project_id"]
@@ -777,6 +796,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           due_date: string | null
+          estimate_id: string | null
           id: string
           invoice_date: string
           invoice_number: string
@@ -795,6 +815,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           due_date?: string | null
+          estimate_id?: string | null
           id?: string
           invoice_date?: string
           invoice_number: string
@@ -813,6 +834,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           due_date?: string | null
+          estimate_id?: string | null
           id?: string
           invoice_date?: string
           invoice_number?: string
@@ -827,6 +849,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_estimate_id_fkey"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "estimates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_project_id_fkey"
             columns: ["project_id"]
@@ -1717,6 +1746,10 @@ export type Database = {
           existing_conditions: string | null
           grant_friendly: boolean
           id: string
+          invoice_id: string | null
+          invoice_number: string | null
+          invoice_status: Database["public"]["Enums"]["invoice_status"] | null
+          invoiced_at: string | null
           payment_terms: string | null
           pdf_path: string | null
           project_id: string
@@ -1741,6 +1774,10 @@ export type Database = {
           existing_conditions?: string | null
           grant_friendly?: boolean
           id?: string
+          invoice_id?: string | null
+          invoice_number?: string | null
+          invoice_status?: Database["public"]["Enums"]["invoice_status"] | null
+          invoiced_at?: string | null
           payment_terms?: string | null
           pdf_path?: string | null
           project_id: string
@@ -1765,6 +1802,10 @@ export type Database = {
           existing_conditions?: string | null
           grant_friendly?: boolean
           id?: string
+          invoice_id?: string | null
+          invoice_number?: string | null
+          invoice_status?: Database["public"]["Enums"]["invoice_status"] | null
+          invoiced_at?: string | null
           payment_terms?: string | null
           pdf_path?: string | null
           project_id?: string
@@ -1779,6 +1820,13 @@ export type Database = {
           warranty_notes?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "proposals_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "proposals_project_id_fkey"
             columns: ["project_id"]
