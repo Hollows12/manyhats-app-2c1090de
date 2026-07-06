@@ -80,6 +80,7 @@ export function ProjectFinancial({ projectId }: { projectId: string }) {
     qc.invalidateQueries({ queryKey: ["project-profit-snapshot", projectId] });
     qc.invalidateQueries({ queryKey: ["project-deposits", projectId] });
     qc.invalidateQueries({ queryKey: ["project-progress-billings", projectId] });
+    qc.invalidateQueries({ queryKey: ["project-activity-timeline", projectId] });
   }
 
   const snap = snapshot.data;
