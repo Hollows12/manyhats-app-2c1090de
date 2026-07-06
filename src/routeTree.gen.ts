@@ -45,6 +45,7 @@ import { Route as PortalClientFileTokenRouteImport } from './routes/portal.clien
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedFieldCaptureProjectIdRouteImport } from './routes/_authenticated/field-capture.$projectId'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
+import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiProposalsIdPdfRouteImport } from './routes/api/proposals.$id.pdf'
@@ -237,6 +238,11 @@ const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedClientsRoute,
 } as any)
+const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
+  id: '/admin/logs',
+  path: '/admin/logs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -286,6 +292,7 @@ export interface FileRoutesByFullPath {
   '/api/concept-image': typeof ApiConceptImageRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/api/concept-image': typeof ApiConceptImageRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -368,6 +376,7 @@ export interface FileRoutesById {
   '/api/concept-image': typeof ApiConceptImageRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -410,6 +419,7 @@ export interface FileRouteTypes {
     | '/api/concept-image'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/logs'
     | '/clients/$id'
     | '/field-capture/$projectId'
     | '/projects/$id'
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/api/concept-image'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/admin/logs'
     | '/clients/$id'
     | '/field-capture/$projectId'
     | '/projects/$id'
@@ -491,6 +502,7 @@ export interface FileRouteTypes {
     | '/api/concept-image'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/admin/logs'
     | '/_authenticated/clients/$id'
     | '/_authenticated/field-capture/$projectId'
     | '/_authenticated/projects/$id'
@@ -772,6 +784,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsIdRouteImport
       parentRoute: typeof AuthenticatedClientsRoute
     }
+    '/_authenticated/admin/logs': {
+      id: '/_authenticated/admin/logs'
+      path: '/admin/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AuthenticatedAdminLogsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -857,6 +876,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSepticRoute: typeof AuthenticatedSepticRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
+  AuthenticatedAdminLogsRoute: typeof AuthenticatedAdminLogsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -881,6 +901,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSepticRoute: AuthenticatedSepticRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
+  AuthenticatedAdminLogsRoute: AuthenticatedAdminLogsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
