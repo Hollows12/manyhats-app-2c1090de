@@ -1,0 +1,194 @@
+# ManyHats Lovable Build Status
+
+_Audit date: 2026-07-06 · Scope: Lovable frontend + Supabase backend only. Flutter is out of scope._
+
+## Overall completion
+
+**~62% of MVP.** The CRM → Project → Estimate → Proposal spine is functional. Financial closeout (Invoice → Payment → Profit) and client-facing surfaces (Customer Portal, real email delivery) are missing. Specialty modules are shell pages.
+
+```
+Lead ✅ → Project ✅ → Estimate ✅ → Proposal ✅ → Invoice ❌ → Payment ❌ → Profit ⚠ (est vs actual only)
+```
+
+---
+
+## Page-by-page audit
+
+| Route | Status | Notes |
+|---|---|---|
+| `/` landing | Complete | Real brand, meta tags, CTA to `/auth`. |
+| `/auth` | Complete | Email + Google, invite token, forgot-password tab. |
+| `/reset-password` | Complete | Recovery flow present. |
+| `/email-help` | Complete | Support page. |
+| `/dashboard` | Mostly complete | Counts + recent projects. No revenue/profit KPIs, no overdue proposals, no cash-flow tile. |
+| `/leads` (kanban) | Complete | Read-only kanban — no drag-to-change-status. |
+| `/clients` + `/clients/$id` | Mostly complete | CRUD works. No activity timeline, no linked proposals/invoices. |
+| `/projects` + `/projects/$id` | Complete | Central hub with tabs. |
+| `/field-capture` | Partial | Picker list only — the actual capture UI lives in `components/project/field-capture.tsx` and is only reachable from a project. Standalone "quick capture from phone" is missing. |
+| `/estimates` | Complete (list) | Read-only index. |
+| `/proposals` | Complete (list) | Read-only index + PDF. |
+| `/concept-studio` | Complete (list) | Read-only index. |
+| `/home-builder`, `/container-builds`, `/historic`, `/septic` | Partial | 8-line shell using `SpecialtyList` — filters projects by type. No specialty-specific intake, checklists, or workflows despite dedicated `home_builds` / `container_builds` / `historic_projects` / `septic_projects` tables. |
+| `/pricing` (Smart Pricing) | Mostly complete | Suppliers/materials/jobs tabs, Firecrawl discovery. Missing: price-history charts, favorites toggle, per-material refresh button (documented in plan). |
+| `/job-management` | Partial | List by status only. No daily-log entry form on this page, no change-order UI here (buried in project tab). |
+| `/job-costing` | Partial | Estimated vs actual roll-up. No line-item drill-in, no cost entry form (must go through project). |
+| `/knowledge-base` | Present | Confirm search + import works end-to-end. |
+| `/team` | Complete | Invite create/copy/resend/revoke. |
+| `/settings` | Partial | Read-only company info + user list. No company-editable fields, no service-area editor (server fn `upsertServiceArea` exists but no UI). No role edit. |
+| `/schema-diff` | Complete | Dev tool. |
+| **Missing** `/invoices` | ❌ | Not built. |
+| **Missing** `/payments` | ❌ | Not built. |
+| **Missing** `/portal/*` (client) | ❌ | Not built. |
+| **Missing** `/admin` (superuser) | ❌ | Team + Settings partially fill this. |
+
+---
+
+## Feature-by-feature audit
+
+### Auth & security — Complete
+- Email/password + Google OAuth via Lovable broker, `_authenticated` gate (ssr:false), profiles trigger, role table + `has_role`, invitation RPC. First user auto-admin.
+- ⚠ **Missing**: HIBP leaked-password check (call `configure_auth` with `password_hibp_enabled: true`), MFA, admin UI to edit user roles.
+
+### CRM (Clients) — Mostly complete
+- CRUD, notes, county. Detail page exists.
+- Missing: contact timeline (calls, emails, visits), linked doc list, per-client lifetime revenue.
+
+### Projects — Complete (spine)
+- Central hub, status pipeline, tabs for field/estimate/proposal/concepts/costing/jobmgmt.
+
+### Estimates — Complete
+- Line items, categories, markup, contingency, tax, grand_total, AI recommendation gate.
+
+### Proposals — Mostly complete
+- Draft → sent, good/better/best options, PDF export, executive summary, AI scope writer, pending-AI lock.
+- Missing: e-signature capture UI (table `proposal_signatures` exists — verify wiring), send-by-email action, payment schedule fields, price validity.
+
+### Smart Pricing — Mostly complete
+- Firecrawl discovery, material enrichment, knowledge import, AI advisory recommendations with pending/approve/reject, supersede-on-rerun (just shipped).
+- Missing: price history chart, supplier favorites UI toggle, service-area editor UI, cron/refresh scheduler.
+
+### Contractor Financial Engine — ❌ Largely missing
+Per `docs/CONTRACTOR_FINANCIAL_ENGINE.md` the flow is Estimate → Proposal → Deposit → Invoice → Progress Billing → Payment → Actual Profit → Variance.
+- Present: `estimates`, `proposals`, `job_costs`, `change_orders`.
+- **Missing tables**: `invoices`, `invoice_line_items`, `payments`, `deposits`/`progress_billings`, `profit_snapshots`.
+- **Missing UI**: invoice generator, payment recording, deposit collection, real-time profit tile, variance report, cash-flow view.
+- **Missing integration**: Stripe/Paddle. No `payments` connector.
+
+### File/photo uploads — Complete
+- Buckets `field-photos`, `concepts`, `proposals-pdf` exist. `project_photos` table wired in field-capture component.
+- Missing: bulk upload UI, EXIF/GPS auto-tagging, image compression.
+
+### Voice notes — Partial (schema only)
+- `voice_notes` table exists (7 cols) but **no UI, no server fn, no code references it**. Recorder + Whisper/AI transcription not built.
+
+### Concept Studio — Complete
+- Generation route `/api/concept-image`, storage bucket, project tab, disclaimer. Approve-for-proposal boolean.
+
+### Customer / Client portal — ❌ Missing
+- No `/portal` routes. No RLS policies for the `client` role role exist. Signature capture on proposals, deposit payment, progress viewing all missing.
+
+### Admin dashboard — Partial
+- `/team` (invites) + `/settings` (read-only). No consolidated admin view: usage, storage, active projects, error logs, feature toggles, role management.
+
+### Navigation — Complete
+- Sidebar covers all shipped pages. Grouped Pipeline / Estimating / Pro / Ops.
+- Missing sidebar entries once built: Invoices, Payments, Portal preview.
+
+### Mobile responsiveness — Partial
+- Sidebar collapses; grids use `md:` / `xl:`. Not audited on device.
+- Known gaps: no PWA install, `/field-capture` is not phone-first (opens a list, not a camera). Kanban (`/leads`) horizontally scrolls poorly at 390px (6 columns forced at `xl`).
+- Project tabs (concepts/estimate/proposal/field/costing/jobmgmt) not verified on mobile.
+
+### Emails — Partial
+- Auth emails and app emails **not scaffolded** (no email domain configured). Invitations rely on copy-paste link. Proposal "send" is not wired to email.
+
+### Errors / broken flows
+- **`_authenticated/route.tsx` uses top-level `beforeLoad` with `getUser()`** — this is fine because `ssr: false` is set, but any child that adds SSR could regress it.
+- Proposal PDF route relies on data present — no `errorComponent` on many routes.
+- `estimates.tsx` and `job-management.tsx` and other list pages have no `errorComponent` / `notFoundComponent` set.
+- `SpecialtyList` component behavior for specialty pages not audited — likely just a filtered project list.
+- No global error boundary customization visible; router default only.
+
+---
+
+## Supabase integration status
+
+- 34 tables, RLS enabled with `has_role` / `is_staff`.
+- Server functions used correctly (`createServerFn` + `requireSupabaseAuth`).
+- Storage buckets private — good.
+- Secrets present: `LOVABLE_API_KEY`, `FIRECRAWL_API_KEY`, `SUPABASE_*`.
+- ⚠ **Duplicate / near-duplicate tables**: `material_costs` (4 policies) AND `material_prices` (2 policies) — both hold pricing. `production_rates` also similar-shape. Consolidate or document.
+- ⚠ **Read from browser**: `useRole()` in `use-auth.ts` reads `user_roles` client-side. Works with RLS but the app has no dedicated role-change UI, so role escalation risk is limited to admin invites.
+- ⚠ **`settings.tsx` reads `user_roles` cross-user** — relies on RLS `is_staff` policy; verify it isn't leaking to `client` role once portal ships.
+- No `invoices`, `payments`, `deposits` tables — required for Financial Engine.
+- No `activity_log` / `audit_log` — required for admin dashboard.
+
+---
+
+## Duplicate pages / components / dead code
+
+- `material_costs` vs `material_prices` — pick one.
+- `home_builds` / `container_builds` / `historic_projects` / `septic_projects` schemas exist but Pro pages don't render or edit them (dead schema).
+- `job-costing.tsx` and `costing.tsx` component both compute est/actual — the standalone page duplicates the project tab.
+- `field-capture.tsx` route is just a picker; `components/project/field-capture.tsx` is the real UI. Duplicate concept.
+- `preferred_vendors` and `contractor_service_areas` tables — no UI wired.
+- `lidar_scans` table — no UI.
+- `ai_estimate_recommendations` **UI exists in estimate tab**; verify approve/reject buttons render (was just added).
+
+## Dead buttons / broken UX
+
+- Settings "Users" list — no edit action (role change, deactivate).
+- Dashboard module cards — all live, verified.
+- Proposal "PDF" link works; **"Send" button not present** despite proposal having `sent_at` field.
+- Kanban `/leads` — cards clickable but no drag-drop.
+
+## Missing env / infra
+
+- No email sender domain configured (blocks invitation/proposal emails).
+- No Stripe/Paddle connector (blocks invoicing).
+- No pg_cron for daily price refresh (Firecrawl runs on demand only).
+
+## RLS / security
+
+- ✅ Roles in separate table with `has_role` SECURITY DEFINER.
+- ✅ Storage buckets private.
+- ⚠ Recommend enabling `password_hibp_enabled` on auth (call `configure_auth`).
+- ⚠ No client-role RLS policies for a future customer portal; add before shipping portal.
+- ⚠ `useRole` uses `getSession` implicitly — for privileged UI, prefer server checks.
+
+---
+
+## Priority fix list (do first, small)
+
+1. **Sidebar link to `/team`** already present. **Add Settings → Service Area editor** wiring the existing `upsertServiceArea` server fn.
+2. **Add `errorComponent` + `notFoundComponent`** to every `_authenticated/*` route with a loader/query.
+3. **Enable HIBP** via `configure_auth` (`password_hibp_enabled: true`).
+4. **Wire invitation emails** — set up email domain + `scaffold_auth_email_templates` + `scaffold_transactional_email`, then send from `/team` create + resend.
+5. **Fix `/leads` on mobile** — switch 6-column kanban to horizontal scroll snap on `<md`.
+6. **Consolidate `material_costs` vs `material_prices`** — drop or alias one; update `pricing.functions.ts`.
+7. **Voice notes UX or drop the schema** — either build recorder + transcription or remove the table.
+8. **Proposal Send button** — record `sent_at`, generate email via app email infra, drop link to public accept page.
+9. **Admin: role editor on `/settings` or `/team`** — required for real onboarding.
+10. **Dashboard KPI upgrade** — add open proposals value, month revenue (once invoices exist), overdue invoice count.
+
+## Next 10 build tasks (in this order)
+
+1. `invoices` + `invoice_line_items` migration (project_id FK, status, due_date, totals) with GRANTs + RLS.
+2. `/invoices` list + `/projects/$id` **Invoice tab** to generate from an approved proposal.
+3. `payments` + `deposits` tables + record-payment UI on invoice.
+4. Real-time **profit tile** on project page: revenue (invoiced/paid) − sum(job_costs.actual).
+5. **Customer portal** at `/portal/proposal/$token` — public route, token-scoped RLS, view/sign proposal + pay deposit.
+6. Stripe (or Paddle) connector via `payments--recommend_payment_provider`, deposit + final payment flows.
+7. Email domain + auth/app emails; send proposals + invoices + receipts.
+8. **Specialty intake forms** (home/container/historic/septic) — replace `SpecialtyList` shells with real intake writing to their tables, or delete the tables.
+9. **Voice notes** recorder + `speech-to-text` via Lovable AI Gateway → attach transcript to project.
+10. **Mobile field capture PWA** — phone-first `/field-capture/$projectId` with camera, GPS, offline queue.
+
+---
+
+## Strategy reminders honored
+
+- Lovable = MVP frontend only.
+- Supabase is the only backend — do NOT add a second one.
+- Do not rebuild working features (spine intact).
+- Prioritize MVP completeness: **finish the money loop (Invoice → Payment → Profit) before adding new specialty modules**.
