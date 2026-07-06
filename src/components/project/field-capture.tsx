@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { PHOTO_TAGS } from "@/lib/manyhats";
+import { SendCaptureButton } from "@/components/project/send-capture-button";
 
 const UNIT_OPTIONS = ["ea", "lf", "sf", "sy", "cy", "in", "ft", "yd", "lb", "ton", "hr", "day", "ls"];
 const PHASES = ["before", "during", "after", "damage", "material", "receipt", "other"];
