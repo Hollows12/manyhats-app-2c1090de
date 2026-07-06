@@ -579,6 +579,17 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
                             <p className="mt-0.5 text-[10px] text-destructive truncate">{s.error}</p>
                           )}
                         </div>
+                        {!busy && s.status === "error" && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpload([i])}
+                            className="text-muted-foreground hover:text-gold"
+                            aria-label={`Retry ${f.name}`}
+                            title="Retry this file"
+                          >
+                            <RotateCw className="h-3 w-3" />
+                          </button>
+                        )}
                         {!busy && (
                           <button
                             type="button"
