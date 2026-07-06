@@ -166,7 +166,7 @@ export function ProjectVoiceNotes({ projectId }: { projectId: string }) {
   );
 }
 
-function VoiceRow({ note, onDelete, onRetranscribe, busy }: any) {
+function VoiceRow({ projectId, note, onDelete, onRetranscribe, busy }: any) {
   const [url, setUrl] = useState<string | null>(null);
   async function playAudio() {
     if (url) return;
