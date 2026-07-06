@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
-import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage, Layers, X, Loader2, CircleAlert, Ban } from "lucide-react";
+import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage, Layers, X, Loader2, CircleAlert, Ban, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
