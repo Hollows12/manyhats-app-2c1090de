@@ -3,7 +3,10 @@ import {
   LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
   Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
   BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus, Receipt, Wallet,
+  ShieldAlert,
 } from "lucide-react";
+import { useRole } from "@/hooks/use-auth";
+
 
 
 import {
@@ -53,6 +56,8 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const role = useRole();
+
 
   const isActive = (url: string) => pathname === url || pathname.startsWith(url + "/");
 
@@ -117,6 +122,17 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {role === "admin" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive("/admin/logs")} tooltip="Admin logs">
+                    <Link to="/admin/logs" className="flex items-center gap-3">
+                      <ShieldAlert className="h-4 w-4 shrink-0 text-gold" />
+                      {!collapsed && <span>Admin logs</span>}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

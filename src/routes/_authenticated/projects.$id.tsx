@@ -24,6 +24,8 @@ import { ProjectFinancial } from "@/components/project/financial";
 import { ProjectVoiceNotes } from "@/components/project/voice-recorder";
 import { ProjectReceipts } from "@/components/project/receipts";
 import { ProjectDailyLog } from "@/components/project/daily-log";
+import { ClientFileTab } from "@/components/project/client-file-tab";
+
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   component: ProjectDetail,
@@ -109,7 +111,9 @@ function ProjectDetail() {
           <TabsTrigger value="job">Job Management</TabsTrigger>
           <TabsTrigger value="costing">Job Costing</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
+          <TabsTrigger value="clientfile">Client File</TabsTrigger>
           {isHome && <TabsTrigger value="home">Home Builder</TabsTrigger>}
+
           {isContainer && <TabsTrigger value="container">Container Pro</TabsTrigger>}
           {isHistoric && <TabsTrigger value="historic">Historic Pro</TabsTrigger>}
           {isSeptic && <TabsTrigger value="septic">Septic Pro</TabsTrigger>}
@@ -131,6 +135,8 @@ function ProjectDetail() {
         <TabsContent value="job" className="mt-6"><ProjectJobMgmt projectId={id} /></TabsContent>
         <TabsContent value="costing" className="mt-6"><ProjectCosting projectId={id} /></TabsContent>
         <TabsContent value="financial" className="mt-6"><ProjectFinancial projectId={id} /></TabsContent>
+        <TabsContent value="clientfile" className="mt-6"><ClientFileTab projectId={id} /></TabsContent>
+
         {isHome && <TabsContent value="home" className="mt-6"><SpecialtyPlaceholder name="Home Builder Pro" /></TabsContent>}
         {isContainer && <TabsContent value="container" className="mt-6"><SpecialtyPlaceholder name="Container Build Pro" /></TabsContent>}
         {isHistoric && <TabsContent value="historic" className="mt-6"><SpecialtyPlaceholder name="Historic Restoration Pro" /></TabsContent>}
