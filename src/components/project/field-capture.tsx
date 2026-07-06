@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { PHOTO_TAGS } from "@/lib/manyhats";
+import { SendCaptureButton } from "@/components/project/send-capture-button";
 
 const UNIT_OPTIONS = ["ea", "lf", "sf", "sy", "cy", "in", "ft", "yd", "lb", "ton", "hr", "day", "ls"];
 const PHASES = ["before", "during", "after", "damage", "material", "receipt", "other"];
@@ -156,6 +157,7 @@ function PhotosSection({ projectId }: { projectId: string }) {
             {photos.data!.map((p: any) => (
               <PhotoCard
                 key={p.id}
+                projectId={projectId}
                 photo={p}
                 getUrl={getSignedUrl}
                 onDelete={() => remove.mutate(p)}
@@ -170,7 +172,7 @@ function PhotosSection({ projectId }: { projectId: string }) {
   );
 }
 
-function PhotoCard({ photo, getUrl, onDelete, onToggleTag, onMeta }: any) {
+function PhotoCard({ projectId, photo, getUrl, onDelete, onToggleTag, onMeta }: any) {
   const [url, setUrl] = useState<string | null>(null);
   if (!url) getUrl(photo.storage_path).then(setUrl);
   return (
@@ -216,6 +218,9 @@ function PhotoCard({ photo, getUrl, onDelete, onToggleTag, onMeta }: any) {
               {t}
             </button>
           ))}
+        </div>
+        <div className="pt-1">
+          <SendCaptureButton projectId={projectId} source={{ photo_ids: [photo.id] }} label="Send to estimate / proposal" size="sm" variant="outline" />
         </div>
       </div>
     </div>

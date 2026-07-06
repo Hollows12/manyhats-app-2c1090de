@@ -8,6 +8,7 @@ import { transcribeVoiceNote } from "@/lib/voice.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SendCaptureButton } from "@/components/project/send-capture-button";
 
 export function ProjectVoiceNotes({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
@@ -151,6 +152,7 @@ export function ProjectVoiceNotes({ projectId }: { projectId: string }) {
             {notes.data!.map((n: any) => (
               <VoiceRow
                 key={n.id}
+                projectId={projectId}
                 note={n}
                 onDelete={() => remove.mutate(n)}
                 onRetranscribe={() => retranscribe.mutate(n.id)}
@@ -164,7 +166,7 @@ export function ProjectVoiceNotes({ projectId }: { projectId: string }) {
   );
 }
 
-function VoiceRow({ note, onDelete, onRetranscribe, busy }: any) {
+function VoiceRow({ projectId, note, onDelete, onRetranscribe, busy }: any) {
   const [url, setUrl] = useState<string | null>(null);
   async function playAudio() {
     if (url) return;
@@ -217,6 +219,13 @@ function VoiceRow({ note, onDelete, onRetranscribe, busy }: any) {
           <Button variant="ghost" size="sm" onClick={onDelete}>
             <Trash2 className="h-3 w-3" />
           </Button>
+          <SendCaptureButton
+            projectId={projectId}
+            source={{ voice_note_ids: [note.id] }}
+            label="Send"
+            size="sm"
+            variant="outline"
+          />
         </div>
       </div>
     </div>
