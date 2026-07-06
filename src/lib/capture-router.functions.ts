@@ -34,12 +34,78 @@ const TARGET_LABEL: Record<TargetT, string> = {
   proposal_recommendation: "Proposal · Recommendation",
 };
 
-async function retrieveCaptureContent(supabase: any, data: z.infer<typeof SourceInput>) {
+type SupabaseError = { message: string };
+type PhotoRow = {
+  id: string;
+  caption: string | null;
+  phase: string | null;
+  tags: string[] | null;
+  captured_at: string | null;
+  storage_path: string | null;
+};
+type VoiceRow = {
+  id: string;
+  transcript: string | null;
+  summary: string | null;
+  scope_notes: string | null;
+  created_at: string | null;
+  duration_seconds: number | null;
+  storage_path: string | null;
+};
+type EstimateRow = { id: string; notes: string | null };
+type ProposalRow = {
+  id: string;
+  scope_of_work?: string | null;
+  existing_conditions?: string | null;
+  executive_summary?: string | null;
+  recommendation?: string | null;
+};
+type SupabaseLike = {
+  from: (table: string) => {
+    select: (columns: string) => {
+      in: (
+        column: string,
+        values: string[],
+      ) => {
+        eq: (
+          column: string,
+          value: string,
+        ) => Promise<{ data: unknown[] | null; error: SupabaseError | null }>;
+      };
+      eq: (
+        column: string,
+        value: string,
+      ) => {
+        order: (
+          column: string,
+          opts: { ascending: boolean },
+        ) => {
+          limit: (value: number) => {
+            maybeSingle: () => Promise<{ data: unknown | null; error: SupabaseError | null }>;
+          };
+        };
+      };
+    };
+    update: (value: Record<string, unknown>) => {
+      eq: (column: string, value: string) => Promise<{ error: SupabaseError | null }>;
+    };
+  };
+  storage: {
+    from: (bucket: string) => {
+      createSignedUrl: (
+        path: string,
+        expiresIn: number,
+      ) => Promise<{ data: { signedUrl?: string } | null }>;
+    };
+  };
+};
+
+async function retrieveCaptureContent(supabase: SupabaseLike, data: z.infer<typeof SourceInput>) {
   if (data.photo_ids.length === 0 && data.voice_note_ids.length === 0) {
     throw new Error("Select at least one photo or voice note.");
   }
 
-  let photos: any[] = [];
+  let photos: PhotoRow[] = [];
   if (data.photo_ids.length) {
     const { data: rows, error } = await supabase
       .from("project_photos")
@@ -47,10 +113,10 @@ async function retrieveCaptureContent(supabase: any, data: z.infer<typeof Source
       .in("id", data.photo_ids)
       .eq("project_id", data.project_id);
     if (error) throw new Error(error.message);
-    photos = rows ?? [];
+    photos = (rows ?? []) as PhotoRow[];
   }
 
-  let notes: any[] = [];
+  let notes: VoiceRow[] = [];
   if (data.voice_note_ids.length) {
     const { data: rows, error } = await supabase
       .from("voice_notes")
@@ -58,7 +124,7 @@ async function retrieveCaptureContent(supabase: any, data: z.infer<typeof Source
       .in("id", data.voice_note_ids)
       .eq("project_id", data.project_id);
     if (error) throw new Error(error.message);
-    notes = rows ?? [];
+    notes = (rows ?? []) as VoiceRow[];
   }
 
   const photoLines: string[] = [];
@@ -66,7 +132,9 @@ async function retrieveCaptureContent(supabase: any, data: z.infer<typeof Source
     const tagBits = [
       p.phase ? `[${p.phase}]` : null,
       (p.tags ?? []).length ? `[${(p.tags ?? []).join(", ")}]` : null,
-    ].filter(Boolean).join(" ");
+    ]
+      .filter(Boolean)
+      .join(" ");
     const cap = (p.caption ?? "").trim() || "(no caption)";
     photoLines.push(`Photo${tagBits ? ` ${tagBits}` : ""}: ${cap}`);
   }
@@ -91,14 +159,18 @@ async function retrieveCaptureContent(supabase: any, data: z.infer<typeof Source
   const photoPathToUrl: Record<string, string> = {};
   for (const p of photos) {
     if (!p.storage_path) continue;
-    const { data: signed } = await supabase.storage.from("field-photos").createSignedUrl(p.storage_path, 1800);
+    const { data: signed } = await supabase.storage
+      .from("field-photos")
+      .createSignedUrl(p.storage_path, 1800);
     if (signed?.signedUrl) photoPathToUrl[p.storage_path] = signed.signedUrl;
   }
 
   const voicePathToUrl: Record<string, string> = {};
   for (const n of notes) {
     if (!n.storage_path) continue;
-    const { data: signed } = await supabase.storage.from("field-photos").createSignedUrl(n.storage_path, 1800);
+    const { data: signed } = await supabase.storage
+      .from("field-photos")
+      .createSignedUrl(n.storage_path, 1800);
     if (signed?.signedUrl) voicePathToUrl[n.storage_path] = signed.signedUrl;
   }
 
@@ -153,12 +225,14 @@ Rules:
     throw new Error(`AI polish failed (${chatRes.status}): ${errText.slice(0, 200)}`);
   }
 
-  const j = (await chatRes.json()) as any;
-  return String(j?.choices?.[0]?.message?.content ?? "").trim();
+  const json = (await chatRes.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  return String(json.choices?.[0]?.message?.content ?? "").trim();
 }
 
 async function appendCaptureToTarget(
-  supabase: any,
+  supabase: SupabaseLike,
   data: z.infer<typeof SendInput>,
   bodyText: string,
 ) {
@@ -176,9 +250,13 @@ async function appendCaptureToTarget(
       .maybeSingle();
     if (qErr) throw new Error(qErr.message);
     if (!est) throw new Error("No estimate on this project yet. Create one first, then send.");
+    const estimate = est as EstimateRow;
 
-    const next = `${(est.notes ?? "").trim()}${divider}${bodyText}`.trim();
-    const { error } = await supabase.from("estimates").update({ notes: next }).eq("id", est.id);
+    const next = `${(estimate.notes ?? "").trim()}${divider}${bodyText}`.trim();
+    const { error } = await supabase
+      .from("estimates")
+      .update({ notes: next })
+      .eq("id", estimate.id);
     if (error) throw new Error(error.message);
     return;
   }
@@ -198,13 +276,14 @@ async function appendCaptureToTarget(
     .maybeSingle();
   if (pErr) throw new Error(pErr.message);
   if (!prop) throw new Error("No proposal on this project yet. Create one first, then send.");
+  const proposal = prop as ProposalRow;
 
-  const existing = String(((prop as any)[col] as string | null | undefined) ?? "").trim();
+  const existing = String(proposal[col] ?? "").trim();
   const next = `${existing}${divider}${bodyText}`.trim();
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("proposals")
     .update({ [col]: next })
-    .eq("id", (prop as any).id);
+    .eq("id", proposal.id);
   if (error) throw new Error(error.message);
 }
 
@@ -212,7 +291,7 @@ export const generateCapturePreview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => PreviewInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const supabase = context.supabase as SupabaseLike;
     const source = await retrieveCaptureContent(supabase, data);
 
     let clientReadyText: string | null = null;
@@ -237,7 +316,7 @@ export const sendCaptureToTarget = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SendInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const supabase = context.supabase as SupabaseLike;
 
     // Validate selected capture source before append.
     await retrieveCaptureContent(supabase, data);

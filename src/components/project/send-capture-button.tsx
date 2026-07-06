@@ -33,13 +33,41 @@ type Target =
   | "proposal_recommendation";
 
 const OPTIONS: {
-  value: Target; label: string; hint: string; defaultPolish: boolean;
+  value: Target;
+  label: string;
+  hint: string;
+  defaultPolish: boolean;
 }[] = [
-  { value: "estimate_notes", label: "Estimate notes", hint: "Internal — appends raw capture to the latest estimate's notes.", defaultPolish: false },
-  { value: "proposal_scope_of_work", label: "Proposal · Scope of work", hint: "Contractor-grade scope wording, appended to the proposal.", defaultPolish: true },
-  { value: "proposal_existing_conditions", label: "Proposal · Existing conditions", hint: "What we observed on site — client-facing.", defaultPolish: true },
-  { value: "proposal_executive_summary", label: "Proposal · Executive summary", hint: "Client-facing overview at the top of the proposal.", defaultPolish: true },
-  { value: "proposal_recommendation", label: "Proposal · Recommendation", hint: "Client-facing recommendation section.", defaultPolish: true },
+  {
+    value: "estimate_notes",
+    label: "Estimate notes",
+    hint: "Internal — appends raw capture to the latest estimate's notes.",
+    defaultPolish: false,
+  },
+  {
+    value: "proposal_scope_of_work",
+    label: "Proposal · Scope of work",
+    hint: "Contractor-grade scope wording, appended to the proposal.",
+    defaultPolish: true,
+  },
+  {
+    value: "proposal_existing_conditions",
+    label: "Proposal · Existing conditions",
+    hint: "What we observed on site — client-facing.",
+    defaultPolish: true,
+  },
+  {
+    value: "proposal_executive_summary",
+    label: "Proposal · Executive summary",
+    hint: "Client-facing overview at the top of the proposal.",
+    defaultPolish: true,
+  },
+  {
+    value: "proposal_recommendation",
+    label: "Proposal · Recommendation",
+    hint: "Client-facing recommendation section.",
+    defaultPolish: true,
+  },
 ];
 
 type PreviewData = {
@@ -70,7 +98,12 @@ type PreviewData = {
 };
 
 function cacheKey(target: Target, polish: boolean, photoIds: string[], voiceNoteIds: string[]) {
-  return [target, polish ? "1" : "0", [...photoIds].sort().join(","), [...voiceNoteIds].sort().join(",")].join("|");
+  return [
+    target,
+    polish ? "1" : "0",
+    [...photoIds].sort().join(","),
+    [...voiceNoteIds].sort().join(","),
+  ].join("|");
 }
 
 export function SendCaptureButton({
@@ -105,7 +138,10 @@ export function SendCaptureButton({
   const previewFn = useServerFn(generateCapturePreview);
 
   const opt = OPTIONS.find((o) => o.value === target)!;
-  const activeKey = useMemo(() => cacheKey(target, polish, photoIds, voiceNoteIds), [target, polish, photoIds, voiceNoteIds]);
+  const activeKey = useMemo(
+    () => cacheKey(target, polish, photoIds, voiceNoteIds),
+    [target, polish, photoIds, voiceNoteIds],
+  );
 
   function onTargetChange(v: string) {
     const next = v as Target;
@@ -157,8 +193,8 @@ export function SendCaptureButton({
       setPreviewText(result.previewText);
       cacheRef.current[key] = { preview: result, editedText: result.previewText };
       setStep("preview");
-    } catch (e: any) {
-      toast.error(e?.message ?? "Preview failed");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Preview failed");
     } finally {
       setLoadingPreview(false);
     }
@@ -209,8 +245,8 @@ export function SendCaptureButton({
       qc.invalidateQueries({ queryKey: ["proposal", projectId] });
       qc.invalidateQueries({ queryKey: ["estimate", projectId] });
       setOpen(false);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Send failed");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Send failed");
     } finally {
       setSending(false);
     }
@@ -219,7 +255,12 @@ export function SendCaptureButton({
   const busy = loadingPreview || sending;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!busy) setOpen(v); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!busy) setOpen(v);
+      }}
+    >
       <DialogTrigger asChild>
         <Button size={size} variant={variant} title="Send this capture to estimate/proposal">
           <Send className={iconOnly ? "h-3 w-3" : "mr-1 h-3 w-3"} />
@@ -241,10 +282,14 @@ export function SendCaptureButton({
               <div>
                 <Label className="text-xs">Destination</Label>
                 <Select value={target} onValueChange={onTargetChange}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -266,12 +311,18 @@ export function SendCaptureButton({
             <div className="space-y-4">
               <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Destination</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Destination
+                  </p>
                   <p className="text-sm font-medium">{preview?.targetLabel ?? opt.label}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Timestamp</p>
-                  <p className="text-sm font-medium">{preview?.generatedAt ? new Date(preview.generatedAt).toLocaleString() : "—"}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Timestamp
+                  </p>
+                  <p className="text-sm font-medium">
+                    {preview?.generatedAt ? new Date(preview.generatedAt).toLocaleString() : "—"}
+                  </p>
                 </div>
               </div>
 
@@ -279,15 +330,26 @@ export function SendCaptureButton({
                 <Switch
                   id="preview-polish-toggle"
                   checked={polish}
-                  onCheckedChange={(v) => { void togglePolishInPreview(v); }}
+                  onCheckedChange={(v) => {
+                    void togglePolishInPreview(v);
+                  }}
                   disabled={loadingPreview}
                 />
                 <Label htmlFor="preview-polish-toggle" className="text-xs flex items-center gap-1">
                   <Sparkles className="h-3 w-3 text-gold" /> AI Polish {polish ? "ON" : "OFF"}
                 </Label>
                 {polish ? (
-                  <Button size="sm" variant="outline" onClick={() => loadPreview({ forceRegenerate: true })} disabled={loadingPreview}>
-                    {loadingPreview ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => loadPreview({ forceRegenerate: true })}
+                    disabled={loadingPreview}
+                  >
+                    {loadingPreview ? (
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-1 h-3 w-3" />
+                    )}
                     Regenerate
                   </Button>
                 ) : null}
@@ -302,19 +364,33 @@ export function SendCaptureButton({
               {preview ? (
                 <>
                   <div>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Original captured content</p>
-                    <Textarea value={preview.originalText} readOnly className="min-h-[130px] text-xs" />
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Original captured content
+                    </p>
+                    <Textarea
+                      value={preview.originalText}
+                      readOnly
+                      className="min-h-[130px] text-xs"
+                    />
                   </div>
 
                   {polish ? (
                     <div>
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Client-ready version</p>
-                      <Textarea value={preview.clientReadyText ?? ""} readOnly className="min-h-[130px] text-xs" />
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Client-ready version
+                      </p>
+                      <Textarea
+                        value={preview.clientReadyText ?? ""}
+                        readOnly
+                        className="min-h-[130px] text-xs"
+                      />
                     </div>
                   ) : null}
 
                   <div>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Edit before send</p>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Edit before send
+                    </p>
                     <Textarea
                       value={previewText}
                       onChange={(e) => {
@@ -330,7 +406,9 @@ export function SendCaptureButton({
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Attached photos</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Attached photos
+                    </p>
                     {preview.photos.length === 0 ? (
                       <p className="text-xs text-muted-foreground">No photos attached.</p>
                     ) : (
@@ -338,14 +416,26 @@ export function SendCaptureButton({
                         {preview.photos.map((p) => (
                           <div key={p.id} className="rounded-md border p-2">
                             {p.signed_url ? (
-                              <img src={p.signed_url} alt={p.caption ?? "Attached photo"} className="mb-2 h-28 w-full rounded object-cover" />
+                              <img
+                                src={p.signed_url}
+                                alt={p.caption ?? "Attached photo"}
+                                className="mb-2 h-28 w-full rounded object-cover"
+                              />
                             ) : (
                               <div className="mb-2 flex h-28 items-center justify-center rounded bg-muted text-xs text-muted-foreground">
                                 <ImageIcon className="mr-1 h-3 w-3" /> Image unavailable
                               </div>
                             )}
                             <p className="line-clamp-2 text-xs">{p.caption || "(no caption)"}</p>
-                            <Button size="sm" variant="ghost" className="mt-1" onClick={() => { void removePhoto(p.id); }} disabled={loadingPreview}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="mt-1"
+                              onClick={() => {
+                                void removePhoto(p.id);
+                              }}
+                              disabled={loadingPreview}
+                            >
                               Remove photo
                             </Button>
                           </div>
@@ -355,7 +445,9 @@ export function SendCaptureButton({
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Attached voice notes</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Attached voice notes
+                    </p>
                     {preview.voiceNotes.length === 0 ? (
                       <p className="text-xs text-muted-foreground">No voice notes attached.</p>
                     ) : (
@@ -364,12 +456,30 @@ export function SendCaptureButton({
                           <div key={n.id} className="rounded-md border p-2">
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Mic className="h-3 w-3 text-gold" />
-                              {n.created_at ? new Date(n.created_at).toLocaleString() : "Voice note"}
-                              {n.duration_seconds ? <Badge variant="outline" className="ml-1 text-[10px]">{formatDur(n.duration_seconds)}</Badge> : null}
+                              {n.created_at
+                                ? new Date(n.created_at).toLocaleString()
+                                : "Voice note"}
+                              {n.duration_seconds ? (
+                                <Badge variant="outline" className="ml-1 text-[10px]">
+                                  {formatDur(n.duration_seconds)}
+                                </Badge>
+                              ) : null}
                             </div>
-                            <p className="mt-1 whitespace-pre-wrap text-xs">{n.scope_notes || n.summary || n.transcript || "(no text yet)"}</p>
-                            {n.signed_url ? <audio controls src={n.signed_url} className="mt-2 h-8 w-full" /> : null}
-                            <Button size="sm" variant="ghost" className="mt-1" onClick={() => { void removeVoiceNote(n.id); }} disabled={loadingPreview}>
+                            <p className="mt-1 whitespace-pre-wrap text-xs">
+                              {n.scope_notes || n.summary || n.transcript || "(no text yet)"}
+                            </p>
+                            {n.signed_url ? (
+                              <audio controls src={n.signed_url} className="mt-2 h-8 w-full" />
+                            ) : null}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="mt-1"
+                              onClick={() => {
+                                void removeVoiceNote(n.id);
+                              }}
+                              disabled={loadingPreview}
+                            >
                               Remove voice note
                             </Button>
                           </div>
@@ -386,9 +496,15 @@ export function SendCaptureButton({
         <DialogFooter className="border-t px-4 py-3">
           {step === "setup" ? (
             <>
-              <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+              <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+                Cancel
+              </Button>
               <Button onClick={() => loadPreview()} disabled={busy}>
-                {loadingPreview ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+                {loadingPreview ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-1 h-4 w-4" />
+                )}
                 Preview Before Send
               </Button>
             </>
@@ -397,7 +513,9 @@ export function SendCaptureButton({
               <Button variant="outline" onClick={() => setStep("setup")} disabled={busy}>
                 ← Back
               </Button>
-              <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+              <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+                Cancel
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => {
@@ -410,7 +528,11 @@ export function SendCaptureButton({
                 Save Draft
               </Button>
               <Button onClick={submit} disabled={busy || !previewText.trim()}>
-                {sending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+                {sending ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-1 h-4 w-4" />
+                )}
                 Send to Proposal / Estimate
               </Button>
             </>
