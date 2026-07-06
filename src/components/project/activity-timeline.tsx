@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, FileText, Wallet, Ban, Sparkles, DollarSign, Layers, CheckCircle2 } from "lucide-react";
+import { Activity, FileText, Wallet, Ban, Sparkles, DollarSign, Layers, CheckCircle2, Send, Eye, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { PAYMENT_METHODS, DEPOSIT_STATUS_META } from "@/lib/finance";
 
 type EventKind =
   | "invoice_created"
+  | "invoice_sent"
+  | "invoice_viewed"
   | "payment_recorded"
   | "payment_voided"
   | "deposit_recorded"
@@ -17,7 +19,10 @@ type EventKind =
   | "deposit_voided"
   | "progress_billing_recorded"
   | "progress_billing_approved"
-  | "progress_billing_voided";
+  | "progress_billing_voided"
+  | "proposal_sent"
+  | "proposal_viewed"
+  | "proposal_signed";
 
 type TimelineEvent = {
   id: string;
@@ -43,10 +48,10 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
   const q = useQuery({
     queryKey: ["project-activity-timeline", projectId],
     queryFn: async (): Promise<TimelineEvent[]> => {
-      const [inv, pay, dep, pb] = await Promise.all([
+      const [inv, pay, dep, pb, props, sigs] = await Promise.all([
         supabase
           .from("invoices")
-          .select("id, invoice_number, total, created_at, proposal_id, estimate_id, proposals(proposal_number, title), estimates(estimate_number)")
+          .select("id, invoice_number, total, created_at, sent_at, viewed_at, proposal_id, estimate_id, proposals(proposal_number, title), estimates(estimate_number)")
           .eq("project_id", projectId),
         supabase
           .from("payments")
@@ -60,6 +65,14 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
           .from("progress_billings")
           .select("id, billing_number, percent_complete, amount_due, retainage, status, approved_at, created_at, updated_at, invoices(invoice_number)")
           .eq("project_id", projectId),
+        supabase
+          .from("proposals")
+          .select("id, proposal_number, sent_at, viewed_at")
+          .eq("project_id", projectId),
+        supabase
+          .from("proposal_signatures")
+          .select("id, signer_name, signed_at, proposal_id, proposals!inner(proposal_number, project_id)")
+          .eq("proposals.project_id", projectId),
       ]);
 
       const events: TimelineEvent[] = [];

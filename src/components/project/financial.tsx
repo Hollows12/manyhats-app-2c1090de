@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   DollarSign, FileText, Receipt, TrendingUp, Plus, Trash2,
-  Printer, Ban, Wallet, Percent, AlertCircle,
+  Printer, Ban, Wallet, Percent, AlertCircle, Link2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -306,6 +306,7 @@ function InvoiceCard({ invoice, onChanged }: { invoice: any; onChanged: () => vo
           <Button size="sm" variant="outline" onClick={() => setPayOpen(true)} disabled={invoice.status === "void" || Number(invoice.balance_due) <= 0}>
             <Wallet className="mr-1 h-3 w-3" />Record payment
           </Button>
+          <InvoicePortalLinkButton invoiceId={invoice.id} onChanged={onChanged} />
           <Button size="sm" variant="ghost" onClick={() => window.print()}>
             <Printer className="h-3 w-3" />
           </Button>
@@ -591,5 +592,31 @@ function ProfitTile({ label, value, muted, highlight }: { label: string; value: 
         {formatMoney(value)}
       </div>
     </div>
+  );
+}
+
+function InvoicePortalLinkButton({ invoiceId, onChanged }: { invoiceId: string; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  async function copyLink(rotate: boolean) {
+    setBusy(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)("ensure_invoice_portal_token", {
+        _invoice_id: invoiceId, _rotate: rotate,
+      });
+      if (error) throw error;
+      const r = data as any;
+      if (r?.error) throw new Error(r.error);
+      const url = `${window.location.origin}/portal/invoice/${r.token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success(rotate ? "New client link copied." : "Client link copied.");
+      onChanged();
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not create link");
+    } finally { setBusy(false); }
+  }
+  return (
+    <Button size="sm" variant="ghost" disabled={busy} onClick={() => copyLink(false)} title="Copy client portal link">
+      <Link2 className="h-3 w-3" />
+    </Button>
   );
 }
