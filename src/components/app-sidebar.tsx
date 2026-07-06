@@ -3,7 +3,10 @@ import {
   LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
   Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
   BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus, Receipt, Wallet,
+  ShieldAlert,
 } from "lucide-react";
+import { useRole } from "@/hooks/use-auth";
+
 
 
 import {
