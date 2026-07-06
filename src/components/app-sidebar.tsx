@@ -43,7 +43,6 @@ const PRO = [
 const OPS = [
   { title: "Smart Pricing", url: "/pricing", icon: DollarSign },
   { title: "Job Management", url: "/job-management", icon: ClipboardList },
-  { title: "Job Costing", url: "/job-costing", icon: TrendingUp },
   { title: "Knowledge Base", url: "/knowledge-base", icon: BookOpen },
 ];
 
