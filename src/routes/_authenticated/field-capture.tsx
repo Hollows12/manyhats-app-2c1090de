@@ -27,7 +27,7 @@ function FieldCapturePage() {
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {projects.data!.map((p: any) => (
-            <Link key={p.id} to="/projects/$id" params={{ id: p.id }}>
+            <Link key={p.id} to="/field-capture/$projectId" params={{ projectId: p.id }}>
               <Card className="hover:border-gold hover:shadow-md transition-all">
                 <CardContent className="p-4">
                   <div className="font-semibold truncate">{p.name}</div>

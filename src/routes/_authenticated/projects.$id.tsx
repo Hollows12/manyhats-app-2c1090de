@@ -21,6 +21,9 @@ import { ProjectConcepts } from "@/components/project/concepts";
 import { ProjectJobMgmt } from "@/components/project/job-mgmt";
 import { ProjectCosting } from "@/components/project/costing";
 import { ProjectFinancial } from "@/components/project/financial";
+import { ProjectVoiceNotes } from "@/components/project/voice-recorder";
+import { ProjectReceipts } from "@/components/project/receipts";
+import { ProjectDailyLog } from "@/components/project/daily-log";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   component: ProjectDetail,
@@ -97,6 +100,9 @@ function ProjectDetail() {
         <TabsList className="flex h-auto flex-wrap justify-start gap-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="field">Field Capture</TabsTrigger>
+          <TabsTrigger value="voice">Voice Notes</TabsTrigger>
+          <TabsTrigger value="receipts">Receipts</TabsTrigger>
+          <TabsTrigger value="dailylog">Daily Log</TabsTrigger>
           <TabsTrigger value="estimate">Estimate</TabsTrigger>
           <TabsTrigger value="proposal">Proposal</TabsTrigger>
           <TabsTrigger value="concept">Concept Studio</TabsTrigger>
@@ -116,6 +122,9 @@ function ProjectDetail() {
           </div>
         </TabsContent>
         <TabsContent value="field" className="mt-6"><ProjectFieldCapture projectId={id} /></TabsContent>
+        <TabsContent value="voice" className="mt-6"><ProjectVoiceNotes projectId={id} /></TabsContent>
+        <TabsContent value="receipts" className="mt-6"><ProjectReceipts projectId={id} /></TabsContent>
+        <TabsContent value="dailylog" className="mt-6"><ProjectDailyLog projectId={id} /></TabsContent>
         <TabsContent value="estimate" className="mt-6"><ProjectEstimate projectId={id} /></TabsContent>
         <TabsContent value="proposal" className="mt-6"><ProjectProposal projectId={id} /></TabsContent>
         <TabsContent value="concept" className="mt-6"><ProjectConcepts projectId={id} /></TabsContent>

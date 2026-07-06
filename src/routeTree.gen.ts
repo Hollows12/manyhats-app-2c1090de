@@ -42,6 +42,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as PortalProposalTokenRouteImport } from './routes/portal.proposal.$token'
 import { Route as PortalInvoiceTokenRouteImport } from './routes/portal.invoice.$token'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedFieldCaptureProjectIdRouteImport } from './routes/_authenticated/field-capture.$projectId'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -219,6 +220,12 @@ const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedProjectsRoute,
 } as any)
+const AuthenticatedFieldCaptureProjectIdRoute =
+  AuthenticatedFieldCaptureProjectIdRouteImport.update({
+    id: '/$projectId',
+    path: '/$projectId',
+    getParentRoute: () => AuthenticatedFieldCaptureRoute,
+  } as any)
 const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -254,7 +261,7 @@ export interface FileRoutesByFullPath {
   '/container-builds': typeof AuthenticatedContainerBuildsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
-  '/field-capture': typeof AuthenticatedFieldCaptureRoute
+  '/field-capture': typeof AuthenticatedFieldCaptureRouteWithChildren
   '/historic': typeof AuthenticatedHistoricRoute
   '/home-builder': typeof AuthenticatedHomeBuilderRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
@@ -274,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
+  '/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/portal/invoice/$token': typeof PortalInvoiceTokenRoute
   '/portal/proposal/$token': typeof PortalProposalTokenRoute
@@ -292,7 +300,7 @@ export interface FileRoutesByTo {
   '/container-builds': typeof AuthenticatedContainerBuildsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
-  '/field-capture': typeof AuthenticatedFieldCaptureRoute
+  '/field-capture': typeof AuthenticatedFieldCaptureRouteWithChildren
   '/historic': typeof AuthenticatedHistoricRoute
   '/home-builder': typeof AuthenticatedHomeBuilderRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
@@ -312,6 +320,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
+  '/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/portal/invoice/$token': typeof PortalInvoiceTokenRoute
   '/portal/proposal/$token': typeof PortalProposalTokenRoute
@@ -332,7 +341,7 @@ export interface FileRoutesById {
   '/_authenticated/container-builds': typeof AuthenticatedContainerBuildsRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/estimates': typeof AuthenticatedEstimatesRoute
-  '/_authenticated/field-capture': typeof AuthenticatedFieldCaptureRoute
+  '/_authenticated/field-capture': typeof AuthenticatedFieldCaptureRouteWithChildren
   '/_authenticated/historic': typeof AuthenticatedHistoricRoute
   '/_authenticated/home-builder': typeof AuthenticatedHomeBuilderRoute
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
@@ -352,6 +361,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
+  '/_authenticated/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/portal/invoice/$token': typeof PortalInvoiceTokenRoute
   '/portal/proposal/$token': typeof PortalProposalTokenRoute
@@ -392,6 +402,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/clients/$id'
+    | '/field-capture/$projectId'
     | '/projects/$id'
     | '/portal/invoice/$token'
     | '/portal/proposal/$token'
@@ -430,6 +441,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/clients/$id'
+    | '/field-capture/$projectId'
     | '/projects/$id'
     | '/portal/invoice/$token'
     | '/portal/proposal/$token'
@@ -469,6 +481,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/clients/$id'
+    | '/_authenticated/field-capture/$projectId'
     | '/_authenticated/projects/$id'
     | '/portal/invoice/$token'
     | '/portal/proposal/$token'
@@ -725,6 +738,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
       parentRoute: typeof AuthenticatedProjectsRoute
     }
+    '/_authenticated/field-capture/$projectId': {
+      id: '/_authenticated/field-capture/$projectId'
+      path: '/$projectId'
+      fullPath: '/field-capture/$projectId'
+      preLoaderRoute: typeof AuthenticatedFieldCaptureProjectIdRouteImport
+      parentRoute: typeof AuthenticatedFieldCaptureRoute
+    }
     '/_authenticated/clients/$id': {
       id: '/_authenticated/clients/$id'
       path: '/$id'
@@ -767,6 +787,21 @@ const AuthenticatedClientsRouteChildren: AuthenticatedClientsRouteChildren = {
 const AuthenticatedClientsRouteWithChildren =
   AuthenticatedClientsRoute._addFileChildren(AuthenticatedClientsRouteChildren)
 
+interface AuthenticatedFieldCaptureRouteChildren {
+  AuthenticatedFieldCaptureProjectIdRoute: typeof AuthenticatedFieldCaptureProjectIdRoute
+}
+
+const AuthenticatedFieldCaptureRouteChildren: AuthenticatedFieldCaptureRouteChildren =
+  {
+    AuthenticatedFieldCaptureProjectIdRoute:
+      AuthenticatedFieldCaptureProjectIdRoute,
+  }
+
+const AuthenticatedFieldCaptureRouteWithChildren =
+  AuthenticatedFieldCaptureRoute._addFileChildren(
+    AuthenticatedFieldCaptureRouteChildren,
+  )
+
 interface AuthenticatedProjectsRouteChildren {
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
 }
@@ -786,7 +821,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContainerBuildsRoute: typeof AuthenticatedContainerBuildsRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEstimatesRoute: typeof AuthenticatedEstimatesRoute
-  AuthenticatedFieldCaptureRoute: typeof AuthenticatedFieldCaptureRoute
+  AuthenticatedFieldCaptureRoute: typeof AuthenticatedFieldCaptureRouteWithChildren
   AuthenticatedHistoricRoute: typeof AuthenticatedHistoricRoute
   AuthenticatedHomeBuilderRoute: typeof AuthenticatedHomeBuilderRoute
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
@@ -810,7 +845,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContainerBuildsRoute: AuthenticatedContainerBuildsRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEstimatesRoute: AuthenticatedEstimatesRoute,
-  AuthenticatedFieldCaptureRoute: AuthenticatedFieldCaptureRoute,
+  AuthenticatedFieldCaptureRoute: AuthenticatedFieldCaptureRouteWithChildren,
   AuthenticatedHistoricRoute: AuthenticatedHistoricRoute,
   AuthenticatedHomeBuilderRoute: AuthenticatedHomeBuilderRoute,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,

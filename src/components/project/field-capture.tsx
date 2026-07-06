@@ -1,29 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Camera, Trash2, Ruler, Mic, Box, Check, Upload, AlertTriangle } from "lucide-react";
+import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PHOTO_TAGS } from "@/lib/manyhats";
 
 const UNIT_OPTIONS = ["ea", "lf", "sf", "sy", "cy", "in", "ft", "yd", "lb", "ton", "hr", "day", "ls"];
+const PHASES = ["before", "during", "after", "damage", "material", "receipt", "other"];
 
 export function ProjectFieldCapture({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-6">
       <PhotosSection projectId={projectId} />
       <MeasurementsSection projectId={projectId} />
-      <div className="grid gap-4 md:grid-cols-2">
-        <PlaceholderCard icon={Mic} title="Voice notes" body="Record voice notes from the field and convert them to scope language. Coming soon." />
-        <PlaceholderCard icon={Box} title="LiDAR scans" body="iPhone LiDAR / ARKit / WebXR scan import. Coming soon." />
-      </div>
     </div>
   );
 }
@@ -43,16 +39,33 @@ function PhotosSection({ projectId }: { projectId: string }) {
     return null;
   }
 
+  async function getGps(): Promise<{ lat?: number; lng?: number }> {
+    return new Promise((resolve) => {
+      if (!("geolocation" in navigator)) return resolve({});
+      const timer = setTimeout(() => resolve({}), 2500);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          clearTimeout(timer);
+          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => { clearTimeout(timer); resolve({}); },
+        { enableHighAccuracy: false, timeout: 2000 },
+      );
+    });
+  }
+
   const upload = useMutation({
     mutationFn: async (files: FileList) => {
       const { data: { user } } = await supabase.auth.getUser();
+      const gps = await getGps();
       for (const file of Array.from(files)) {
         const path = `${projectId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
         const { error: upErr } = await supabase.storage.from("field-photos").upload(path, file);
         if (upErr) throw upErr;
         const { error } = await supabase.from("project_photos").insert({
           project_id: projectId, storage_path: path, is_real_site_photo: true, uploaded_by: user?.id,
-        });
+          gps_lat: gps.lat ?? null, gps_lng: gps.lng ?? null, captured_at: new Date().toISOString(),
+        } as any);
         if (error) throw error;
       }
     },
@@ -71,6 +84,13 @@ function PhotosSection({ projectId }: { projectId: string }) {
   const toggleTag = useMutation({
     mutationFn: async ({ id, tags }: { id: string; tags: string[] }) => {
       await supabase.from("project_photos").update({ tags }).eq("id", id);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["photos", projectId] }),
+  });
+
+  const updateMeta = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Record<string, any> }) => {
+      await (supabase as any).from("project_photos").update(patch).eq("id", id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["photos", projectId] }),
   });
@@ -104,6 +124,7 @@ function PhotosSection({ projectId }: { projectId: string }) {
                 getUrl={getSignedUrl}
                 onDelete={() => remove.mutate(p)}
                 onToggleTag={(t: string) => toggleTag.mutate({ id: p.id, tags: p.tags.includes(t) ? p.tags.filter((x: string) => x !== t) : [...p.tags, t] })}
+                onMeta={(patch: Record<string, any>) => updateMeta.mutate({ id: p.id, patch })}
               />
             ))}
           </div>
@@ -113,7 +134,7 @@ function PhotosSection({ projectId }: { projectId: string }) {
   );
 }
 
-function PhotoCard({ photo, getUrl, onDelete, onToggleTag }: any) {
+function PhotoCard({ photo, getUrl, onDelete, onToggleTag, onMeta }: any) {
   const [url, setUrl] = useState<string | null>(null);
   if (!url) getUrl(photo.storage_path).then(setUrl);
   return (
@@ -124,7 +145,31 @@ function PhotoCard({ photo, getUrl, onDelete, onToggleTag }: any) {
       <button onClick={onDelete} className="absolute right-1 top-1 hidden rounded bg-destructive/90 p-1 text-destructive-foreground group-hover:block">
         <Trash2 className="h-3 w-3"/>
       </button>
-      <div className="p-2 bg-card">
+      <div className="absolute left-1 top-1 flex flex-col gap-1">
+        {photo.proposal_include && <Badge className="border-0 bg-gold text-gold-foreground text-[9px]"><FileImage className="mr-0.5 h-2.5 w-2.5"/>Proposal</Badge>}
+        {photo.is_client_facing ? (
+          <Badge className="border-0 bg-emerald-600 text-white text-[9px]"><Eye className="mr-0.5 h-2.5 w-2.5"/>Client</Badge>
+        ) : (
+          <Badge variant="outline" className="text-[9px] bg-background/80"><EyeOff className="mr-0.5 h-2.5 w-2.5"/>Internal</Badge>
+        )}
+      </div>
+      <div className="p-2 bg-card space-y-2">
+        <div className="flex gap-1">
+          <Select value={photo.phase ?? ""} onValueChange={(v) => onMeta({ phase: v || null })}>
+            <SelectTrigger className="h-6 text-[10px]"><SelectValue placeholder="Phase"/></SelectTrigger>
+            <SelectContent>{PHASES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          <button
+            onClick={() => onMeta({ proposal_include: !photo.proposal_include })}
+            className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${photo.proposal_include ? "bg-gold text-gold-foreground" : "bg-muted text-muted-foreground"}`}
+          >Proposal</button>
+          <button
+            onClick={() => onMeta({ is_client_facing: !photo.is_client_facing })}
+            className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${photo.is_client_facing ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground"}`}
+          >Client</button>
+        </div>
         <div className="flex flex-wrap gap-1">
           {PHOTO_TAGS.map((t) => (
             <button
@@ -229,11 +274,3 @@ function MeasurementsSection({ projectId }: { projectId: string }) {
   );
 }
 
-function PlaceholderCard({ icon: Icon, title, body }: { icon: any; title: string; body: string }) {
-  return (
-    <Card>
-      <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Icon className="h-4 w-4 text-gold"/>{title}</CardTitle></CardHeader>
-      <CardContent><p className="text-xs text-muted-foreground">{body}</p></CardContent>
-    </Card>
-  );
-}
