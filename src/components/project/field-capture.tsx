@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
-import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage, Layers, X, Loader2, CircleAlert, Ban } from "lucide-react";
+import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage, Layers, X, Loader2, CircleAlert, Ban, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -387,16 +387,26 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
     xhrRef.current?.abort();
   }
 
-  async function handleUpload() {
+  async function handleUpload(targetIndexes?: number[]) {
     if (files.length === 0) { toast.error("Select at least one file."); return; }
+    const indexes = (targetIndexes && targetIndexes.length > 0)
+      ? targetIndexes.filter((i) => i >= 0 && i < files.length)
+      : files.map((_, i) => i);
+    if (indexes.length === 0) return;
+    const isRetry = !!targetIndexes;
     setBusy(true);
     cancelRef.current = false;
-    setStates(files.map(() => ({ status: "pending", percent: 0 })));
+    // Reset only the files we're about to (re)upload, keep others as-is.
+    setStates((prev) => {
+      const next = prev.length === files.length ? prev.slice() : files.map(() => ({ status: "pending" as FileStatus, percent: 0 }));
+      for (const i of indexes) next[i] = { status: "pending", percent: 0 };
+      return next;
+    });
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const meta = bulkMetaFor(category);
       let ok = 0;
-      for (let i = 0; i < files.length; i++) {
+      for (const i of indexes) {
         if (cancelRef.current) { updateState(i, { status: "canceled" }); continue; }
         const file = files[i];
         const safe = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -404,7 +414,7 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
         const path = isReceipt
           ? `receipts/${projectId}/${Date.now()}-${i}-${safe}`
           : `${projectId}/${Date.now()}-${i}-${safe}`;
-        updateState(i, { status: "uploading", percent: 0 });
+        updateState(i, { status: "uploading", percent: 0, error: undefined });
         try {
           const { data: signed, error: signErr } = await supabase.storage
             .from("field-photos")
@@ -445,16 +455,18 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
           }
         }
       }
-      const failed = files.length - ok;
+      const failed = indexes.length - ok;
+      const noun = category === "receipts" ? "receipt(s)" : "photo(s)";
       if (cancelRef.current) {
         toast.message(`Canceled. ${ok} uploaded, ${failed} skipped.`);
       } else if (failed === 0) {
-        toast.success(`Uploaded ${ok} ${category === "receipts" ? "receipt(s)" : "photo(s)"}.`);
+        toast.success(isRetry ? `Retried ${ok} ${noun} successfully.` : `Uploaded ${ok} ${noun}.`);
       } else {
-        toast.warning(`Uploaded ${ok}, ${failed} failed.`);
+        toast.warning(`${isRetry ? "Retried" : "Uploaded"} ${ok}, ${failed} failed.`);
       }
       onDone();
-      if (!cancelRef.current && failed === 0) { setOpen(false); reset(); }
+      // Only auto-close on a full initial upload with no failures.
+      if (!isRetry && !cancelRef.current && failed === 0) { setOpen(false); reset(); }
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally {
@@ -462,6 +474,7 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
       cancelRef.current = false;
     }
   }
+
 
 
   const hint = BULK_CATEGORIES.find((c) => c.value === category)?.hint;
@@ -566,6 +579,17 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
                             <p className="mt-0.5 text-[10px] text-destructive truncate">{s.error}</p>
                           )}
                         </div>
+                        {!busy && s.status === "error" && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpload([i])}
+                            className="text-muted-foreground hover:text-gold"
+                            aria-label={`Retry ${f.name}`}
+                            title="Retry this file"
+                          >
+                            <RotateCw className="h-3 w-3" />
+                          </button>
+                        )}
                         {!busy && (
                           <button
                             type="button"
@@ -614,15 +638,32 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
             <Button variant="destructive" onClick={handleCancel}>
               <X className="mr-1 h-4 w-4" />Cancel upload
             </Button>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => { setOpen(false); reset(); }}>Close</Button>
-              <Button onClick={handleUpload} disabled={files.length === 0}>
-                <Upload className="mr-1 h-4 w-4"/>
-                Upload {files.length || ""}
-              </Button>
-            </>
-          )}
+          ) : (() => {
+            const failedIdx = states
+              .map((s, idx) => (s?.status === "error" ? idx : -1))
+              .filter((i) => i >= 0);
+            const pendingIdx = states
+              .map((s, idx) => (!s || s.status === "pending" ? idx : -1))
+              .filter((i) => i >= 0 && i < files.length);
+            return (
+              <>
+                <Button variant="outline" onClick={() => { setOpen(false); reset(); }}>Close</Button>
+                {failedIdx.length > 0 && (
+                  <Button variant="secondary" onClick={() => handleUpload(failedIdx)}>
+                    <RotateCw className="mr-1 h-4 w-4" />
+                    Retry failed ({failedIdx.length})
+                  </Button>
+                )}
+                <Button
+                  onClick={() => handleUpload(pendingIdx.length > 0 && pendingIdx.length < files.length ? pendingIdx : undefined)}
+                  disabled={files.length === 0}
+                >
+                  <Upload className="mr-1 h-4 w-4"/>
+                  Upload {files.length || ""}
+                </Button>
+              </>
+            );
+          })()}
         </DialogFooter>
 
       </DialogContent>
