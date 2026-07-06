@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
   Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
-  BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus,
+  BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus, Receipt, Wallet,
 } from "lucide-react";
 
 
@@ -28,6 +28,11 @@ const BUILD = [
   { title: "Estimates", url: "/estimates", icon: Calculator },
   { title: "Proposals", url: "/proposals", icon: FileText },
   { title: "Concept Studio", url: "/concept-studio", icon: Sparkles },
+];
+const FINANCIAL = [
+  { title: "Invoices", url: "/invoices", icon: Receipt },
+  { title: "Payments", url: "/payments", icon: Wallet },
+  { title: "Job Costing", url: "/job-costing", icon: TrendingUp },
 ];
 const PRO = [
   { title: "Home Builder Pro", url: "/home-builder", icon: Home },
