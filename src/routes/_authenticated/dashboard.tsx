@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Users, Briefcase, FileText, Camera, Calculator, Sparkles, ClipboardList,
   TrendingUp, BookOpen, Home, Container, Landmark, Droplets, Inbox, ArrowRight,
+  Receipt, Wallet, DollarSign, AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
