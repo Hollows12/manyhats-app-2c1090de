@@ -41,6 +41,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as PortalProposalTokenRouteImport } from './routes/portal.proposal.$token'
 import { Route as PortalInvoiceTokenRouteImport } from './routes/portal.invoice.$token'
+import { Route as PortalClientFileTokenRouteImport } from './routes/portal.client-file.$token'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedFieldCaptureProjectIdRouteImport } from './routes/_authenticated/field-capture.$projectId'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
@@ -215,6 +216,11 @@ const PortalInvoiceTokenRoute = PortalInvoiceTokenRouteImport.update({
   path: '/portal/invoice/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalClientFileTokenRoute = PortalClientFileTokenRouteImport.update({
+  id: '/portal/client-file/$token',
+  path: '/portal/client-file/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -283,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/portal/client-file/$token': typeof PortalClientFileTokenRoute
   '/portal/invoice/$token': typeof PortalInvoiceTokenRoute
   '/portal/proposal/$token': typeof PortalProposalTokenRoute
   '/api/proposals/$id/pdf': typeof ApiProposalsIdPdfRoute
@@ -322,6 +329,7 @@ export interface FileRoutesByTo {
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/portal/client-file/$token': typeof PortalClientFileTokenRoute
   '/portal/invoice/$token': typeof PortalInvoiceTokenRoute
   '/portal/proposal/$token': typeof PortalProposalTokenRoute
   '/api/proposals/$id/pdf': typeof ApiProposalsIdPdfRoute
@@ -363,6 +371,7 @@ export interface FileRoutesById {
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/portal/client-file/$token': typeof PortalClientFileTokenRoute
   '/portal/invoice/$token': typeof PortalInvoiceTokenRoute
   '/portal/proposal/$token': typeof PortalProposalTokenRoute
   '/api/proposals/$id/pdf': typeof ApiProposalsIdPdfRoute
@@ -404,6 +413,7 @@ export interface FileRouteTypes {
     | '/clients/$id'
     | '/field-capture/$projectId'
     | '/projects/$id'
+    | '/portal/client-file/$token'
     | '/portal/invoice/$token'
     | '/portal/proposal/$token'
     | '/api/proposals/$id/pdf'
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/clients/$id'
     | '/field-capture/$projectId'
     | '/projects/$id'
+    | '/portal/client-file/$token'
     | '/portal/invoice/$token'
     | '/portal/proposal/$token'
     | '/api/proposals/$id/pdf'
@@ -483,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/clients/$id'
     | '/_authenticated/field-capture/$projectId'
     | '/_authenticated/projects/$id'
+    | '/portal/client-file/$token'
     | '/portal/invoice/$token'
     | '/portal/proposal/$token'
     | '/api/proposals/$id/pdf'
@@ -500,6 +512,7 @@ export interface RootRouteChildren {
   ApiConceptImageRoute: typeof ApiConceptImageRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  PortalClientFileTokenRoute: typeof PortalClientFileTokenRoute
   PortalInvoiceTokenRoute: typeof PortalInvoiceTokenRoute
   PortalProposalTokenRoute: typeof PortalProposalTokenRoute
   ApiProposalsIdPdfRoute: typeof ApiProposalsIdPdfRoute
@@ -731,6 +744,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalInvoiceTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/client-file/$token': {
+      id: '/portal/client-file/$token'
+      path: '/portal/client-file/$token'
+      fullPath: '/portal/client-file/$token'
+      preLoaderRoute: typeof PortalClientFileTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/projects/$id': {
       id: '/_authenticated/projects/$id'
       path: '/$id'
@@ -879,6 +899,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConceptImageRoute: ApiConceptImageRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  PortalClientFileTokenRoute: PortalClientFileTokenRoute,
   PortalInvoiceTokenRoute: PortalInvoiceTokenRoute,
   PortalProposalTokenRoute: PortalProposalTokenRoute,
   ApiProposalsIdPdfRoute: ApiProposalsIdPdfRoute,
