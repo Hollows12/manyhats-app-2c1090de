@@ -229,3 +229,114 @@ function FKpi({ icon: Icon, label, value, tone }: { icon: any; label: string; va
     </Card>
   );
 }
+
+function PortalKpis() {
+  const q = useQuery({
+    queryKey: ["dash", "portal"],
+    queryFn: async () => {
+      const monthStart = new Date();
+      monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+      const iso = monthStart.toISOString();
+      const [sentP, viewedP, acceptedP, awaitInv, depsP, paysM] = await Promise.all([
+        supabase.from("proposals").select("id", { count: "exact", head: true }).not("sent_at", "is", null),
+        supabase.from("proposals").select("id", { count: "exact", head: true }).not("viewed_at", "is", null),
+        supabase.from("proposals").select("id", { count: "exact", head: true }).eq("status", "approved"),
+        supabase.from("invoices").select("id", { count: "exact", head: true }).in("status", ["sent", "partial"]),
+        supabase.from("deposits").select("id", { count: "exact", head: true }).in("status", ["pending", "invoiced"]),
+        supabase.from("payments").select("amount,is_void").gte("payment_date", iso.slice(0, 10)),
+      ]);
+      const paidMonth = (paysM.data ?? []).filter((p: any) => !p.is_void).reduce((s: number, p: any) => s + Number(p.amount), 0);
+      return {
+        sent: sentP.count ?? 0,
+        viewed: viewedP.count ?? 0,
+        accepted: acceptedP.count ?? 0,
+        awaiting: awaitInv.count ?? 0,
+        depositsPending: depsP.count ?? 0,
+        paidMonth,
+      };
+    },
+  });
+  const d = q.data;
+  return (
+    <div>
+      <h2 className="font-display text-sm text-muted-foreground uppercase tracking-wide mb-2">Client Portal</h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <FKpi icon={Send} label="Proposals Sent" value={String(d?.sent ?? 0)} />
+        <FKpi icon={Eye} label="Proposals Viewed" value={String(d?.viewed ?? 0)} />
+        <FKpi icon={PenLine} label="Proposals Accepted" value={String(d?.accepted ?? 0)} tone="emerald" />
+        <FKpi icon={AlertCircle} label="Invoices Awaiting Pay" value={String(d?.awaiting ?? 0)} tone="amber" />
+        <FKpi icon={DollarSign} label="Deposits Pending" value={String(d?.depositsPending ?? 0)} />
+        <FKpi icon={Wallet} label="Paid (Month)" value={formatMoney(d?.paidMonth ?? 0)} tone="emerald" />
+      </div>
+    </div>
+  );
+}
+
+function NotificationsFeed() {
+  const q = useQuery({
+    queryKey: ["dash", "notifications"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("notifications")
+        .select("id, kind, message, created_at, is_read, project_id")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      return data ?? [];
+    },
+    refetchInterval: 30_000,
+  });
+  const items = q.data ?? [];
+  const unread = items.filter((n: any) => !n.is_read).length;
+  async function markAllRead() {
+    await (supabase as any).from("notifications").update({ is_read: true }).eq("is_read", false);
+    q.refetch();
+  }
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Bell className="h-4 w-4 text-gold" /> Recent Notifications
+          {unread > 0 && <span className="ml-1 rounded-full bg-gold text-navy px-2 py-0.5 text-[10px] font-semibold">{unread}</span>}
+        </CardTitle>
+        {unread > 0 && (
+          <Button size="sm" variant="ghost" onClick={markAllRead}>Mark all read</Button>
+        )}
+      </CardHeader>
+      <CardContent className="p-0">
+        {items.length === 0 ? (
+          <div className="py-6 text-center text-xs text-muted-foreground">No notifications yet. Portal views, signatures, and payments will appear here.</div>
+        ) : (
+          <ul className="divide-y">
+            {items.map((n: any) => (
+              <li key={n.id} className={`flex items-start gap-2 px-4 py-2 text-sm ${n.is_read ? "" : "bg-gold/5"}`}>
+                <NotificationIcon kind={n.kind} />
+                <div className="flex-1 min-w-0">
+                  <div className="truncate">{n.message}</div>
+                  <div className="text-[11px] text-muted-foreground">{formatDate(n.created_at)}</div>
+                </div>
+                {n.project_id && (
+                  <Button asChild variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                    <Link to="/projects/$id" params={{ id: n.project_id }}>Open</Link>
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function NotificationIcon({ kind }: { kind: string }) {
+  const map: Record<string, { icon: any; cls: string }> = {
+    proposal_sent: { icon: Send, cls: "text-navy" },
+    proposal_viewed: { icon: Eye, cls: "text-slate-600" },
+    proposal_signed: { icon: PenLine, cls: "text-gold" },
+    invoice_viewed: { icon: Eye, cls: "text-sky-600" },
+    payment_received: { icon: Wallet, cls: "text-emerald-700" },
+  };
+  const m = map[kind] ?? { icon: Bell, cls: "text-muted-foreground" };
+  const I = m.icon;
+  return <I className={`mt-0.5 h-4 w-4 shrink-0 ${m.cls}`} />;
+}
