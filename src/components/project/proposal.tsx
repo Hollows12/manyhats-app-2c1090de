@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { FileText, Download, Sparkles, Loader2, Plus } from "lucide-react";
+import { FileText, Download, Sparkles, Loader2, Plus, Link2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,7 +143,8 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
               <p className="text-xs text-amber-700 mt-1">⚠ {pendingRecCount} AI recommendation{pendingRecCount === 1 ? "" : "s"} pending contractor approval. Review in the Estimate tab before sending.</p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <ClientLinkButtons proposalId={proposal.id} />
             <Button asChild variant="outline" size="sm">
               <a href={`/api/proposals/${proposal.id}/pdf`} target="_blank" rel="noreferrer">
                 <Download className="mr-1 h-4 w-4"/> PDF
@@ -260,5 +261,38 @@ function Field({ label, value, onChange, rows = 3 }: { label: string; value: any
       <Label className="text-xs">{label}</Label>
       <Textarea rows={rows} value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
     </div>
+  );
+}
+
+function ClientLinkButtons({ proposalId }: { proposalId: string }) {
+  const [busy, setBusy] = useState(false);
+  async function ensure(rotate: boolean) {
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("ensure_proposal_portal_token", {
+        _proposal_id: proposalId,
+        _rotate: rotate,
+      });
+      if (error) throw error;
+      const r = data as any;
+      if (r?.error) throw new Error(r.error);
+      const url = `${window.location.origin}/portal/proposal/${r.token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success(rotate ? "New client link copied." : "Client link copied to clipboard.");
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not create client link");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <Button variant="outline" size="sm" disabled={busy} onClick={() => ensure(false)}>
+        <Link2 className="mr-1 h-4 w-4"/> Copy client link
+      </Button>
+      <Button variant="ghost" size="sm" disabled={busy} onClick={() => ensure(true)} title="Rotate link (invalidates old URL)">
+        <RefreshCw className="h-4 w-4"/>
+      </Button>
+    </>
   );
 }

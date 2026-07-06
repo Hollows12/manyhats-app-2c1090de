@@ -39,6 +39,7 @@ import { Route as AuthenticatedConceptStudioRouteImport } from './routes/_authen
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as PortalProposalTokenRouteImport } from './routes/portal.proposal.$token'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -202,6 +203,11 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const PortalProposalTokenRoute = PortalProposalTokenRouteImport.update({
+  id: '/portal/proposal/$token',
+  path: '/portal/proposal/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/portal/proposal/$token': typeof PortalProposalTokenRoute
   '/api/proposals/$id/pdf': typeof ApiProposalsIdPdfRoute
 }
 export interface FileRoutesByTo {
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/portal/proposal/$token': typeof PortalProposalTokenRoute
   '/api/proposals/$id/pdf': typeof ApiProposalsIdPdfRoute
 }
 export interface FileRoutesById {
@@ -337,6 +345,7 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/portal/proposal/$token': typeof PortalProposalTokenRoute
   '/api/proposals/$id/pdf': typeof ApiProposalsIdPdfRoute
 }
 export interface FileRouteTypes {
@@ -375,6 +384,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/clients/$id'
     | '/projects/$id'
+    | '/portal/proposal/$token'
     | '/api/proposals/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -411,6 +421,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/clients/$id'
     | '/projects/$id'
+    | '/portal/proposal/$token'
     | '/api/proposals/$id/pdf'
   id:
     | '__root__'
@@ -448,6 +459,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/clients/$id'
     | '/_authenticated/projects/$id'
+    | '/portal/proposal/$token'
     | '/api/proposals/$id/pdf'
   fileRoutesById: FileRoutesById
 }
@@ -463,6 +475,7 @@ export interface RootRouteChildren {
   ApiConceptImageRoute: typeof ApiConceptImageRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  PortalProposalTokenRoute: typeof PortalProposalTokenRoute
   ApiProposalsIdPdfRoute: typeof ApiProposalsIdPdfRoute
 }
 
@@ -678,6 +691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/proposal/$token': {
+      id: '/portal/proposal/$token'
+      path: '/portal/proposal/$token'
+      fullPath: '/portal/proposal/$token'
+      preLoaderRoute: typeof PortalProposalTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/projects/$id': {
       id: '/_authenticated/projects/$id'
       path: '/$id'
@@ -804,6 +824,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConceptImageRoute: ApiConceptImageRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  PortalProposalTokenRoute: PortalProposalTokenRoute,
   ApiProposalsIdPdfRoute: ApiProposalsIdPdfRoute,
 }
 export const routeTree = rootRouteImport

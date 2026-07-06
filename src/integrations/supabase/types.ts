@@ -1752,6 +1752,8 @@ export type Database = {
           invoiced_at: string | null
           payment_terms: string | null
           pdf_path: string | null
+          portal_token: string | null
+          portal_token_expires_at: string | null
           project_id: string
           proposal_number: string
           recommendation: string | null
@@ -1780,6 +1782,8 @@ export type Database = {
           invoiced_at?: string | null
           payment_terms?: string | null
           pdf_path?: string | null
+          portal_token?: string | null
+          portal_token_expires_at?: string | null
           project_id: string
           proposal_number: string
           recommendation?: string | null
@@ -1808,6 +1812,8 @@ export type Database = {
           invoiced_at?: string | null
           payment_terms?: string | null
           pdf_path?: string | null
+          portal_token?: string | null
+          portal_token_expires_at?: string | null
           project_id?: string
           proposal_number?: string
           recommendation?: string | null
@@ -2017,6 +2023,10 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      ensure_proposal_portal_token: {
+        Args: { _proposal_id: string; _rotate?: boolean }
+        Returns: Json
+      }
       get_invitation_preview: { Args: { _token: string }; Returns: Json }
       get_public_schema_snapshot: { Args: never; Returns: Json }
       has_role: {
@@ -2027,6 +2037,18 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      portal_accept_proposal: {
+        Args: {
+          _ip_address?: string
+          _selected_option_id: string
+          _signature_data?: string
+          _signer_email: string
+          _signer_name: string
+          _token: string
+        }
+        Returns: Json
+      }
+      portal_get_proposal: { Args: { _token: string }; Returns: Json }
       project_profit_snapshot: { Args: { _project_id: string }; Returns: Json }
     }
     Enums: {
