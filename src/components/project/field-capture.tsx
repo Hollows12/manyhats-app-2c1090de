@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage, Layers } from "lucide-react";
+import { useRef, useState } from "react";
+
+import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage, Layers, X, Loader2, CircleAlert, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -315,15 +316,20 @@ function MeasurementsSection({ projectId }: { projectId: string }) {
   );
 }
 
+type FileStatus = "pending" | "uploading" | "done" | "error" | "canceled";
+type FileState = { status: FileStatus; percent: number; error?: string };
+
 function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<BulkCategory>("project");
   const [files, setFiles] = useState<File[]>([]);
+  const [states, setStates] = useState<FileState[]>([]);
   const [caption, setCaption] = useState("");
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [done, setDone] = useState(0);
   const [dragOver, setDragOver] = useState(false);
+
+  const cancelRef = useRef(false);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
 
   function addFiles(incoming: File[]) {
     const isReceipts = category === "receipts";
@@ -338,68 +344,125 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
         const key = `${f.name}-${f.size}-${f.lastModified}`;
         if (!seen.has(key)) { seen.add(key); merged.push(f); }
       }
+      setStates(merged.map((_, i) => states[i] ?? { status: "pending", percent: 0 }));
       return merged;
     });
   }
 
   function reset() {
-    setFiles([]); setCaption(""); setProgress(0); setDone(0); setCategory("project"); setDragOver(false);
+    setFiles([]); setStates([]); setCaption(""); setCategory("project"); setDragOver(false);
+    cancelRef.current = false; xhrRef.current = null;
   }
 
+  function updateState(i: number, patch: Partial<FileState>) {
+    setStates((prev) => {
+      const next = prev.slice();
+      next[i] = { ...(next[i] ?? { status: "pending", percent: 0 }), ...patch };
+      return next;
+    });
+  }
+
+  function uploadWithProgress(signedUrl: string, file: File, onPercent: (p: number) => void): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhrRef.current = xhr;
+      xhr.open("PUT", signedUrl, true);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onPercent(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = () => {
+        xhrRef.current = null;
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error(`Upload failed (${xhr.status})`));
+      };
+      xhr.onerror = () => { xhrRef.current = null; reject(new Error("Network error")); };
+      xhr.onabort = () => { xhrRef.current = null; reject(new Error("__CANCELED__")); };
+      xhr.send(file);
+    });
+  }
+
+  function handleCancel() {
+    cancelRef.current = true;
+    xhrRef.current?.abort();
+  }
 
   async function handleUpload() {
     if (files.length === 0) { toast.error("Select at least one file."); return; }
-    setBusy(true); setProgress(0); setDone(0);
+    setBusy(true);
+    cancelRef.current = false;
+    setStates(files.map(() => ({ status: "pending", percent: 0 })));
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const meta = bulkMetaFor(category);
       let ok = 0;
       for (let i = 0; i < files.length; i++) {
+        if (cancelRef.current) { updateState(i, { status: "canceled" }); continue; }
         const file = files[i];
         const safe = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-        if (category === "receipts") {
-          const path = `receipts/${projectId}/${Date.now()}-${i}-${safe}`;
-          const { error: upErr } = await supabase.storage.from("field-photos").upload(path, file);
-          if (upErr) throw upErr;
-          const { error } = await (supabase as any).from("receipts").insert({
-            project_id: projectId, uploaded_by: user?.id, storage_path: path,
-            vendor: null, amount: 0, category: "material",
-            purchased_at: new Date().toISOString().slice(0, 10),
-            notes: caption || null,
-          });
-          if (error) throw error;
-        } else {
-          const path = `${projectId}/${Date.now()}-${i}-${safe}`;
-          const { error: upErr } = await supabase.storage.from("field-photos").upload(path, file);
-          if (upErr) throw upErr;
-          const { error } = await supabase.from("project_photos").insert({
-            project_id: projectId,
-            storage_path: path,
-            is_real_site_photo: true,
-            uploaded_by: user?.id,
-            captured_at: new Date().toISOString(),
-            caption: caption || null,
-            phase: meta.phase,
-            tags: meta.tags,
-            proposal_include: meta.proposal_include,
-            is_client_facing: meta.is_client_facing,
-          } as any);
-          if (error) throw error;
+        const isReceipt = category === "receipts";
+        const path = isReceipt
+          ? `receipts/${projectId}/${Date.now()}-${i}-${safe}`
+          : `${projectId}/${Date.now()}-${i}-${safe}`;
+        updateState(i, { status: "uploading", percent: 0 });
+        try {
+          const { data: signed, error: signErr } = await supabase.storage
+            .from("field-photos")
+            .createSignedUploadUrl(path);
+          if (signErr || !signed) throw new Error(signErr?.message ?? "Could not sign upload URL");
+          await uploadWithProgress(signed.signedUrl, file, (p) => updateState(i, { percent: p }));
+
+          if (isReceipt) {
+            const { error } = await (supabase as any).from("receipts").insert({
+              project_id: projectId, uploaded_by: user?.id, storage_path: path,
+              vendor: null, amount: 0, category: "material",
+              purchased_at: new Date().toISOString().slice(0, 10),
+              notes: caption || null,
+            });
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from("project_photos").insert({
+              project_id: projectId,
+              storage_path: path,
+              is_real_site_photo: true,
+              uploaded_by: user?.id,
+              captured_at: new Date().toISOString(),
+              caption: caption || null,
+              phase: meta.phase,
+              tags: meta.tags,
+              proposal_include: meta.proposal_include,
+              is_client_facing: meta.is_client_facing,
+            } as any);
+            if (error) throw error;
+          }
+          updateState(i, { status: "done", percent: 100 });
+          ok++;
+        } catch (err: any) {
+          if (err?.message === "__CANCELED__" || cancelRef.current) {
+            updateState(i, { status: "canceled" });
+          } else {
+            updateState(i, { status: "error", error: err?.message ?? "Failed" });
+          }
         }
-        ok++;
-        setDone(ok);
-        setProgress(Math.round((ok / files.length) * 100));
       }
-      toast.success(`Uploaded ${ok} ${category === "receipts" ? "receipt(s)" : "photo(s)"}.`);
+      const failed = files.length - ok;
+      if (cancelRef.current) {
+        toast.message(`Canceled. ${ok} uploaded, ${failed} skipped.`);
+      } else if (failed === 0) {
+        toast.success(`Uploaded ${ok} ${category === "receipts" ? "receipt(s)" : "photo(s)"}.`);
+      } else {
+        toast.warning(`Uploaded ${ok}, ${failed} failed.`);
+      }
       onDone();
-      setOpen(false);
-      reset();
+      if (!cancelRef.current && failed === 0) { setOpen(false); reset(); }
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally {
       setBusy(false);
+      cancelRef.current = false;
     }
   }
+
 
   const hint = BULK_CATEGORIES.find((c) => c.value === category)?.hint;
 
@@ -473,21 +536,52 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
                     Clear
                   </button>
                 </div>
-                <ul className="max-h-24 overflow-y-auto rounded-md border border-border bg-background/50 p-1 text-[11px]">
-                  {files.map((f, i) => (
-                    <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2 px-1 py-0.5">
-                      <span className="truncate">{f.name}</span>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="text-muted-foreground hover:text-destructive"
-                        aria-label={`Remove ${f.name}`}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </li>
-                  ))}
+                <ul className="max-h-40 overflow-y-auto rounded-md border border-border bg-background/50 p-1 text-[11px]">
+                  {files.map((f, i) => {
+                    const s = states[i] ?? { status: "pending" as FileStatus, percent: 0 };
+                    return (
+                      <li key={`${f.name}-${i}`} className="flex items-center gap-2 px-1 py-1">
+                        <div className="flex-shrink-0">
+                          {s.status === "done" && <Check className="h-3 w-3 text-emerald-600" />}
+                          {s.status === "uploading" && <Loader2 className="h-3 w-3 animate-spin text-gold" />}
+                          {s.status === "error" && <CircleAlert className="h-3 w-3 text-destructive" />}
+                          {s.status === "canceled" && <Ban className="h-3 w-3 text-muted-foreground" />}
+                          {s.status === "pending" && <div className="h-3 w-3 rounded-full border border-muted-foreground/40" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate">{f.name}</span>
+                            <span className="tabular-nums text-muted-foreground">
+                              {s.status === "done" ? "100%"
+                                : s.status === "error" ? "Failed"
+                                : s.status === "canceled" ? "Canceled"
+                                : s.status === "uploading" ? `${s.percent}%`
+                                : "—"}
+                            </span>
+                          </div>
+                          {(s.status === "uploading" || s.status === "done") && (
+                            <Progress value={s.percent} className="mt-1 h-1" />
+                          )}
+                          {s.status === "error" && s.error && (
+                            <p className="mt-0.5 text-[10px] text-destructive truncate">{s.error}</p>
+                          )}
+                        </div>
+                        {!busy && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFiles((prev) => prev.filter((_, idx) => idx !== i));
+                              setStates((prev) => prev.filter((_, idx) => idx !== i));
+                            }}
+                            className="text-muted-foreground hover:text-destructive"
+                            aria-label={`Remove ${f.name}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
@@ -495,22 +589,42 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
 
           <div>
             <Label className="text-xs">Caption / note (applied to all)</Label>
-            <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Optional" />
+            <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Optional" disabled={busy} />
           </div>
-          {busy && (
-            <div className="space-y-1">
-              <Progress value={progress} />
-              <p className="text-[11px] text-muted-foreground">{done} / {files.length} uploaded</p>
-            </div>
-          )}
+          {busy && (() => {
+            const doneCount = states.filter((s) => s.status === "done").length;
+            const totalPercent = files.length === 0
+              ? 0
+              : Math.round(states.reduce((sum, s) => sum + (s?.percent ?? 0), 0) / files.length);
+            return (
+              <div className="space-y-1 rounded-md border border-border bg-muted/30 p-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-semibold uppercase tracking-wider">Overall</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {doneCount} / {files.length} · {totalPercent}%
+                  </span>
+                </div>
+                <Progress value={totalPercent} />
+              </div>
+            );
+          })()}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => { if (!busy) { setOpen(false); reset(); } }} disabled={busy}>Cancel</Button>
-          <Button onClick={handleUpload} disabled={busy || files.length === 0}>
-            <Upload className="mr-1 h-4 w-4"/>
-            {busy ? `Uploading ${done}/${files.length}…` : `Upload ${files.length || ""}`}
-          </Button>
+          {busy ? (
+            <Button variant="destructive" onClick={handleCancel}>
+              <X className="mr-1 h-4 w-4" />Cancel upload
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => { setOpen(false); reset(); }}>Close</Button>
+              <Button onClick={handleUpload} disabled={files.length === 0}>
+                <Upload className="mr-1 h-4 w-4"/>
+                Upload {files.length || ""}
+              </Button>
+            </>
+          )}
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
