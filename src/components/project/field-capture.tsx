@@ -20,10 +20,6 @@ export function ProjectFieldCapture({ projectId }: { projectId: string }) {
     <div className="space-y-6">
       <PhotosSection projectId={projectId} />
       <MeasurementsSection projectId={projectId} />
-      <div className="grid gap-4 md:grid-cols-2">
-        <PlaceholderCard icon={Mic} title="Voice notes" body="Record voice notes from the field and convert them to scope language. Coming soon." />
-        <PlaceholderCard icon={Box} title="LiDAR scans" body="iPhone LiDAR / ARKit / WebXR scan import. Coming soon." />
-      </div>
     </div>
   );
 }
