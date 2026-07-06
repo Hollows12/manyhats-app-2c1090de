@@ -1589,35 +1589,66 @@ export type Database = {
       project_photos: {
         Row: {
           caption: string | null
+          captured_at: string | null
+          category: string | null
+          client_id: string | null
           created_at: string
+          gps_lat: number | null
+          gps_lng: number | null
           id: string
+          is_client_facing: boolean
           is_real_site_photo: boolean
+          phase: string | null
           project_id: string
+          proposal_include: boolean
           storage_path: string
           tags: string[]
           uploaded_by: string | null
         }
         Insert: {
           caption?: string | null
+          captured_at?: string | null
+          category?: string | null
+          client_id?: string | null
           created_at?: string
+          gps_lat?: number | null
+          gps_lng?: number | null
           id?: string
+          is_client_facing?: boolean
           is_real_site_photo?: boolean
+          phase?: string | null
           project_id: string
+          proposal_include?: boolean
           storage_path: string
           tags?: string[]
           uploaded_by?: string | null
         }
         Update: {
           caption?: string | null
+          captured_at?: string | null
+          category?: string | null
+          client_id?: string | null
           created_at?: string
+          gps_lat?: number | null
+          gps_lng?: number | null
           id?: string
+          is_client_facing?: boolean
           is_real_site_photo?: boolean
+          phase?: string | null
           project_id?: string
+          proposal_include?: boolean
           storage_path?: string
           tags?: string[]
           uploaded_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "project_photos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "project_photos_project_id_fkey"
             columns: ["project_id"]
@@ -1910,6 +1941,66 @@ export type Database = {
           },
         ]
       }
+      receipts: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          job_cost_id: string | null
+          notes: string | null
+          project_id: string
+          purchased_at: string | null
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          job_cost_id?: string | null
+          notes?: string | null
+          project_id: string
+          purchased_at?: string | null
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          job_cost_id?: string | null
+          notes?: string | null
+          project_id?: string
+          purchased_at?: string | null
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_job_cost_id_fkey"
+            columns: ["job_cost_id"]
+            isOneToOne: false
+            referencedRelation: "job_costs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       septic_projects: {
         Row: {
           as_built_notes: string | null
@@ -2049,33 +2140,55 @@ export type Database = {
       }
       voice_notes: {
         Row: {
+          category: string | null
+          client_id: string | null
           created_at: string
           created_by: string | null
+          duration_seconds: number | null
           id: string
           project_id: string
           scope_notes: string | null
           storage_path: string | null
+          summary: string | null
           transcript: string | null
+          updated_at: string
         }
         Insert: {
+          category?: string | null
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
+          duration_seconds?: number | null
           id?: string
           project_id: string
           scope_notes?: string | null
           storage_path?: string | null
+          summary?: string | null
           transcript?: string | null
+          updated_at?: string
         }
         Update: {
+          category?: string | null
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
+          duration_seconds?: number | null
           id?: string
           project_id?: string
           scope_notes?: string | null
           storage_path?: string | null
+          summary?: string | null
           transcript?: string | null
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "voice_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "voice_notes_project_id_fkey"
             columns: ["project_id"]
