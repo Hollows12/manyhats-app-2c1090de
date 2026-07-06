@@ -263,3 +263,36 @@ function Field({ label, value, onChange, rows = 3 }: { label: string; value: any
     </div>
   );
 }
+
+function ClientLinkButtons({ proposalId }: { proposalId: string }) {
+  const [busy, setBusy] = useState(false);
+  async function ensure(rotate: boolean) {
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("ensure_proposal_portal_token", {
+        _proposal_id: proposalId,
+        _rotate: rotate,
+      });
+      if (error) throw error;
+      const r = data as any;
+      if (r?.error) throw new Error(r.error);
+      const url = `${window.location.origin}/portal/proposal/${r.token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success(rotate ? "New client link copied." : "Client link copied to clipboard.");
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not create client link");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <>
+      <Button variant="outline" size="sm" disabled={busy} onClick={() => ensure(false)}>
+        <Link2 className="mr-1 h-4 w-4"/> Copy client link
+      </Button>
+      <Button variant="ghost" size="sm" disabled={busy} onClick={() => ensure(true)} title="Rotate link (invalidates old URL)">
+        <RefreshCw className="h-4 w-4"/>
+      </Button>
+    </>
+  );
+}
