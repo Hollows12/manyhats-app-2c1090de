@@ -56,6 +56,8 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const role = useRole();
+
 
   const isActive = (url: string) => pathname === url || pathname.startsWith(url + "/");
 
