@@ -8,6 +8,7 @@ import { transcribeVoiceNote } from "@/lib/voice.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SendCaptureButton } from "@/components/project/send-capture-button";
 
 export function ProjectVoiceNotes({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
