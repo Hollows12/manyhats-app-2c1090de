@@ -276,10 +276,11 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
   );
 }
 
-type FilterKey = "all" | "invoices" | "payments" | "deposits" | "progress";
+type FilterKey = "all" | "invoices" | "payments" | "deposits" | "progress" | "proposals";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "All" },
+  { key: "proposals", label: "Proposals" },
   { key: "invoices", label: "Invoices" },
   { key: "payments", label: "Payments" },
   { key: "deposits", label: "Deposits" },
@@ -287,6 +288,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ];
 
 function categoryOf(kind: EventKind): Exclude<FilterKey, "all"> {
+  if (kind.startsWith("proposal")) return "proposals";
   if (kind.startsWith("invoice")) return "invoices";
   if (kind.startsWith("payment")) return "payments";
   if (kind.startsWith("deposit")) return "deposits";
@@ -295,6 +297,8 @@ function categoryOf(kind: EventKind): Exclude<FilterKey, "all"> {
 
 const ICONS = {
   invoice_created: { icon: Sparkles, dot: "bg-sky-600" },
+  invoice_sent: { icon: Send, dot: "bg-sky-700" },
+  invoice_viewed: { icon: Eye, dot: "bg-sky-500" },
   payment_recorded: { icon: Wallet, dot: "bg-emerald-600" },
   payment_voided: { icon: Ban, dot: "bg-slate-500" },
   deposit_recorded: { icon: DollarSign, dot: "bg-amber-600" },
@@ -303,4 +307,10 @@ const ICONS = {
   progress_billing_recorded: { icon: Layers, dot: "bg-indigo-600" },
   progress_billing_approved: { icon: CheckCircle2, dot: "bg-emerald-700" },
   progress_billing_voided: { icon: Ban, dot: "bg-slate-500" },
+  proposal_sent: { icon: Send, dot: "bg-navy" },
+  proposal_viewed: { icon: Eye, dot: "bg-slate-600" },
+  proposal_signed: { icon: PenLine, dot: "bg-gold" },
 } satisfies Record<TimelineEvent["kind"], { icon: typeof FileText; dot: string }>;
+
+// Handle counts init for the new key
+
