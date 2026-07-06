@@ -133,10 +133,11 @@ function ProjectsPage() {
 
 function ProjectDialog({ clients, onSubmit, busy }: { clients: any[]; onSubmit: (v: any) => void; busy: boolean }) {
   const [form, setForm] = useState<any>({
-    name: "", client_id: "", project_type: "other", status: "lead",
+    name: "", client_id: "", new_client_name: "", project_type: "other", status: "lead",
     job_address: "", city: "", state: "", zip: "", county: "",
     summary: "", budget_min: "", budget_max: "", desired_timeline: "",
   });
+  const [clientMode, setClientMode] = useState<"existing" | "new">("existing");
   return (
     <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-y-auto">
       <DialogHeader><DialogTitle>New project</DialogTitle></DialogHeader>
@@ -146,6 +147,8 @@ function ProjectDialog({ clients, onSubmit, busy }: { clients: any[]; onSubmit: 
           e.preventDefault();
           onSubmit({
             ...form,
+            client_id: clientMode === "existing" ? form.client_id : "",
+            new_client_name: clientMode === "new" ? form.new_client_name : "",
             budget_min: form.budget_min ? Number(form.budget_min) : null,
             budget_max: form.budget_max ? Number(form.budget_max) : null,
           });
@@ -157,13 +160,36 @@ function ProjectDialog({ clients, onSubmit, busy }: { clients: any[]; onSubmit: 
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">Client</Label>
-            <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })} required>
-              <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
-              <SelectContent>
-                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Client</Label>
+              <button
+                type="button"
+                onClick={() => setClientMode(clientMode === "existing" ? "new" : "existing")}
+                className="text-[10px] font-semibold uppercase tracking-wider text-gold hover:underline"
+              >
+                {clientMode === "existing" ? "+ New client" : "← Pick existing"}
+              </button>
+            </div>
+            {clientMode === "existing" ? (
+              <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                <SelectContent>
+                  {clients.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No clients yet — use "+ New client".</div>
+                  ) : clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                required
+                placeholder="New client name"
+                value={form.new_client_name}
+                onChange={(e) => setForm({ ...form, new_client_name: e.target.value })}
+              />
+            )}
+            {clientMode === "new" && (
+              <p className="text-[10px] text-muted-foreground">Creates the client with just a name. Fill in phone, email, and address later from the Clients page.</p>
+            )}
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Status</Label>
@@ -180,6 +206,7 @@ function ProjectDialog({ clients, onSubmit, busy }: { clients: any[]; onSubmit: 
           <Select value={form.project_type} onValueChange={(v) => setForm({ ...form, project_type: v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
+
               {PROJECT_TYPE_GROUPS.map((g) => (
                 <SelectGroup key={g.label}>
                   <SelectLabel>{g.label}</SelectLabel>
