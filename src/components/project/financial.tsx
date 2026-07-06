@@ -65,7 +65,7 @@ export function ProjectFinancial({ projectId }: { projectId: string }) {
         .from("proposals")
         .select("*, proposal_options(*)")
         .eq("project_id", projectId)
-        .in("status", ["accepted", "signed", "approved"])
+        .in("status", ["approved"])
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
