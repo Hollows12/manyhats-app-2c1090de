@@ -387,16 +387,26 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
     xhrRef.current?.abort();
   }
 
-  async function handleUpload() {
+  async function handleUpload(targetIndexes?: number[]) {
     if (files.length === 0) { toast.error("Select at least one file."); return; }
+    const indexes = (targetIndexes && targetIndexes.length > 0)
+      ? targetIndexes.filter((i) => i >= 0 && i < files.length)
+      : files.map((_, i) => i);
+    if (indexes.length === 0) return;
+    const isRetry = !!targetIndexes;
     setBusy(true);
     cancelRef.current = false;
-    setStates(files.map(() => ({ status: "pending", percent: 0 })));
+    // Reset only the files we're about to (re)upload, keep others as-is.
+    setStates((prev) => {
+      const next = prev.length === files.length ? prev.slice() : files.map(() => ({ status: "pending" as FileStatus, percent: 0 }));
+      for (const i of indexes) next[i] = { status: "pending", percent: 0 };
+      return next;
+    });
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const meta = bulkMetaFor(category);
       let ok = 0;
-      for (let i = 0; i < files.length; i++) {
+      for (const i of indexes) {
         if (cancelRef.current) { updateState(i, { status: "canceled" }); continue; }
         const file = files[i];
         const safe = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -404,7 +414,7 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
         const path = isReceipt
           ? `receipts/${projectId}/${Date.now()}-${i}-${safe}`
           : `${projectId}/${Date.now()}-${i}-${safe}`;
-        updateState(i, { status: "uploading", percent: 0 });
+        updateState(i, { status: "uploading", percent: 0, error: undefined });
         try {
           const { data: signed, error: signErr } = await supabase.storage
             .from("field-photos")
@@ -445,16 +455,18 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
           }
         }
       }
-      const failed = files.length - ok;
+      const failed = indexes.length - ok;
+      const noun = category === "receipts" ? "receipt(s)" : "photo(s)";
       if (cancelRef.current) {
         toast.message(`Canceled. ${ok} uploaded, ${failed} skipped.`);
       } else if (failed === 0) {
-        toast.success(`Uploaded ${ok} ${category === "receipts" ? "receipt(s)" : "photo(s)"}.`);
+        toast.success(isRetry ? `Retried ${ok} ${noun} successfully.` : `Uploaded ${ok} ${noun}.`);
       } else {
-        toast.warning(`Uploaded ${ok}, ${failed} failed.`);
+        toast.warning(`${isRetry ? "Retried" : "Uploaded"} ${ok}, ${failed} failed.`);
       }
       onDone();
-      if (!cancelRef.current && failed === 0) { setOpen(false); reset(); }
+      // Only auto-close on a full initial upload with no failures.
+      if (!isRetry && !cancelRef.current && failed === 0) { setOpen(false); reset(); }
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally {
@@ -462,6 +474,7 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
       cancelRef.current = false;
     }
   }
+
 
 
   const hint = BULK_CATEGORIES.find((c) => c.value === category)?.hint;
