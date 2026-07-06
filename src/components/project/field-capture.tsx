@@ -274,11 +274,3 @@ function MeasurementsSection({ projectId }: { projectId: string }) {
   );
 }
 
-function PlaceholderCard({ icon: Icon, title, body }: { icon: any; title: string; body: string }) {
-  return (
-    <Card>
-      <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Icon className="h-4 w-4 text-gold"/>{title}</CardTitle></CardHeader>
-      <CardContent><p className="text-xs text-muted-foreground">{body}</p></CardContent>
-    </Card>
-  );
-}
