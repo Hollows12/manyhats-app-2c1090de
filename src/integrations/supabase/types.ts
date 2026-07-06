@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_client_visible: boolean
+          metadata: Json
+          project_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_client_visible?: boolean
+          metadata?: Json
+          project_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_client_visible?: boolean
+          metadata?: Json
+          project_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_estimate_recommendations: {
         Row: {
           confidence: number | null
@@ -54,6 +98,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ai_estimate_recommendations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_trails: {
+        Row: {
+          action: string
+          actor_id: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          project_id: string | null
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          project_id?: string | null
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          project_id?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_trails_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -107,6 +198,106 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "change_orders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_file_share_views: {
+        Row: {
+          id: string
+          ip_address: string | null
+          share_id: string
+          user_agent: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          share_id: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          share_id?: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_file_share_views_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "client_file_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_file_shares: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          include_internal_notes: boolean
+          last_viewed_at: string | null
+          pin_attempts: number
+          pin_hash: string
+          pin_locked_until: string | null
+          pin_verified_at: string | null
+          project_id: string
+          recipient_email: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          token: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          include_internal_notes?: boolean
+          last_viewed_at?: string | null
+          pin_attempts?: number
+          pin_hash: string
+          pin_locked_until?: string | null
+          pin_verified_at?: string | null
+          project_id: string
+          recipient_email?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          token: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          include_internal_notes?: boolean
+          last_viewed_at?: string | null
+          pin_attempts?: number
+          pin_hash?: string
+          pin_locked_until?: string | null
+          pin_verified_at?: string | null
+          project_id?: string
+          recipient_email?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          token?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_file_shares_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -448,6 +639,53 @@ export type Database = {
             columns: ["proposal_id"]
             isOneToOne: false
             referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      error_logs: {
+        Row: {
+          context: Json
+          created_at: string
+          id: string
+          level: string
+          message: string
+          project_id: string | null
+          route: string | null
+          stack: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          id?: string
+          level?: string
+          message: string
+          project_id?: string | null
+          route?: string | null
+          stack?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          project_id?: string | null
+          route?: string | null
+          stack?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "error_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -2204,6 +2442,15 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      create_client_file_share: {
+        Args: {
+          _expires_days?: number
+          _include_internal_notes?: boolean
+          _project_id: string
+          _recipient_email: string
+        }
+        Returns: Json
+      }
       ensure_invoice_portal_token: {
         Args: { _invoice_id: string; _rotate?: boolean }
         Returns: Json
@@ -2258,17 +2505,30 @@ export type Database = {
             }
             Returns: Json
           }
+      portal_get_client_file: {
+        Args: { _pin: string; _token: string }
+        Returns: Json
+      }
       portal_get_invoice: { Args: { _token: string }; Returns: Json }
       portal_get_proposal: { Args: { _token: string }; Returns: Json }
       portal_mark_invoice_viewed: { Args: { _token: string }; Returns: Json }
       portal_mark_proposal_viewed: { Args: { _token: string }; Returns: Json }
+      portal_verify_client_file_pin: {
+        Args: { _pin: string; _token: string }
+        Returns: Json
+      }
       project_profit_snapshot: { Args: { _project_id: string }; Returns: Json }
+      revoke_client_file_share: { Args: { _share_id: string }; Returns: Json }
       revoke_invoice_portal_token: {
         Args: { _invoice_id: string }
         Returns: Json
       }
       revoke_proposal_portal_token: {
         Args: { _proposal_id: string }
+        Returns: Json
+      }
+      rotate_client_file_share_pin: {
+        Args: { _share_id: string }
         Returns: Json
       }
       send_proposal: { Args: { _proposal_id: string }; Returns: Json }
