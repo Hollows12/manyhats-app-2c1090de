@@ -35,6 +35,13 @@ function ProposalsPage() {
                 <div className="text-xs text-muted-foreground">{p.projects?.clients?.name}</div>
               </Link>
               <div className="text-xs text-muted-foreground">Created {formatDate(p.created_at)}</div>
+              {p.invoice_number && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Badge variant="secondary">Invoice</Badge>
+                  <span className="font-mono">{p.invoice_number}</span>
+                  {p.invoice_status && <Badge variant="outline" className="capitalize">{p.invoice_status}</Badge>}
+                </div>
+              )}
               <Button asChild size="sm" variant="outline" className="w-full">
                 <a href={`/api/proposals/${p.id}/pdf`} target="_blank" rel="noreferrer"><Download className="mr-1 h-3 w-3"/>PDF</a>
               </Button>
