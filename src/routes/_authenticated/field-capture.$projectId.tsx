@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Camera, Mic, Receipt, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProjectFieldCapture } from "@/components/project/field-capture";
 import { ProjectVoiceNotes } from "@/components/project/voice-recorder";
