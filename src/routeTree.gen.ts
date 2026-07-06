@@ -23,10 +23,12 @@ import { Route as AuthenticatedSchemaDiffRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPricingRouteImport } from './routes/_authenticated/pricing'
+import { Route as AuthenticatedPaymentsRouteImport } from './routes/_authenticated/payments'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedKnowledgeBaseRouteImport } from './routes/_authenticated/knowledge-base'
 import { Route as AuthenticatedJobManagementRouteImport } from './routes/_authenticated/job-management'
 import { Route as AuthenticatedJobCostingRouteImport } from './routes/_authenticated/job-costing'
+import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedHomeBuilderRouteImport } from './routes/_authenticated/home-builder'
 import { Route as AuthenticatedHistoricRouteImport } from './routes/_authenticated/historic'
 import { Route as AuthenticatedFieldCaptureRouteImport } from './routes/_authenticated/field-capture'
@@ -112,6 +114,11 @@ const AuthenticatedPricingRoute = AuthenticatedPricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPaymentsRoute = AuthenticatedPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -132,6 +139,11 @@ const AuthenticatedJobManagementRoute =
 const AuthenticatedJobCostingRoute = AuthenticatedJobCostingRouteImport.update({
   id: '/job-costing',
   path: '/job-costing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInvoicesRoute = AuthenticatedInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomeBuilderRoute =
@@ -233,10 +245,12 @@ export interface FileRoutesByFullPath {
   '/field-capture': typeof AuthenticatedFieldCaptureRoute
   '/historic': typeof AuthenticatedHistoricRoute
   '/home-builder': typeof AuthenticatedHomeBuilderRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
   '/job-costing': typeof AuthenticatedJobCostingRoute
   '/job-management': typeof AuthenticatedJobManagementRoute
   '/knowledge-base': typeof AuthenticatedKnowledgeBaseRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/payments': typeof AuthenticatedPaymentsRoute
   '/pricing': typeof AuthenticatedPricingRoute
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/proposals': typeof AuthenticatedProposalsRoute
@@ -267,10 +281,12 @@ export interface FileRoutesByTo {
   '/field-capture': typeof AuthenticatedFieldCaptureRoute
   '/historic': typeof AuthenticatedHistoricRoute
   '/home-builder': typeof AuthenticatedHomeBuilderRoute
+  '/invoices': typeof AuthenticatedInvoicesRoute
   '/job-costing': typeof AuthenticatedJobCostingRoute
   '/job-management': typeof AuthenticatedJobManagementRoute
   '/knowledge-base': typeof AuthenticatedKnowledgeBaseRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/payments': typeof AuthenticatedPaymentsRoute
   '/pricing': typeof AuthenticatedPricingRoute
   '/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/proposals': typeof AuthenticatedProposalsRoute
@@ -303,10 +319,12 @@ export interface FileRoutesById {
   '/_authenticated/field-capture': typeof AuthenticatedFieldCaptureRoute
   '/_authenticated/historic': typeof AuthenticatedHistoricRoute
   '/_authenticated/home-builder': typeof AuthenticatedHomeBuilderRoute
+  '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/job-costing': typeof AuthenticatedJobCostingRoute
   '/_authenticated/job-management': typeof AuthenticatedJobManagementRoute
   '/_authenticated/knowledge-base': typeof AuthenticatedKnowledgeBaseRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
+  '/_authenticated/payments': typeof AuthenticatedPaymentsRoute
   '/_authenticated/pricing': typeof AuthenticatedPricingRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRouteWithChildren
   '/_authenticated/proposals': typeof AuthenticatedProposalsRoute
@@ -339,10 +357,12 @@ export interface FileRouteTypes {
     | '/field-capture'
     | '/historic'
     | '/home-builder'
+    | '/invoices'
     | '/job-costing'
     | '/job-management'
     | '/knowledge-base'
     | '/leads'
+    | '/payments'
     | '/pricing'
     | '/projects'
     | '/proposals'
@@ -373,10 +393,12 @@ export interface FileRouteTypes {
     | '/field-capture'
     | '/historic'
     | '/home-builder'
+    | '/invoices'
     | '/job-costing'
     | '/job-management'
     | '/knowledge-base'
     | '/leads'
+    | '/payments'
     | '/pricing'
     | '/projects'
     | '/proposals'
@@ -408,10 +430,12 @@ export interface FileRouteTypes {
     | '/_authenticated/field-capture'
     | '/_authenticated/historic'
     | '/_authenticated/home-builder'
+    | '/_authenticated/invoices'
     | '/_authenticated/job-costing'
     | '/_authenticated/job-management'
     | '/_authenticated/knowledge-base'
     | '/_authenticated/leads'
+    | '/_authenticated/payments'
     | '/_authenticated/pricing'
     | '/_authenticated/projects'
     | '/_authenticated/proposals'
@@ -542,6 +566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPricingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/payments': {
+      id: '/_authenticated/payments'
+      path: '/payments'
+      fullPath: '/payments'
+      preLoaderRoute: typeof AuthenticatedPaymentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/leads': {
       id: '/_authenticated/leads'
       path: '/leads'
@@ -568,6 +599,13 @@ declare module '@tanstack/react-router' {
       path: '/job-costing'
       fullPath: '/job-costing'
       preLoaderRoute: typeof AuthenticatedJobCostingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/invoices': {
+      id: '/_authenticated/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AuthenticatedInvoicesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home-builder': {
@@ -711,10 +749,12 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFieldCaptureRoute: typeof AuthenticatedFieldCaptureRoute
   AuthenticatedHistoricRoute: typeof AuthenticatedHistoricRoute
   AuthenticatedHomeBuilderRoute: typeof AuthenticatedHomeBuilderRoute
+  AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedJobCostingRoute: typeof AuthenticatedJobCostingRoute
   AuthenticatedJobManagementRoute: typeof AuthenticatedJobManagementRoute
   AuthenticatedKnowledgeBaseRoute: typeof AuthenticatedKnowledgeBaseRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
+  AuthenticatedPaymentsRoute: typeof AuthenticatedPaymentsRoute
   AuthenticatedPricingRoute: typeof AuthenticatedPricingRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRouteWithChildren
   AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRoute
@@ -733,10 +773,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFieldCaptureRoute: AuthenticatedFieldCaptureRoute,
   AuthenticatedHistoricRoute: AuthenticatedHistoricRoute,
   AuthenticatedHomeBuilderRoute: AuthenticatedHomeBuilderRoute,
+  AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedJobCostingRoute: AuthenticatedJobCostingRoute,
   AuthenticatedJobManagementRoute: AuthenticatedJobManagementRoute,
   AuthenticatedKnowledgeBaseRoute: AuthenticatedKnowledgeBaseRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
+  AuthenticatedPaymentsRoute: AuthenticatedPaymentsRoute,
   AuthenticatedPricingRoute: AuthenticatedPricingRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRouteWithChildren,
   AuthenticatedProposalsRoute: AuthenticatedProposalsRoute,
