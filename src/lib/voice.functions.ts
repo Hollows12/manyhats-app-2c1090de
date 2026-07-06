@@ -24,13 +24,14 @@ export const transcribeVoiceNote = createServerFn({ method: "POST" })
       .select("id, storage_path, project_id")
       .eq("id", data.voice_note_id)
       .single();
-    if (noteErr || !note) throw new Error("Voice note not found");
+    if (noteErr || !note || !note.storage_path) throw new Error("Voice note not found");
+    const storagePath: string = note.storage_path;
 
     // Download audio (bucket 'field-photos', or fallback voice-notes)
     const bucket = "field-photos";
     const { data: signed } = await supabase.storage
       .from(bucket)
-      .createSignedUrl(note.storage_path, 300);
+      .createSignedUrl(storagePath, 300);
     if (!signed?.signedUrl) throw new Error("Could not sign audio URL");
     const audioRes = await fetch(signed.signedUrl);
     if (!audioRes.ok) throw new Error("Could not fetch audio");
@@ -39,7 +40,7 @@ export const transcribeVoiceNote = createServerFn({ method: "POST" })
     // 1. STT
     const form = new FormData();
     form.append("model", "openai/gpt-4o-mini-transcribe");
-    const ext = note.storage_path.split(".").pop() || "webm";
+    const ext = storagePath.split(".").pop() || "webm";
     form.append("file", audioBlob, `voice.${ext}`);
     const sttRes = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
       method: "POST",
