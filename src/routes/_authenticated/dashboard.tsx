@@ -90,6 +90,10 @@ function Dashboard() {
       </div>
 
       <FinanceKpis />
+      <PortalKpis />
+      <NotificationsFeed />
+
+
 
 
       <div className="grid gap-6 lg:grid-cols-3">
