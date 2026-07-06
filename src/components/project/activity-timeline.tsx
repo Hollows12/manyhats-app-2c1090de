@@ -1,5 +1,7 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, FileText, Wallet, Ban, Sparkles, DollarSign, Layers, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -165,7 +167,16 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
     },
   });
 
-  const events = q.data ?? [];
+  const allEvents = q.data ?? [];
+  const [filter, setFilter] = useState<FilterKey>("all");
+
+  const counts = useMemo(() => {
+    const c: Record<FilterKey, number> = { all: allEvents.length, invoices: 0, payments: 0, deposits: 0, progress: 0 };
+    for (const e of allEvents) c[categoryOf(e.kind)]++;
+    return c;
+  }, [allEvents]);
+
+  const events = filter === "all" ? allEvents : allEvents.filter((e) => categoryOf(e.kind) === filter);
 
   return (
     <Card>
@@ -174,14 +185,33 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
           <Activity className="h-4 w-4 text-gold" />
           Activity Timeline
         </CardTitle>
-        <Badge variant="outline" className="tabular-nums">{events.length} event{events.length === 1 ? "" : "s"}</Badge>
+        <Badge variant="outline" className="tabular-nums">{events.length} of {allEvents.length}</Badge>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap gap-1">
+          {FILTERS.map((f) => (
+            <Button
+              key={f.key}
+              size="sm"
+              variant={filter === f.key ? "default" : "outline"}
+              className="h-7 px-2 text-xs"
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+              <span className="ml-1.5 rounded bg-background/20 px-1 text-[10px] tabular-nums">
+                {counts[f.key]}
+              </span>
+            </Button>
+          ))}
+        </div>
+
         {q.isLoading ? (
           <div className="text-xs text-muted-foreground">Loading activity…</div>
         ) : events.length === 0 ? (
           <div className="rounded-md border border-dashed py-8 text-center text-xs text-muted-foreground">
-            No financial activity yet. Generate an invoice or record a payment to start the log.
+            {allEvents.length === 0
+              ? "No financial activity yet. Generate an invoice or record a payment to start the log."
+              : "No events match this filter."}
           </div>
         ) : (
           <ol className="relative border-l border-muted pl-5 space-y-4">
@@ -214,6 +244,23 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
       </CardContent>
     </Card>
   );
+}
+
+type FilterKey = "all" | "invoices" | "payments" | "deposits" | "progress";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "invoices", label: "Invoices" },
+  { key: "payments", label: "Payments" },
+  { key: "deposits", label: "Deposits" },
+  { key: "progress", label: "Progress" },
+];
+
+function categoryOf(kind: EventKind): Exclude<FilterKey, "all"> {
+  if (kind.startsWith("invoice")) return "invoices";
+  if (kind.startsWith("payment")) return "payments";
+  if (kind.startsWith("deposit")) return "deposits";
+  return "progress";
 }
 
 const ICONS = {
