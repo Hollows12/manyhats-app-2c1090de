@@ -143,7 +143,8 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
               <p className="text-xs text-amber-700 mt-1">⚠ {pendingRecCount} AI recommendation{pendingRecCount === 1 ? "" : "s"} pending contractor approval. Review in the Estimate tab before sending.</p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <ClientLinkButtons proposalId={proposal.id} />
             <Button asChild variant="outline" size="sm">
               <a href={`/api/proposals/${proposal.id}/pdf`} target="_blank" rel="noreferrer">
                 <Download className="mr-1 h-4 w-4"/> PDF
