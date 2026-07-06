@@ -536,21 +536,52 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
                     Clear
                   </button>
                 </div>
-                <ul className="max-h-24 overflow-y-auto rounded-md border border-border bg-background/50 p-1 text-[11px]">
-                  {files.map((f, i) => (
-                    <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2 px-1 py-0.5">
-                      <span className="truncate">{f.name}</span>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="text-muted-foreground hover:text-destructive"
-                        aria-label={`Remove ${f.name}`}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </li>
-                  ))}
+                <ul className="max-h-40 overflow-y-auto rounded-md border border-border bg-background/50 p-1 text-[11px]">
+                  {files.map((f, i) => {
+                    const s = states[i] ?? { status: "pending" as FileStatus, percent: 0 };
+                    return (
+                      <li key={`${f.name}-${i}`} className="flex items-center gap-2 px-1 py-1">
+                        <div className="flex-shrink-0">
+                          {s.status === "done" && <Check className="h-3 w-3 text-emerald-600" />}
+                          {s.status === "uploading" && <Loader2 className="h-3 w-3 animate-spin text-gold" />}
+                          {s.status === "error" && <CircleAlert className="h-3 w-3 text-destructive" />}
+                          {s.status === "canceled" && <Ban className="h-3 w-3 text-muted-foreground" />}
+                          {s.status === "pending" && <div className="h-3 w-3 rounded-full border border-muted-foreground/40" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate">{f.name}</span>
+                            <span className="tabular-nums text-muted-foreground">
+                              {s.status === "done" ? "100%"
+                                : s.status === "error" ? "Failed"
+                                : s.status === "canceled" ? "Canceled"
+                                : s.status === "uploading" ? `${s.percent}%`
+                                : "—"}
+                            </span>
+                          </div>
+                          {(s.status === "uploading" || s.status === "done") && (
+                            <Progress value={s.percent} className="mt-1 h-1" />
+                          )}
+                          {s.status === "error" && s.error && (
+                            <p className="mt-0.5 text-[10px] text-destructive truncate">{s.error}</p>
+                          )}
+                        </div>
+                        {!busy && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFiles((prev) => prev.filter((_, idx) => idx !== i));
+                              setStates((prev) => prev.filter((_, idx) => idx !== i));
+                            }}
+                            className="text-muted-foreground hover:text-destructive"
+                            aria-label={`Remove ${f.name}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
@@ -558,22 +589,42 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
 
           <div>
             <Label className="text-xs">Caption / note (applied to all)</Label>
-            <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Optional" />
+            <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Optional" disabled={busy} />
           </div>
-          {busy && (
-            <div className="space-y-1">
-              <Progress value={progress} />
-              <p className="text-[11px] text-muted-foreground">{done} / {files.length} uploaded</p>
-            </div>
-          )}
+          {busy && (() => {
+            const doneCount = states.filter((s) => s.status === "done").length;
+            const totalPercent = files.length === 0
+              ? 0
+              : Math.round(states.reduce((sum, s) => sum + (s?.percent ?? 0), 0) / files.length);
+            return (
+              <div className="space-y-1 rounded-md border border-border bg-muted/30 p-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-semibold uppercase tracking-wider">Overall</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {doneCount} / {files.length} · {totalPercent}%
+                  </span>
+                </div>
+                <Progress value={totalPercent} />
+              </div>
+            );
+          })()}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => { if (!busy) { setOpen(false); reset(); } }} disabled={busy}>Cancel</Button>
-          <Button onClick={handleUpload} disabled={busy || files.length === 0}>
-            <Upload className="mr-1 h-4 w-4"/>
-            {busy ? `Uploading ${done}/${files.length}…` : `Upload ${files.length || ""}`}
-          </Button>
+          {busy ? (
+            <Button variant="destructive" onClick={handleCancel}>
+              <X className="mr-1 h-4 w-4" />Cancel upload
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => { setOpen(false); reset(); }}>Close</Button>
+              <Button onClick={handleUpload} disabled={files.length === 0}>
+                <Upload className="mr-1 h-4 w-4"/>
+                Upload {files.length || ""}
+              </Button>
+            </>
+          )}
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
