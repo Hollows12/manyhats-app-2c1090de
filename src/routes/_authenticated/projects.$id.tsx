@@ -111,7 +111,9 @@ function ProjectDetail() {
           <TabsTrigger value="job">Job Management</TabsTrigger>
           <TabsTrigger value="costing">Job Costing</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
+          <TabsTrigger value="clientfile">Client File</TabsTrigger>
           {isHome && <TabsTrigger value="home">Home Builder</TabsTrigger>}
+
           {isContainer && <TabsTrigger value="container">Container Pro</TabsTrigger>}
           {isHistoric && <TabsTrigger value="historic">Historic Pro</TabsTrigger>}
           {isSeptic && <TabsTrigger value="septic">Septic Pro</TabsTrigger>}
