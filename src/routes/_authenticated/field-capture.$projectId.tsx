@@ -79,6 +79,3 @@ function FieldCaptureProject() {
     </div>
   );
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _empty = { Card, CardContent };
