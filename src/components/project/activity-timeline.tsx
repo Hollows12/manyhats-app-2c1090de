@@ -92,6 +92,8 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
           detail: source ? `From ${source}` : "Manual invoice",
           amount: Number(i.total ?? 0),
         });
+        if (i.sent_at) events.push({ id: `inv-sent-${i.id}`, at: i.sent_at, kind: "invoice_sent", title: `Invoice ${i.invoice_number} sent to client`, amount: Number(i.total ?? 0) });
+        if (i.viewed_at) events.push({ id: `inv-viewed-${i.id}`, at: i.viewed_at, kind: "invoice_viewed", title: `Invoice ${i.invoice_number} viewed by client` });
       }
 
       for (const p of (pay.data ?? []) as any[]) {
