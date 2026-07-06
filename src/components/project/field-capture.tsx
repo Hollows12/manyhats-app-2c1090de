@@ -427,16 +427,72 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
           </div>
           <div>
             <Label className="text-xs">Files</Label>
-            <Input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            />
+            <label
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (!busy) setDragOver(true); }}
+              onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); if (!busy) setDragOver(true); }}
+              onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDragOver(false); }}
+              onDrop={(e) => {
+                e.preventDefault(); e.stopPropagation(); setDragOver(false);
+                if (busy) return;
+                const dropped = Array.from(e.dataTransfer.files ?? []);
+                if (dropped.length) addFiles(dropped);
+              }}
+              className={`mt-1 flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed px-4 py-6 text-center transition-colors ${
+                dragOver ? "border-gold bg-gold/10" : "border-border bg-muted/30 hover:bg-muted/50"
+              } ${busy ? "pointer-events-none opacity-50" : ""}`}
+            >
+              <Upload className="h-5 w-5 text-muted-foreground" />
+              <div className="text-xs font-medium">
+                {dragOver ? "Drop files to add" : "Drag & drop files here, or click to browse"}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {category === "receipts" ? "Images or PDF" : "Images"} · multiple files supported
+              </div>
+              <input
+                type="file"
+                multiple
+                accept={category === "receipts" ? "image/*,application/pdf" : "image/*"}
+                className="hidden"
+                onChange={(e) => {
+                  const picked = Array.from(e.target.files ?? []);
+                  if (picked.length) addFiles(picked);
+                  e.target.value = "";
+                }}
+              />
+            </label>
             {files.length > 0 && (
-              <p className="mt-1 text-[11px] text-muted-foreground">{files.length} file(s) selected</p>
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] text-muted-foreground">{files.length} file(s) selected</p>
+                  <button
+                    type="button"
+                    onClick={() => setFiles([])}
+                    disabled={busy}
+                    className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </button>
+                </div>
+                <ul className="max-h-24 overflow-y-auto rounded-md border border-border bg-background/50 p-1 text-[11px]">
+                  {files.map((f, i) => (
+                    <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2 px-1 py-0.5">
+                      <span className="truncate">{f.name}</span>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label={`Remove ${f.name}`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
+
           <div>
             <Label className="text-xs">Caption / note (applied to all)</Label>
             <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Optional" />
