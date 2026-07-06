@@ -152,6 +152,7 @@ export function ProjectVoiceNotes({ projectId }: { projectId: string }) {
             {notes.data!.map((n: any) => (
               <VoiceRow
                 key={n.id}
+                projectId={projectId}
                 note={n}
                 onDelete={() => remove.mutate(n)}
                 onRetranscribe={() => retranscribe.mutate(n.id)}
