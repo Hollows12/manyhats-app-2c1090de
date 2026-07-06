@@ -163,7 +163,7 @@ Rules:
 
     const existing = String(((prop as any)[col] as string | null | undefined) ?? "").trim();
     const next = `${existing}${divider}${bodyText}`.trim();
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("proposals")
       .update({ [col]: next })
       .eq("id", (prop as any).id);
