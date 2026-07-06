@@ -218,6 +218,9 @@ function PhotoCard({ projectId, photo, getUrl, onDelete, onToggleTag, onMeta }: 
             </button>
           ))}
         </div>
+        <div className="pt-1">
+          <SendCaptureButton projectId={projectId} source={{ photo_ids: [photo.id] }} label="Send to estimate / proposal" size="sm" variant="outline" />
+        </div>
       </div>
     </div>
   );
