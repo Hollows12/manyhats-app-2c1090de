@@ -219,6 +219,13 @@ function VoiceRow({ projectId, note, onDelete, onRetranscribe, busy }: any) {
           <Button variant="ghost" size="sm" onClick={onDelete}>
             <Trash2 className="h-3 w-3" />
           </Button>
+          <SendCaptureButton
+            projectId={projectId}
+            source={{ voice_note_ids: [note.id] }}
+            label="Send"
+            size="sm"
+            variant="outline"
+          />
         </div>
       </div>
     </div>
