@@ -39,16 +39,33 @@ function PhotosSection({ projectId }: { projectId: string }) {
     return null;
   }
 
+  async function getGps(): Promise<{ lat?: number; lng?: number }> {
+    return new Promise((resolve) => {
+      if (!("geolocation" in navigator)) return resolve({});
+      const timer = setTimeout(() => resolve({}), 2500);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          clearTimeout(timer);
+          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => { clearTimeout(timer); resolve({}); },
+        { enableHighAccuracy: false, timeout: 2000 },
+      );
+    });
+  }
+
   const upload = useMutation({
     mutationFn: async (files: FileList) => {
       const { data: { user } } = await supabase.auth.getUser();
+      const gps = await getGps();
       for (const file of Array.from(files)) {
         const path = `${projectId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
         const { error: upErr } = await supabase.storage.from("field-photos").upload(path, file);
         if (upErr) throw upErr;
         const { error } = await supabase.from("project_photos").insert({
           project_id: projectId, storage_path: path, is_real_site_photo: true, uploaded_by: user?.id,
-        });
+          gps_lat: gps.lat ?? null, gps_lng: gps.lng ?? null, captured_at: new Date().toISOString(),
+        } as any);
         if (error) throw error;
       }
     },
@@ -67,6 +84,13 @@ function PhotosSection({ projectId }: { projectId: string }) {
   const toggleTag = useMutation({
     mutationFn: async ({ id, tags }: { id: string; tags: string[] }) => {
       await supabase.from("project_photos").update({ tags }).eq("id", id);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["photos", projectId] }),
+  });
+
+  const updateMeta = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Record<string, any> }) => {
+      await (supabase as any).from("project_photos").update(patch).eq("id", id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["photos", projectId] }),
   });
