@@ -201,7 +201,7 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
   const [filter, setFilter] = useState<FilterKey>("all");
 
   const counts = useMemo(() => {
-    const c: Record<FilterKey, number> = { all: allEvents.length, invoices: 0, payments: 0, deposits: 0, progress: 0 };
+    const c: Record<FilterKey, number> = { all: allEvents.length, invoices: 0, payments: 0, deposits: 0, progress: 0, proposals: 0 };
     for (const e of allEvents) c[categoryOf(e.kind)]++;
     return c;
   }, [allEvents]);
