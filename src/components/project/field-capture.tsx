@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage } from "lucide-react";
+import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,40 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { PHOTO_TAGS } from "@/lib/manyhats";
 
 const UNIT_OPTIONS = ["ea", "lf", "sf", "sy", "cy", "in", "ft", "yd", "lb", "ton", "hr", "day", "ls"];
 const PHASES = ["before", "during", "after", "damage", "material", "receipt", "other"];
+
+type BulkCategory =
+  | "project" | "before" | "during" | "after"
+  | "proposal" | "damage" | "material" | "receipts";
+
+const BULK_CATEGORIES: { value: BulkCategory; label: string; hint: string }[] = [
+  { value: "project", label: "Project (general)", hint: "General project photos, internal only." },
+  { value: "before", label: "Before", hint: "Existing conditions before work begins." },
+  { value: "during", label: "During (progress)", hint: "Work in progress photos." },
+  { value: "after", label: "After (finished)", hint: "Completed work photos." },
+  { value: "proposal", label: "Proposal (client-facing)", hint: "Included on proposals, visible to client." },
+  { value: "damage", label: "Damage", hint: "Damage documentation." },
+  { value: "material", label: "Material", hint: "Materials on site or delivered." },
+  { value: "receipts", label: "Receipts", hint: "Uploaded to Receipts (edit vendor/amount after)." },
+];
+
+function bulkMetaFor(cat: BulkCategory) {
+  switch (cat) {
+    case "before":   return { phase: "before" as const,   tags: ["Before"],       proposal_include: false, is_client_facing: false };
+    case "during":   return { phase: "during" as const,   tags: ["Progress"],     proposal_include: false, is_client_facing: false };
+    case "after":    return { phase: "after" as const,    tags: ["Finished"],     proposal_include: true,  is_client_facing: true  };
+    case "proposal": return { phase: null,                tags: ["Reference"],    proposal_include: true,  is_client_facing: true  };
+    case "damage":   return { phase: "damage" as const,   tags: ["Damage"],       proposal_include: false, is_client_facing: false };
+    case "material": return { phase: "material" as const, tags: [],               proposal_include: false, is_client_facing: false };
+    case "project":
+    default:         return { phase: null,                tags: [],               proposal_include: false, is_client_facing: false };
+  }
+}
 
 export function ProjectFieldCapture({ projectId }: { projectId: string }) {
   return (
@@ -97,18 +127,24 @@ function PhotosSection({ projectId }: { projectId: string }) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
         <div>
           <CardTitle className="font-display flex items-center gap-2"><Camera className="h-5 w-5 text-gold"/>Photos</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">Real site photos. Tag, caption, attach to proposals.</p>
         </div>
-        <label className="cursor-pointer">
-          <input type="file" multiple accept="image/*" capture="environment" className="hidden"
-            onChange={(e) => e.target.files && upload.mutate(e.target.files)} />
-          <Button asChild size="sm" disabled={upload.isPending}>
-            <span><Upload className="mr-1 h-4 w-4"/>{upload.isPending ? "Uploading…" : "Upload"}</span>
-          </Button>
-        </label>
+        <div className="flex items-center gap-2">
+          <BulkUploadDialog projectId={projectId} onDone={() => {
+            qc.invalidateQueries({ queryKey: ["photos", projectId] });
+            qc.invalidateQueries({ queryKey: ["receipts", projectId] });
+          }} />
+          <label className="cursor-pointer">
+            <input type="file" multiple accept="image/*" capture="environment" className="hidden"
+              onChange={(e) => e.target.files && upload.mutate(e.target.files)} />
+            <Button asChild size="sm" variant="outline" disabled={upload.isPending}>
+              <span><Upload className="mr-1 h-4 w-4"/>{upload.isPending ? "Uploading…" : "Quick upload"}</span>
+            </Button>
+          </label>
+        </div>
       </CardHeader>
       <CardContent>
         {(photos.data ?? []).length === 0 ? (
@@ -273,4 +309,131 @@ function MeasurementsSection({ projectId }: { projectId: string }) {
     </Card>
   );
 }
+
+function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [category, setCategory] = useState<BulkCategory>("project");
+  const [files, setFiles] = useState<File[]>([]);
+  const [caption, setCaption] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [done, setDone] = useState(0);
+
+  function reset() {
+    setFiles([]); setCaption(""); setProgress(0); setDone(0); setCategory("project");
+  }
+
+  async function handleUpload() {
+    if (files.length === 0) { toast.error("Select at least one file."); return; }
+    setBusy(true); setProgress(0); setDone(0);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const meta = bulkMetaFor(category);
+      let ok = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const safe = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+        if (category === "receipts") {
+          const path = `receipts/${projectId}/${Date.now()}-${i}-${safe}`;
+          const { error: upErr } = await supabase.storage.from("field-photos").upload(path, file);
+          if (upErr) throw upErr;
+          const { error } = await (supabase as any).from("receipts").insert({
+            project_id: projectId, uploaded_by: user?.id, storage_path: path,
+            vendor: null, amount: 0, category: "material",
+            purchased_at: new Date().toISOString().slice(0, 10),
+            notes: caption || null,
+          });
+          if (error) throw error;
+        } else {
+          const path = `${projectId}/${Date.now()}-${i}-${safe}`;
+          const { error: upErr } = await supabase.storage.from("field-photos").upload(path, file);
+          if (upErr) throw upErr;
+          const { error } = await supabase.from("project_photos").insert({
+            project_id: projectId,
+            storage_path: path,
+            is_real_site_photo: true,
+            uploaded_by: user?.id,
+            captured_at: new Date().toISOString(),
+            caption: caption || null,
+            phase: meta.phase,
+            tags: meta.tags,
+            proposal_include: meta.proposal_include,
+            is_client_facing: meta.is_client_facing,
+          } as any);
+          if (error) throw error;
+        }
+        ok++;
+        setDone(ok);
+        setProgress(Math.round((ok / files.length) * 100));
+      }
+      toast.success(`Uploaded ${ok} ${category === "receipts" ? "receipt(s)" : "photo(s)"}.`);
+      onDone();
+      setOpen(false);
+      reset();
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const hint = BULK_CATEGORIES.find((c) => c.value === category)?.hint;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!busy) { setOpen(v); if (!v) reset(); } }}>
+      <DialogTrigger asChild>
+        <Button size="sm"><Layers className="mr-1 h-4 w-4"/>Bulk upload</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display">Bulk upload</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label className="text-xs">Category</Label>
+            <Select value={category} onValueChange={(v) => setCategory(v as BulkCategory)}>
+              <SelectTrigger><SelectValue/></SelectTrigger>
+              <SelectContent>
+                {BULK_CATEGORIES.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
+          </div>
+          <div>
+            <Label className="text-xs">Files</Label>
+            <Input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            />
+            {files.length > 0 && (
+              <p className="mt-1 text-[11px] text-muted-foreground">{files.length} file(s) selected</p>
+            )}
+          </div>
+          <div>
+            <Label className="text-xs">Caption / note (applied to all)</Label>
+            <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Optional" />
+          </div>
+          {busy && (
+            <div className="space-y-1">
+              <Progress value={progress} />
+              <p className="text-[11px] text-muted-foreground">{done} / {files.length} uploaded</p>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => { if (!busy) { setOpen(false); reset(); } }} disabled={busy}>Cancel</Button>
+          <Button onClick={handleUpload} disabled={busy || files.length === 0}>
+            <Upload className="mr-1 h-4 w-4"/>
+            {busy ? `Uploading ${done}/${files.length}…` : `Upload ${files.length || ""}`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
