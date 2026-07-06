@@ -127,18 +127,24 @@ function PhotosSection({ projectId }: { projectId: string }) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center justify-between gap-2">
         <div>
           <CardTitle className="font-display flex items-center gap-2"><Camera className="h-5 w-5 text-gold"/>Photos</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">Real site photos. Tag, caption, attach to proposals.</p>
         </div>
-        <label className="cursor-pointer">
-          <input type="file" multiple accept="image/*" capture="environment" className="hidden"
-            onChange={(e) => e.target.files && upload.mutate(e.target.files)} />
-          <Button asChild size="sm" disabled={upload.isPending}>
-            <span><Upload className="mr-1 h-4 w-4"/>{upload.isPending ? "Uploading…" : "Upload"}</span>
-          </Button>
-        </label>
+        <div className="flex items-center gap-2">
+          <BulkUploadDialog projectId={projectId} onDone={() => {
+            qc.invalidateQueries({ queryKey: ["photos", projectId] });
+            qc.invalidateQueries({ queryKey: ["receipts", projectId] });
+          }} />
+          <label className="cursor-pointer">
+            <input type="file" multiple accept="image/*" capture="environment" className="hidden"
+              onChange={(e) => e.target.files && upload.mutate(e.target.files)} />
+            <Button asChild size="sm" variant="outline" disabled={upload.isPending}>
+              <span><Upload className="mr-1 h-4 w-4"/>{upload.isPending ? "Uploading…" : "Quick upload"}</span>
+            </Button>
+          </label>
+        </div>
       </CardHeader>
       <CardContent>
         {(photos.data ?? []).length === 0 ? (
