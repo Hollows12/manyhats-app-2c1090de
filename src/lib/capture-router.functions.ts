@@ -291,7 +291,8 @@ export const generateCapturePreview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => PreviewInput.parse(d))
   .handler(async ({ data, context }) => {
-    const supabase = context.supabase as SupabaseLike;
+    const supabase = context.supabase as unknown as SupabaseLike;
+
     const source = await retrieveCaptureContent(supabase, data);
 
     let clientReadyText: string | null = null;
