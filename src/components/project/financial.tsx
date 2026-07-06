@@ -24,6 +24,7 @@ import {
   generateInvoiceNumber, type ProfitSnapshot,
 } from "@/lib/finance";
 import { GenerateInvoiceDialog } from "./generate-invoice-dialog";
+import { ActivityTimeline } from "./activity-timeline";
 
 export function ProjectFinancial({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
