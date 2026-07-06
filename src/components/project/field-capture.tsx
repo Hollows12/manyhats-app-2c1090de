@@ -156,6 +156,7 @@ function PhotosSection({ projectId }: { projectId: string }) {
             {photos.data!.map((p: any) => (
               <PhotoCard
                 key={p.id}
+                projectId={projectId}
                 photo={p}
                 getUrl={getSignedUrl}
                 onDelete={() => remove.mutate(p)}
@@ -170,7 +171,7 @@ function PhotosSection({ projectId }: { projectId: string }) {
   );
 }
 
-function PhotoCard({ photo, getUrl, onDelete, onToggleTag, onMeta }: any) {
+function PhotoCard({ projectId, photo, getUrl, onDelete, onToggleTag, onMeta }: any) {
   const [url, setUrl] = useState<string | null>(null);
   if (!url) getUrl(photo.storage_path).then(setUrl);
   return (
