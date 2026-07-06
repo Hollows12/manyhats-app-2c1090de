@@ -125,6 +125,7 @@ export function GenerateInvoiceDialog({
       const { data: inv, error } = await supabase.from("invoices").insert({
         project_id: projectId,
         proposal_id: proposal.id,
+        estimate_id: ctx.data?.estimate?.id ?? null,
         invoice_number: generateInvoiceNumber(seq),
         subtotal,
         tax,
