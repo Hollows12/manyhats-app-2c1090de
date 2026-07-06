@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage } from "lucide-react";
+import { Camera, Trash2, Ruler, Check, Upload, AlertTriangle, Eye, EyeOff, FileImage, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,40 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { PHOTO_TAGS } from "@/lib/manyhats";
 
 const UNIT_OPTIONS = ["ea", "lf", "sf", "sy", "cy", "in", "ft", "yd", "lb", "ton", "hr", "day", "ls"];
 const PHASES = ["before", "during", "after", "damage", "material", "receipt", "other"];
+
+type BulkCategory =
+  | "project" | "before" | "during" | "after"
+  | "proposal" | "damage" | "material" | "receipts";
+
+const BULK_CATEGORIES: { value: BulkCategory; label: string; hint: string }[] = [
+  { value: "project", label: "Project (general)", hint: "General project photos, internal only." },
+  { value: "before", label: "Before", hint: "Existing conditions before work begins." },
+  { value: "during", label: "During (progress)", hint: "Work in progress photos." },
+  { value: "after", label: "After (finished)", hint: "Completed work photos." },
+  { value: "proposal", label: "Proposal (client-facing)", hint: "Included on proposals, visible to client." },
+  { value: "damage", label: "Damage", hint: "Damage documentation." },
+  { value: "material", label: "Material", hint: "Materials on site or delivered." },
+  { value: "receipts", label: "Receipts", hint: "Uploaded to Receipts (edit vendor/amount after)." },
+];
+
+function bulkMetaFor(cat: BulkCategory) {
+  switch (cat) {
+    case "before":   return { phase: "before" as const,   tags: ["Before"],       proposal_include: false, is_client_facing: false };
+    case "during":   return { phase: "during" as const,   tags: ["Progress"],     proposal_include: false, is_client_facing: false };
+    case "after":    return { phase: "after" as const,    tags: ["Finished"],     proposal_include: true,  is_client_facing: true  };
+    case "proposal": return { phase: null,                tags: ["Reference"],    proposal_include: true,  is_client_facing: true  };
+    case "damage":   return { phase: "damage" as const,   tags: ["Damage"],       proposal_include: false, is_client_facing: false };
+    case "material": return { phase: "material" as const, tags: [],               proposal_include: false, is_client_facing: false };
+    case "project":
+    default:         return { phase: null,                tags: [],               proposal_include: false, is_client_facing: false };
+  }
+}
 
 export function ProjectFieldCapture({ projectId }: { projectId: string }) {
   return (
