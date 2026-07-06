@@ -134,6 +134,9 @@ export function ProjectFinancial({ projectId }: { projectId: string }) {
 
       {/* PROGRESS BILLINGS */}
       <ProgressBillingsSection projectId={projectId} items={progress.data ?? []} onChanged={invalidateAll} />
+
+      {/* ACTIVITY TIMELINE */}
+      <ActivityTimeline projectId={projectId} />
     </div>
   );
 }
