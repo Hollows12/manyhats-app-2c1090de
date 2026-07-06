@@ -122,6 +122,17 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {role === "admin" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive("/admin/logs")} tooltip="Admin logs">
+                    <Link to="/admin/logs" className="flex items-center gap-3">
+                      <ShieldAlert className="h-4 w-4 shrink-0 text-gold" />
+                      {!collapsed && <span>Admin logs</span>}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
