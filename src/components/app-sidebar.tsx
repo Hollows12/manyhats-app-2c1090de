@@ -95,6 +95,7 @@ export function AppSidebar() {
       <SidebarContent>
         {renderGroup("Pipeline", PIPELINE)}
         {renderGroup("Estimating & Proposals", BUILD)}
+        {renderGroup("Financial", FINANCIAL)}
         {renderGroup("Pro Modules", PRO)}
         {renderGroup("Operations", OPS)}
         <SidebarGroup>
