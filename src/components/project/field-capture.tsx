@@ -630,7 +630,7 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
           ) : (
             <>
               <Button variant="outline" onClick={() => { setOpen(false); reset(); }}>Close</Button>
-              <Button onClick={handleUpload} disabled={files.length === 0}>
+              <Button onClick={() => handleUpload()} disabled={files.length === 0}>
                 <Upload className="mr-1 h-4 w-4"/>
                 Upload {files.length || ""}
               </Button>
