@@ -220,4 +220,10 @@ const ICONS = {
   invoice_created: { icon: Sparkles, dot: "bg-sky-600" },
   payment_recorded: { icon: Wallet, dot: "bg-emerald-600" },
   payment_voided: { icon: Ban, dot: "bg-slate-500" },
+  deposit_recorded: { icon: DollarSign, dot: "bg-amber-600" },
+  deposit_paid: { icon: CheckCircle2, dot: "bg-emerald-700" },
+  deposit_voided: { icon: Ban, dot: "bg-slate-500" },
+  progress_billing_recorded: { icon: Layers, dot: "bg-indigo-600" },
+  progress_billing_approved: { icon: CheckCircle2, dot: "bg-emerald-700" },
+  progress_billing_voided: { icon: Ban, dot: "bg-slate-500" },
 } satisfies Record<TimelineEvent["kind"], { icon: typeof FileText; dot: string }>;
