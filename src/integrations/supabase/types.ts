@@ -802,13 +802,17 @@ export type Database = {
           invoice_number: string
           is_final: boolean
           notes: string | null
+          portal_token: string | null
+          portal_token_expires_at: string | null
           project_id: string
           proposal_id: string | null
+          sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
           tax: number
           total: number
           updated_at: string
+          viewed_at: string | null
         }
         Insert: {
           balance_due?: number
@@ -821,13 +825,17 @@ export type Database = {
           invoice_number: string
           is_final?: boolean
           notes?: string | null
+          portal_token?: string | null
+          portal_token_expires_at?: string | null
           project_id: string
           proposal_id?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax?: number
           total?: number
           updated_at?: string
+          viewed_at?: string | null
         }
         Update: {
           balance_due?: number
@@ -840,13 +848,17 @@ export type Database = {
           invoice_number?: string
           is_final?: boolean
           notes?: string | null
+          portal_token?: string | null
+          portal_token_expires_at?: string | null
           project_id?: string
           proposal_id?: string | null
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax?: number
           total?: number
           updated_at?: string
+          viewed_at?: string | null
         }
         Relationships: [
           {
@@ -1305,6 +1317,50 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          kind: string
+          message: string
+          project_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          kind: string
+          message: string
+          project_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          kind?: string
+          message?: string
+          project_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1693,9 +1749,12 @@ export type Database = {
           proposal_id: string
           selected_option_id: string | null
           signature_data: string | null
+          signature_kind: string
           signed_at: string
           signer_email: string | null
           signer_name: string
+          signer_phone: string | null
+          terms_accepted: boolean
         }
         Insert: {
           id?: string
@@ -1703,9 +1762,12 @@ export type Database = {
           proposal_id: string
           selected_option_id?: string | null
           signature_data?: string | null
+          signature_kind?: string
           signed_at?: string
           signer_email?: string | null
           signer_name: string
+          signer_phone?: string | null
+          terms_accepted?: boolean
         }
         Update: {
           id?: string
@@ -1713,9 +1775,12 @@ export type Database = {
           proposal_id?: string
           selected_option_id?: string | null
           signature_data?: string | null
+          signature_kind?: string
           signed_at?: string
           signer_email?: string | null
           signer_name?: string
+          signer_phone?: string | null
+          terms_accepted?: boolean
         }
         Relationships: [
           {
@@ -1762,6 +1827,7 @@ export type Database = {
           status: Database["public"]["Enums"]["proposal_status"]
           timeline: string | null
           updated_at: string
+          viewed_at: string | null
           warranty_length: string | null
           warranty_notes: string | null
         }
@@ -1792,6 +1858,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["proposal_status"]
           timeline?: string | null
           updated_at?: string
+          viewed_at?: string | null
           warranty_length?: string | null
           warranty_notes?: string | null
         }
@@ -1822,6 +1889,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["proposal_status"]
           timeline?: string | null
           updated_at?: string
+          viewed_at?: string | null
           warranty_length?: string | null
           warranty_notes?: string | null
         }
@@ -2023,6 +2091,10 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: Json }
+      ensure_invoice_portal_token: {
+        Args: { _invoice_id: string; _rotate?: boolean }
+        Returns: Json
+      }
       ensure_proposal_portal_token: {
         Args: { _proposal_id: string; _rotate?: boolean }
         Returns: Json
@@ -2037,19 +2109,56 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
-      portal_accept_proposal: {
+      notify_staff: {
         Args: {
-          _ip_address?: string
-          _selected_option_id: string
-          _signature_data?: string
-          _signer_email: string
-          _signer_name: string
-          _token: string
+          _entity_id: string
+          _entity_type: string
+          _kind: string
+          _message: string
+          _project_id: string
         }
+        Returns: undefined
+      }
+      portal_accept_proposal:
+        | {
+            Args: {
+              _ip_address?: string
+              _selected_option_id: string
+              _signature_data?: string
+              _signer_email: string
+              _signer_name: string
+              _token: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _ip_address?: string
+              _selected_option_id: string
+              _signature_data?: string
+              _signature_kind?: string
+              _signer_email: string
+              _signer_name: string
+              _signer_phone?: string
+              _terms_accepted?: boolean
+              _token: string
+            }
+            Returns: Json
+          }
+      portal_get_invoice: { Args: { _token: string }; Returns: Json }
+      portal_get_proposal: { Args: { _token: string }; Returns: Json }
+      portal_mark_invoice_viewed: { Args: { _token: string }; Returns: Json }
+      portal_mark_proposal_viewed: { Args: { _token: string }; Returns: Json }
+      project_profit_snapshot: { Args: { _project_id: string }; Returns: Json }
+      revoke_invoice_portal_token: {
+        Args: { _invoice_id: string }
         Returns: Json
       }
-      portal_get_proposal: { Args: { _token: string }; Returns: Json }
-      project_profit_snapshot: { Args: { _project_id: string }; Returns: Json }
+      revoke_proposal_portal_token: {
+        Args: { _proposal_id: string }
+        Returns: Json
+      }
+      send_proposal: { Args: { _proposal_id: string }; Returns: Json }
     }
     Enums: {
       ai_recommendation_status: "pending" | "approved" | "rejected"

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { FileText, Download, Sparkles, Loader2, Plus, Link2, RefreshCw } from "lucide-react";
+import { FileText, Download, Sparkles, Loader2, Plus, Link2, RefreshCw, Send, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -144,7 +144,8 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
-            <ClientLinkButtons proposalId={proposal.id} />
+            <SendProposalButton proposalId={proposal.id} status={proposal.status} />
+            <ClientLinkButtons proposalId={proposal.id} hasToken={!!proposal.portal_token} />
             <Button asChild variant="outline" size="sm">
               <a href={`/api/proposals/${proposal.id}/pdf`} target="_blank" rel="noreferrer">
                 <Download className="mr-1 h-4 w-4"/> PDF
@@ -264,7 +265,34 @@ function Field({ label, value, onChange, rows = 3 }: { label: string; value: any
   );
 }
 
-function ClientLinkButtons({ proposalId }: { proposalId: string }) {
+function SendProposalButton({ proposalId, status }: { proposalId: string; status: string }) {
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  async function send() {
+    setBusy(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)("send_proposal", { _proposal_id: proposalId });
+      if (error) throw error;
+      const r = data as any;
+      if (r?.error) throw new Error(r.error);
+      const url = `${window.location.origin}/portal/proposal/${r.token}`;
+      await navigator.clipboard.writeText(url);
+      toast.success("Proposal marked sent. Client link copied.");
+      qc.invalidateQueries({ queryKey: ["proposal"] });
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not send");
+    } finally { setBusy(false); }
+  }
+  const sent = status !== "draft";
+  return (
+    <Button size="sm" variant={sent ? "outline" : "default"} disabled={busy} onClick={send}>
+      <Send className="mr-1 h-4 w-4"/>{sent ? "Resend link" : "Send proposal"}
+    </Button>
+  );
+}
+
+function ClientLinkButtons({ proposalId, hasToken }: { proposalId: string; hasToken: boolean }) {
+  const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
   async function ensure(rotate: boolean) {
     setBusy(true);
@@ -285,14 +313,29 @@ function ClientLinkButtons({ proposalId }: { proposalId: string }) {
       setBusy(false);
     }
   }
+  async function revoke() {
+    setBusy(true);
+    try {
+      const { error } = await (supabase.rpc as any)("revoke_proposal_portal_token", { _proposal_id: proposalId });
+      if (error) throw error;
+      toast.success("Client link revoked.");
+      qc.invalidateQueries({ queryKey: ["proposal"] });
+    } catch (e: any) { toast.error(e.message ?? "Could not revoke"); }
+    finally { setBusy(false); }
+  }
   return (
     <>
       <Button variant="outline" size="sm" disabled={busy} onClick={() => ensure(false)}>
-        <Link2 className="mr-1 h-4 w-4"/> Copy client link
+        <Link2 className="mr-1 h-4 w-4"/> Copy link
       </Button>
       <Button variant="ghost" size="sm" disabled={busy} onClick={() => ensure(true)} title="Rotate link (invalidates old URL)">
         <RefreshCw className="h-4 w-4"/>
       </Button>
+      {hasToken && (
+        <Button variant="ghost" size="sm" disabled={busy} onClick={revoke} title="Revoke link">
+          <XCircle className="h-4 w-4 text-destructive"/>
+        </Button>
+      )}
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, FileText, Wallet, Ban, Sparkles, DollarSign, Layers, CheckCircle2 } from "lucide-react";
+import { Activity, FileText, Wallet, Ban, Sparkles, DollarSign, Layers, CheckCircle2, Send, Eye, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { PAYMENT_METHODS, DEPOSIT_STATUS_META } from "@/lib/finance";
 
 type EventKind =
   | "invoice_created"
+  | "invoice_sent"
+  | "invoice_viewed"
   | "payment_recorded"
   | "payment_voided"
   | "deposit_recorded"
@@ -17,7 +19,10 @@ type EventKind =
   | "deposit_voided"
   | "progress_billing_recorded"
   | "progress_billing_approved"
-  | "progress_billing_voided";
+  | "progress_billing_voided"
+  | "proposal_sent"
+  | "proposal_viewed"
+  | "proposal_signed";
 
 type TimelineEvent = {
   id: string;
@@ -43,10 +48,10 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
   const q = useQuery({
     queryKey: ["project-activity-timeline", projectId],
     queryFn: async (): Promise<TimelineEvent[]> => {
-      const [inv, pay, dep, pb] = await Promise.all([
+      const [inv, pay, dep, pb, props, sigs] = await Promise.all([
         supabase
           .from("invoices")
-          .select("id, invoice_number, total, created_at, proposal_id, estimate_id, proposals(proposal_number, title), estimates(estimate_number)")
+          .select("id, invoice_number, total, created_at, sent_at, viewed_at, proposal_id, estimate_id, proposals(proposal_number, title), estimates(estimate_number)")
           .eq("project_id", projectId),
         supabase
           .from("payments")
@@ -60,6 +65,14 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
           .from("progress_billings")
           .select("id, billing_number, percent_complete, amount_due, retainage, status, approved_at, created_at, updated_at, invoices(invoice_number)")
           .eq("project_id", projectId),
+        supabase
+          .from("proposals")
+          .select("id, proposal_number, sent_at, viewed_at")
+          .eq("project_id", projectId),
+        supabase
+          .from("proposal_signatures")
+          .select("id, signer_name, signed_at, proposal_id, proposals!inner(proposal_number, project_id)")
+          .eq("proposals.project_id", projectId),
       ]);
 
       const events: TimelineEvent[] = [];
@@ -79,6 +92,8 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
           detail: source ? `From ${source}` : "Manual invoice",
           amount: Number(i.total ?? 0),
         });
+        if (i.sent_at) events.push({ id: `inv-sent-${i.id}`, at: i.sent_at, kind: "invoice_sent", title: `Invoice ${i.invoice_number} sent to client`, amount: Number(i.total ?? 0) });
+        if (i.viewed_at) events.push({ id: `inv-viewed-${i.id}`, at: i.viewed_at, kind: "invoice_viewed", title: `Invoice ${i.invoice_number} viewed by client` });
       }
 
       for (const p of (pay.data ?? []) as any[]) {
@@ -163,6 +178,21 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
         }
       }
 
+      for (const p of (props.data ?? []) as any[]) {
+        if (p.sent_at) events.push({ id: `prop-sent-${p.id}`, at: p.sent_at, kind: "proposal_sent", title: `Proposal ${p.proposal_number} sent to client` });
+        if (p.viewed_at) events.push({ id: `prop-viewed-${p.id}`, at: p.viewed_at, kind: "proposal_viewed", title: `Proposal ${p.proposal_number} viewed by client` });
+      }
+
+      for (const s of (sigs.data ?? []) as any[]) {
+        events.push({
+          id: `sig-${s.id}`,
+          at: s.signed_at,
+          kind: "proposal_signed",
+          title: `Proposal ${s.proposals?.proposal_number ?? ""} signed by ${s.signer_name}`,
+        });
+      }
+
+
       return events.sort((a, b) => +new Date(b.at) - +new Date(a.at));
     },
   });
@@ -171,7 +201,7 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
   const [filter, setFilter] = useState<FilterKey>("all");
 
   const counts = useMemo(() => {
-    const c: Record<FilterKey, number> = { all: allEvents.length, invoices: 0, payments: 0, deposits: 0, progress: 0 };
+    const c: Record<FilterKey, number> = { all: allEvents.length, invoices: 0, payments: 0, deposits: 0, progress: 0, proposals: 0 };
     for (const e of allEvents) c[categoryOf(e.kind)]++;
     return c;
   }, [allEvents]);
@@ -246,10 +276,11 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
   );
 }
 
-type FilterKey = "all" | "invoices" | "payments" | "deposits" | "progress";
+type FilterKey = "all" | "invoices" | "payments" | "deposits" | "progress" | "proposals";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "All" },
+  { key: "proposals", label: "Proposals" },
   { key: "invoices", label: "Invoices" },
   { key: "payments", label: "Payments" },
   { key: "deposits", label: "Deposits" },
@@ -257,6 +288,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 ];
 
 function categoryOf(kind: EventKind): Exclude<FilterKey, "all"> {
+  if (kind.startsWith("proposal")) return "proposals";
   if (kind.startsWith("invoice")) return "invoices";
   if (kind.startsWith("payment")) return "payments";
   if (kind.startsWith("deposit")) return "deposits";
@@ -265,6 +297,8 @@ function categoryOf(kind: EventKind): Exclude<FilterKey, "all"> {
 
 const ICONS = {
   invoice_created: { icon: Sparkles, dot: "bg-sky-600" },
+  invoice_sent: { icon: Send, dot: "bg-sky-700" },
+  invoice_viewed: { icon: Eye, dot: "bg-sky-500" },
   payment_recorded: { icon: Wallet, dot: "bg-emerald-600" },
   payment_voided: { icon: Ban, dot: "bg-slate-500" },
   deposit_recorded: { icon: DollarSign, dot: "bg-amber-600" },
@@ -273,4 +307,10 @@ const ICONS = {
   progress_billing_recorded: { icon: Layers, dot: "bg-indigo-600" },
   progress_billing_approved: { icon: CheckCircle2, dot: "bg-emerald-700" },
   progress_billing_voided: { icon: Ban, dot: "bg-slate-500" },
+  proposal_sent: { icon: Send, dot: "bg-navy" },
+  proposal_viewed: { icon: Eye, dot: "bg-slate-600" },
+  proposal_signed: { icon: PenLine, dot: "bg-gold" },
 } satisfies Record<TimelineEvent["kind"], { icon: typeof FileText; dot: string }>;
+
+// Handle counts init for the new key
+

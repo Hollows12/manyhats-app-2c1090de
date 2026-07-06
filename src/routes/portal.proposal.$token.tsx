@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CheckCircle2, FileText, ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, FileText, ShieldCheck, AlertCircle, Loader2, PenLine, Type as TypeIcon, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatMoney, formatDate } from "@/lib/manyhats";
 import { INVOICE_STATUS_META } from "@/lib/finance";
 
@@ -52,20 +53,20 @@ export const Route = createFileRoute("/portal/proposal/$token")({
   }),
   component: PortalProposalPage,
   errorComponent: ({ error }) => (
-    <PortalShell>
-      <ErrorBox title="Something went wrong" body={error.message} />
-    </PortalShell>
+    <PortalShell><ErrorBox title="Something went wrong" body={error.message} /></PortalShell>
   ),
   notFoundComponent: () => (
-    <PortalShell>
-      <ErrorBox title="Proposal not found" body="This link is invalid or has been revoked." />
-    </PortalShell>
+    <PortalShell><ErrorBox title="Proposal not found" body="This link is invalid or has been revoked." /></PortalShell>
   ),
 });
 
 function PortalProposalPage() {
   const { token } = Route.useParams();
   const router = useRouter();
+
+  useEffect(() => {
+    (supabase.rpc as any)("portal_mark_proposal_viewed", { _token: token }).then(() => {});
+  }, [token]);
 
   const q = useQuery({
     queryKey: ["portal-proposal", token],
@@ -77,7 +78,7 @@ function PortalProposalPage() {
   });
 
   if (q.isLoading) {
-    return <PortalShell><div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin"/> Loading proposal…</div></PortalShell>;
+    return <PortalShell><div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading proposal…</div></PortalShell>;
   }
 
   const payload = q.data;
@@ -98,7 +99,7 @@ function PortalProposalPage() {
     <PortalShell>
       <header className="space-y-1">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline"><FileText className="mr-1 h-3 w-3"/>{proposal.proposal_number}</Badge>
+          <Badge variant="outline"><FileText className="mr-1 h-3 w-3" />{proposal.proposal_number}</Badge>
           <Badge variant={accepted ? "default" : "outline"} className="capitalize">{proposal.status}</Badge>
           {proposal.sent_at && <span>Sent {formatDate(proposal.sent_at)}</span>}
         </div>
@@ -109,7 +110,6 @@ function PortalProposalPage() {
         )}
       </header>
 
-      {/* Proposal body */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="md:col-span-2">
           <CardHeader><CardTitle className="text-sm">Proposal</CardTitle></CardHeader>
@@ -147,7 +147,6 @@ function PortalProposalPage() {
         </div>
       </div>
 
-      {/* Invoices */}
       {invoices.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -176,11 +175,10 @@ function PortalProposalPage() {
         </Card>
       )}
 
-      {/* Accept */}
       {accepted ? (
         <Card className="border-emerald-200 bg-emerald-50">
           <CardContent className="flex items-center gap-2 py-4 text-sm text-emerald-800">
-            <CheckCircle2 className="h-5 w-5"/>
+            <CheckCircle2 className="h-5 w-5" />
             Proposal accepted{proposal.approved_at ? ` on ${formatDate(proposal.approved_at)}` : ""}. Thank you!
           </CardContent>
         </Card>
@@ -189,7 +187,7 @@ function PortalProposalPage() {
       )}
 
       <p className="pt-4 text-center text-[11px] text-muted-foreground">
-        <ShieldCheck className="inline h-3 w-3 mr-1"/> Secure link. Do not share this URL — anyone with it can view this proposal.
+        <ShieldCheck className="inline h-3 w-3 mr-1" /> Secure link. Do not share this URL — anyone with it can view this proposal.
       </p>
     </PortalShell>
   );
@@ -212,6 +210,11 @@ function AcceptForm({ token, options, onAccepted }: {
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [terms, setTerms] = useState(false);
+  const [mode, setMode] = useState<"typed" | "drawn">("typed");
+  const [drawnData, setDrawnData] = useState<string | null>(null);
+
   const recommendedId = useMemo(
     () => options.find((o) => o.is_recommended)?.id ?? options[0]?.id ?? null,
     [options],
@@ -220,11 +223,16 @@ function AcceptForm({ token, options, onAccepted }: {
 
   const accept = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("portal_accept_proposal", {
+      const sigData = mode === "drawn" ? drawnData : name;
+      const { data, error } = await (supabase.rpc as any)("portal_accept_proposal", {
         _token: token,
         _signer_name: name,
-        _signer_email: email || (null as unknown as string),
-        _selected_option_id: (selected ?? null) as unknown as string,
+        _signer_email: email || null,
+        _selected_option_id: selected ?? null,
+        _signature_data: sigData,
+        _signer_phone: phone || null,
+        _terms_accepted: terms,
+        _signature_kind: mode,
       });
       if (error) throw error;
       const r = data as any;
@@ -234,6 +242,8 @@ function AcceptForm({ token, options, onAccepted }: {
     onSuccess: () => { toast.success("Proposal accepted. Thank you!"); onAccepted(); },
     onError: (e: any) => toast.error(e.message ?? "Could not accept"),
   });
+
+  const canSubmit = name.trim().length >= 2 && terms && (mode === "typed" || (drawnData && drawnData.length > 100));
 
   return (
     <Card>
@@ -256,26 +266,115 @@ function AcceptForm({ token, options, onAccepted }: {
             </div>
           </div>
         )}
-        <div className="grid gap-3 sm:grid-cols-2">
+
+        <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <Label className="text-xs">Your full name (typed signature) *</Label>
+            <Label className="text-xs">Full name *</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Smith" />
           </div>
           <div>
-            <Label className="text-xs">Email (optional)</Label>
+            <Label className="text-xs">Email</Label>
             <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@example.com" />
           </div>
+          <div>
+            <Label className="text-xs">Phone</Label>
+            <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-5555" />
+          </div>
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          By typing your name and clicking Accept, you agree to the scope, pricing, and terms above. Your acceptance is legally binding and a copy is kept on file.
-        </p>
-        <Button className="w-full" disabled={accept.isPending || name.trim().length < 2}
+
+        <div>
+          <div className="flex gap-1 mb-2">
+            <Button type="button" size="sm" variant={mode === "typed" ? "default" : "outline"} onClick={() => setMode("typed")}>
+              <TypeIcon className="mr-1 h-3 w-3" />Type
+            </Button>
+            <Button type="button" size="sm" variant={mode === "drawn" ? "default" : "outline"} onClick={() => setMode("drawn")}>
+              <PenLine className="mr-1 h-3 w-3" />Draw
+            </Button>
+          </div>
+          {mode === "typed" ? (
+            <div className="rounded-md border bg-muted/30 px-4 py-6 text-center">
+              <span className="font-signature text-2xl italic" style={{ fontFamily: "'Great Vibes', 'Brush Script MT', cursive" }}>
+                {name || <span className="text-muted-foreground text-sm not-italic">Your signature will appear as typed name</span>}
+              </span>
+            </div>
+          ) : (
+            <SignaturePad onChange={setDrawnData} />
+          )}
+        </div>
+
+        <div className="flex items-start gap-2">
+          <Checkbox id="terms" checked={terms} onCheckedChange={(v) => setTerms(!!v)} className="mt-0.5" />
+          <Label htmlFor="terms" className="text-xs leading-relaxed">
+            I agree to the scope, pricing, and terms above. My electronic signature is legally binding and a copy is kept on file.
+          </Label>
+        </div>
+
+        <Button className="w-full" disabled={accept.isPending || !canSubmit}
           onClick={() => accept.mutate()}>
-          {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle2 className="mr-2 h-4 w-4"/>}
+          {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
           Accept proposal
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawing = useRef(false);
+  const last = useRef<{ x: number; y: number } | null>(null);
+
+  function pos(e: React.PointerEvent) {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+  function start(e: React.PointerEvent) {
+    drawing.current = true;
+    last.current = pos(e);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }
+  function move(e: React.PointerEvent) {
+    if (!drawing.current || !last.current) return;
+    const p = pos(e);
+    const ctx = canvasRef.current!.getContext("2d")!;
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(last.current.x, last.current.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    last.current = p;
+  }
+  function end() {
+    drawing.current = false;
+    last.current = null;
+    onChange(canvasRef.current!.toDataURL("image/png"));
+  }
+  function clear() {
+    const c = canvasRef.current!;
+    c.getContext("2d")!.clearRect(0, 0, c.width, c.height);
+    onChange(null);
+  }
+
+  return (
+    <div>
+      <canvas
+        ref={canvasRef}
+        width={600}
+        height={140}
+        className="w-full h-32 rounded-md border bg-white touch-none"
+        onPointerDown={start}
+        onPointerMove={move}
+        onPointerUp={end}
+        onPointerLeave={end}
+      />
+      <div className="mt-1 flex justify-end">
+        <Button type="button" size="sm" variant="ghost" onClick={clear}>
+          <Eraser className="mr-1 h-3 w-3" /> Clear
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -293,7 +392,7 @@ function ErrorBox({ title, body }: { title: string; body: string }) {
   return (
     <Card>
       <CardContent className="py-8 text-center space-y-2">
-        <AlertCircle className="mx-auto h-8 w-8 text-amber-600"/>
+        <AlertCircle className="mx-auto h-8 w-8 text-amber-600" />
         <div className="font-display text-lg font-semibold">{title}</div>
         <div className="text-sm text-muted-foreground">{body}</div>
       </CardContent>
