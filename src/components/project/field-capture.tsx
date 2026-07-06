@@ -310,3 +310,130 @@ function MeasurementsSection({ projectId }: { projectId: string }) {
   );
 }
 
+function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [category, setCategory] = useState<BulkCategory>("project");
+  const [files, setFiles] = useState<File[]>([]);
+  const [caption, setCaption] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [done, setDone] = useState(0);
+
+  function reset() {
+    setFiles([]); setCaption(""); setProgress(0); setDone(0); setCategory("project");
+  }
+
+  async function handleUpload() {
+    if (files.length === 0) { toast.error("Select at least one file."); return; }
+    setBusy(true); setProgress(0); setDone(0);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const meta = bulkMetaFor(category);
+      let ok = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const safe = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+        if (category === "receipts") {
+          const path = `receipts/${projectId}/${Date.now()}-${i}-${safe}`;
+          const { error: upErr } = await supabase.storage.from("field-photos").upload(path, file);
+          if (upErr) throw upErr;
+          const { error } = await (supabase as any).from("receipts").insert({
+            project_id: projectId, uploaded_by: user?.id, storage_path: path,
+            vendor: null, amount: 0, category: "material",
+            purchased_at: new Date().toISOString().slice(0, 10),
+            notes: caption || null,
+          });
+          if (error) throw error;
+        } else {
+          const path = `${projectId}/${Date.now()}-${i}-${safe}`;
+          const { error: upErr } = await supabase.storage.from("field-photos").upload(path, file);
+          if (upErr) throw upErr;
+          const { error } = await supabase.from("project_photos").insert({
+            project_id: projectId,
+            storage_path: path,
+            is_real_site_photo: true,
+            uploaded_by: user?.id,
+            captured_at: new Date().toISOString(),
+            caption: caption || null,
+            phase: meta.phase,
+            tags: meta.tags,
+            proposal_include: meta.proposal_include,
+            is_client_facing: meta.is_client_facing,
+          } as any);
+          if (error) throw error;
+        }
+        ok++;
+        setDone(ok);
+        setProgress(Math.round((ok / files.length) * 100));
+      }
+      toast.success(`Uploaded ${ok} ${category === "receipts" ? "receipt(s)" : "photo(s)"}.`);
+      onDone();
+      setOpen(false);
+      reset();
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const hint = BULK_CATEGORIES.find((c) => c.value === category)?.hint;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!busy) { setOpen(v); if (!v) reset(); } }}>
+      <DialogTrigger asChild>
+        <Button size="sm"><Layers className="mr-1 h-4 w-4"/>Bulk upload</Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display">Bulk upload</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label className="text-xs">Category</Label>
+            <Select value={category} onValueChange={(v) => setCategory(v as BulkCategory)}>
+              <SelectTrigger><SelectValue/></SelectTrigger>
+              <SelectContent>
+                {BULK_CATEGORIES.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
+          </div>
+          <div>
+            <Label className="text-xs">Files</Label>
+            <Input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            />
+            {files.length > 0 && (
+              <p className="mt-1 text-[11px] text-muted-foreground">{files.length} file(s) selected</p>
+            )}
+          </div>
+          <div>
+            <Label className="text-xs">Caption / note (applied to all)</Label>
+            <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Optional" />
+          </div>
+          {busy && (
+            <div className="space-y-1">
+              <Progress value={progress} />
+              <p className="text-[11px] text-muted-foreground">{done} / {files.length} uploaded</p>
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => { if (!busy) { setOpen(false); reset(); } }} disabled={busy}>Cancel</Button>
+          <Button onClick={handleUpload} disabled={busy || files.length === 0}>
+            <Upload className="mr-1 h-4 w-4"/>
+            {busy ? `Uploading ${done}/${files.length}…` : `Upload ${files.length || ""}`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
