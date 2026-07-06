@@ -178,6 +178,21 @@ export function ActivityTimeline({ projectId }: { projectId: string }) {
         }
       }
 
+      for (const p of (props.data ?? []) as any[]) {
+        if (p.sent_at) events.push({ id: `prop-sent-${p.id}`, at: p.sent_at, kind: "proposal_sent", title: `Proposal ${p.proposal_number} sent to client` });
+        if (p.viewed_at) events.push({ id: `prop-viewed-${p.id}`, at: p.viewed_at, kind: "proposal_viewed", title: `Proposal ${p.proposal_number} viewed by client` });
+      }
+
+      for (const s of (sigs.data ?? []) as any[]) {
+        events.push({
+          id: `sig-${s.id}`,
+          at: s.signed_at,
+          kind: "proposal_signed",
+          title: `Proposal ${s.proposals?.proposal_number ?? ""} signed by ${s.signer_name}`,
+        });
+      }
+
+
       return events.sort((a, b) => +new Date(b.at) - +new Date(a.at));
     },
   });
