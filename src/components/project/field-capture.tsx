@@ -323,10 +323,29 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
+
+  function addFiles(incoming: File[]) {
+    const isReceipts = category === "receipts";
+    const filtered = incoming.filter((f) =>
+      isReceipts ? (f.type.startsWith("image/") || f.type === "application/pdf") : f.type.startsWith("image/"),
+    );
+    if (filtered.length === 0) { toast.error("No supported files found."); return; }
+    setFiles((prev) => {
+      const seen = new Set(prev.map((f) => `${f.name}-${f.size}-${f.lastModified}`));
+      const merged = [...prev];
+      for (const f of filtered) {
+        const key = `${f.name}-${f.size}-${f.lastModified}`;
+        if (!seen.has(key)) { seen.add(key); merged.push(f); }
+      }
+      return merged;
+    });
+  }
 
   function reset() {
-    setFiles([]); setCaption(""); setProgress(0); setDone(0); setCategory("project");
+    setFiles([]); setCaption(""); setProgress(0); setDone(0); setCategory("project"); setDragOver(false);
   }
+
 
   async function handleUpload() {
     if (files.length === 0) { toast.error("Select at least one file."); return; }
