@@ -21,6 +21,9 @@ import { ProjectConcepts } from "@/components/project/concepts";
 import { ProjectJobMgmt } from "@/components/project/job-mgmt";
 import { ProjectCosting } from "@/components/project/costing";
 import { ProjectFinancial } from "@/components/project/financial";
+import { ProjectVoiceNotes } from "@/components/project/voice-recorder";
+import { ProjectReceipts } from "@/components/project/receipts";
+import { ProjectDailyLog } from "@/components/project/daily-log";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   component: ProjectDetail,
