@@ -135,6 +135,8 @@ function ProjectDetail() {
         <TabsContent value="job" className="mt-6"><ProjectJobMgmt projectId={id} /></TabsContent>
         <TabsContent value="costing" className="mt-6"><ProjectCosting projectId={id} /></TabsContent>
         <TabsContent value="financial" className="mt-6"><ProjectFinancial projectId={id} /></TabsContent>
+        <TabsContent value="clientfile" className="mt-6"><ClientFileTab projectId={id} /></TabsContent>
+
         {isHome && <TabsContent value="home" className="mt-6"><SpecialtyPlaceholder name="Home Builder Pro" /></TabsContent>}
         {isContainer && <TabsContent value="container" className="mt-6"><SpecialtyPlaceholder name="Container Build Pro" /></TabsContent>}
         {isHistoric && <TabsContent value="historic" className="mt-6"><SpecialtyPlaceholder name="Historic Restoration Pro" /></TabsContent>}
