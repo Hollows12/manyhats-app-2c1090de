@@ -174,3 +174,54 @@ function Metric({ label, value }: { label: string; value: number | undefined }) 
     </Card>
   );
 }
+
+function FinanceKpis() {
+  const q = useQuery({
+    queryKey: ["dash", "finance"],
+    queryFn: async () => {
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const iso = monthStart.toISOString();
+      const [invAll, payAll, payMonth, invMonth, propsOpen, depsPending] = await Promise.all([
+        supabase.from("invoices").select("total,balance_due,status"),
+        supabase.from("payments").select("amount,is_void"),
+        supabase.from("payments").select("amount,is_void").gte("payment_date", iso.slice(0, 10)),
+        supabase.from("invoices").select("total").gte("invoice_date", iso.slice(0, 10)),
+        supabase.from("proposals").select("id,proposal_options(price,is_selected)").in("status", ["sent", "draft"]),
+        supabase.from("deposits").select("amount,status"),
+      ]);
+      const outstanding = (invAll.data ?? []).filter((i: any) => i.status !== "void").reduce((s: number, i: any) => s + Number(i.balance_due), 0);
+      const revenueMonth = (invMonth.data ?? []).reduce((s: number, i: any) => s + Number(i.total), 0);
+      const paidMonth = (payMonth.data ?? []).filter((p: any) => !p.is_void).reduce((s: number, p: any) => s + Number(p.amount), 0);
+      const openProposalValue = (propsOpen.data ?? []).reduce((s: number, p: any) => {
+        const sel = (p.proposal_options ?? []).find((o: any) => o.is_selected) ?? p.proposal_options?.[0];
+        return s + Number(sel?.price ?? 0);
+      }, 0);
+      const depositsDue = (depsPending.data ?? []).filter((d: any) => d.status === "pending" || d.status === "invoiced").reduce((s: number, d: any) => s + Number(d.amount), 0);
+      return { outstanding, revenueMonth, paidMonth, openProposalValue, depositsDue };
+    },
+  });
+  const d = q.data;
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <FKpi icon={Receipt} label="Revenue (Month)" value={formatMoney(d?.revenueMonth ?? 0)} />
+      <FKpi icon={Wallet} label="Payments (Month)" value={formatMoney(d?.paidMonth ?? 0)} tone="emerald" />
+      <FKpi icon={AlertCircle} label="Outstanding" value={formatMoney(d?.outstanding ?? 0)} tone="amber" />
+      <FKpi icon={DollarSign} label="Deposits Due" value={formatMoney(d?.depositsDue ?? 0)} />
+      <FKpi icon={FileText} label="Open Proposals" value={formatMoney(d?.openProposalValue ?? 0)} />
+    </div>
+  );
+}
+
+function FKpi({ icon: Icon, label, value, tone }: { icon: any; label: string; value: string; tone?: string }) {
+  const t = tone === "emerald" ? "text-emerald-700" : tone === "amber" ? "text-amber-700" : "text-navy";
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground"><Icon className="h-3 w-3" />{label}</div>
+        <div className={`mt-1 font-display text-xl font-bold tabular-nums ${t}`}>{value}</div>
+      </CardContent>
+    </Card>
+  );
+}
