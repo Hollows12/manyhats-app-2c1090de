@@ -24,6 +24,7 @@ import {
   generateInvoiceNumber, type ProfitSnapshot,
 } from "@/lib/finance";
 import { GenerateInvoiceDialog } from "./generate-invoice-dialog";
+import { ActivityTimeline } from "./activity-timeline";
 
 export function ProjectFinancial({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
@@ -79,6 +80,7 @@ export function ProjectFinancial({ projectId }: { projectId: string }) {
     qc.invalidateQueries({ queryKey: ["project-profit-snapshot", projectId] });
     qc.invalidateQueries({ queryKey: ["project-deposits", projectId] });
     qc.invalidateQueries({ queryKey: ["project-progress-billings", projectId] });
+    qc.invalidateQueries({ queryKey: ["project-activity-timeline", projectId] });
   }
 
   const snap = snapshot.data;
@@ -132,6 +134,9 @@ export function ProjectFinancial({ projectId }: { projectId: string }) {
 
       {/* PROGRESS BILLINGS */}
       <ProgressBillingsSection projectId={projectId} items={progress.data ?? []} onChanged={invalidateAll} />
+
+      {/* ACTIVITY TIMELINE */}
+      <ActivityTimeline projectId={projectId} />
     </div>
   );
 }
