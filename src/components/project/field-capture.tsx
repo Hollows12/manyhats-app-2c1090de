@@ -638,15 +638,32 @@ function BulkUploadDialog({ projectId, onDone }: { projectId: string; onDone: ()
             <Button variant="destructive" onClick={handleCancel}>
               <X className="mr-1 h-4 w-4" />Cancel upload
             </Button>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => { setOpen(false); reset(); }}>Close</Button>
-              <Button onClick={() => handleUpload()} disabled={files.length === 0}>
-                <Upload className="mr-1 h-4 w-4"/>
-                Upload {files.length || ""}
-              </Button>
-            </>
-          )}
+          ) : (() => {
+            const failedIdx = states
+              .map((s, idx) => (s?.status === "error" ? idx : -1))
+              .filter((i) => i >= 0);
+            const pendingIdx = states
+              .map((s, idx) => (!s || s.status === "pending" ? idx : -1))
+              .filter((i) => i >= 0 && i < files.length);
+            return (
+              <>
+                <Button variant="outline" onClick={() => { setOpen(false); reset(); }}>Close</Button>
+                {failedIdx.length > 0 && (
+                  <Button variant="secondary" onClick={() => handleUpload(failedIdx)}>
+                    <RotateCw className="mr-1 h-4 w-4" />
+                    Retry failed ({failedIdx.length})
+                  </Button>
+                )}
+                <Button
+                  onClick={() => handleUpload(pendingIdx.length > 0 && pendingIdx.length < files.length ? pendingIdx : undefined)}
+                  disabled={files.length === 0}
+                >
+                  <Upload className="mr-1 h-4 w-4"/>
+                  Upload {files.length || ""}
+                </Button>
+              </>
+            );
+          })()}
         </DialogFooter>
 
       </DialogContent>
