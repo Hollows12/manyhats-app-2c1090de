@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
   Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
-  BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus,
+  BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus, Receipt, Wallet,
 } from "lucide-react";
 
 
@@ -29,6 +29,11 @@ const BUILD = [
   { title: "Proposals", url: "/proposals", icon: FileText },
   { title: "Concept Studio", url: "/concept-studio", icon: Sparkles },
 ];
+const FINANCIAL = [
+  { title: "Invoices", url: "/invoices", icon: Receipt },
+  { title: "Payments", url: "/payments", icon: Wallet },
+  { title: "Job Costing", url: "/job-costing", icon: TrendingUp },
+];
 const PRO = [
   { title: "Home Builder Pro", url: "/home-builder", icon: Home },
   { title: "Container Build Pro", url: "/container-builds", icon: Container },
@@ -38,7 +43,6 @@ const PRO = [
 const OPS = [
   { title: "Smart Pricing", url: "/pricing", icon: DollarSign },
   { title: "Job Management", url: "/job-management", icon: ClipboardList },
-  { title: "Job Costing", url: "/job-costing", icon: TrendingUp },
   { title: "Knowledge Base", url: "/knowledge-base", icon: BookOpen },
 ];
 
@@ -91,6 +95,7 @@ export function AppSidebar() {
       <SidebarContent>
         {renderGroup("Pipeline", PIPELINE)}
         {renderGroup("Estimating & Proposals", BUILD)}
+        {renderGroup("Financial", FINANCIAL)}
         {renderGroup("Pro Modules", PRO)}
         {renderGroup("Operations", OPS)}
         <SidebarGroup>

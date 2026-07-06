@@ -20,6 +20,7 @@ import { ProjectProposal } from "@/components/project/proposal";
 import { ProjectConcepts } from "@/components/project/concepts";
 import { ProjectJobMgmt } from "@/components/project/job-mgmt";
 import { ProjectCosting } from "@/components/project/costing";
+import { ProjectFinancial } from "@/components/project/financial";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   component: ProjectDetail,
@@ -101,6 +102,7 @@ function ProjectDetail() {
           <TabsTrigger value="concept">Concept Studio</TabsTrigger>
           <TabsTrigger value="job">Job Management</TabsTrigger>
           <TabsTrigger value="costing">Job Costing</TabsTrigger>
+          <TabsTrigger value="financial">Financial</TabsTrigger>
           {isHome && <TabsTrigger value="home">Home Builder</TabsTrigger>}
           {isContainer && <TabsTrigger value="container">Container Pro</TabsTrigger>}
           {isHistoric && <TabsTrigger value="historic">Historic Pro</TabsTrigger>}
@@ -119,6 +121,7 @@ function ProjectDetail() {
         <TabsContent value="concept" className="mt-6"><ProjectConcepts projectId={id} /></TabsContent>
         <TabsContent value="job" className="mt-6"><ProjectJobMgmt projectId={id} /></TabsContent>
         <TabsContent value="costing" className="mt-6"><ProjectCosting projectId={id} /></TabsContent>
+        <TabsContent value="financial" className="mt-6"><ProjectFinancial projectId={id} /></TabsContent>
         {isHome && <TabsContent value="home" className="mt-6"><SpecialtyPlaceholder name="Home Builder Pro" /></TabsContent>}
         {isContainer && <TabsContent value="container" className="mt-6"><SpecialtyPlaceholder name="Container Build Pro" /></TabsContent>}
         {isHistoric && <TabsContent value="historic" className="mt-6"><SpecialtyPlaceholder name="Historic Restoration Pro" /></TabsContent>}
