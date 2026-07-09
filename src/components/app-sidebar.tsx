@@ -3,9 +3,11 @@ import {
   LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
   Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
   BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus, Receipt, Wallet,
-  ShieldAlert,
+  ShieldAlert, GitBranch,
 } from "lucide-react";
 import { useRole } from "@/hooks/use-auth";
+
+
 
 
 
@@ -123,14 +125,24 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {role === "admin" && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive("/admin/logs")} tooltip="Admin logs">
-                    <Link to="/admin/logs" className="flex items-center gap-3">
-                      <ShieldAlert className="h-4 w-4 shrink-0 text-gold" />
-                      {!collapsed && <span>Admin logs</span>}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive("/admin/logs")} tooltip="Admin logs">
+                      <Link to="/admin/logs" className="flex items-center gap-3">
+                        <ShieldAlert className="h-4 w-4 shrink-0 text-gold" />
+                        {!collapsed && <span>Admin logs</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive("/admin/git-sync")} tooltip="Git sync">
+                      <Link to="/admin/git-sync" className="flex items-center gap-3">
+                        <GitBranch className="h-4 w-4 shrink-0 text-gold" />
+                        {!collapsed && <span>Git sync</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
 
             </SidebarMenu>
