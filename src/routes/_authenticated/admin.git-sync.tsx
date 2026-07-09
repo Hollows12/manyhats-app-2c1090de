@@ -8,15 +8,21 @@ import {
   ArrowDown,
   CheckCircle2,
   AlertTriangle,
+  AlertCircle,
   Loader2,
   RefreshCw,
   ExternalLink,
+  KeyRound,
+  Info,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getGitSyncStatus } from "@/lib/git-sync.functions";
+import {
+  getGitSyncStatus,
+  type GitSyncIssue,
+} from "@/lib/git-sync.functions";
 import { formatDate } from "@/lib/manyhats";
 
 export const Route = createFileRoute("/_authenticated/admin/git-sync")({
@@ -47,8 +53,12 @@ function GitSyncPage() {
   });
 
   const s = q.data;
+  const hasBlockingError = s?.issues?.some((i) => i.severity === "error");
   const inSync =
-    s?.configured && s.aheadBy === 0 && s.behindBy === 0 && !s.error;
+    s?.configured &&
+    !hasBlockingError &&
+    s.aheadBy === 0 &&
+    s.behindBy === 0;
 
   return (
     <div className="space-y-6 p-4 md:p-8">
@@ -89,130 +99,181 @@ function GitSyncPage() {
             Checking GitHub…
           </CardContent>
         </Card>
-      ) : !s ? null : !s.configured ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <AlertTriangle className="h-4 w-4 text-amber-500" /> Not configured
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>{s.error}</p>
-            <p>
-              Add a <code className="rounded bg-muted px-1">GITHUB_REPO</code>{" "}
-              secret (e.g. <code className="rounded bg-muted px-1">owner/name</code>).
-              Optional:{" "}
-              <code className="rounded bg-muted px-1">GITHUB_BRANCH</code>,{" "}
-              <code className="rounded bg-muted px-1">GITHUB_TOKEN</code>,{" "}
-              <code className="rounded bg-muted px-1">BUILD_COMMIT_SHA</code>.
-            </p>
-          </CardContent>
-        </Card>
-      ) : s.error ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <AlertTriangle className="h-4 w-4 text-destructive" /> Error
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">
-            <pre className="max-h-40 overflow-auto rounded bg-muted/40 p-2 text-[11px]">
-              {s.error}
-            </pre>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm">
-                {inSync ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" /> In sync
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-4 w-4 text-amber-500" /> Out of sync
-                  </>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <Row label="Repository" value={s.repo} />
-              <Row label="Branch" value={s.branch} />
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1">
-                  <ArrowDown className="h-3 w-3 text-amber-500" />
-                  <span className="font-mono text-lg font-semibold">
-                    {s.behindBy ?? "—"}
-                  </span>
-                  <span className="text-xs text-muted-foreground">behind</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <ArrowUp className="h-3 w-3 text-sky-500" />
-                  <span className="font-mono text-lg font-semibold">
-                    {s.aheadBy ?? "—"}
-                  </span>
-                  <span className="text-xs text-muted-foreground">ahead</span>
-                </div>
-              </div>
-              <Row
-                label="Last checked"
-                value={formatDate(s.checkedAt)}
-              />
-            </CardContent>
-          </Card>
+      ) : !s ? null : (
+        <>
+          {s.issues.length > 0 && (
+            <div className="space-y-3">
+              {s.issues.map((issue, i) => (
+                <IssueCard key={i} issue={issue} />
+              ))}
+            </div>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Latest commit on {s.branch}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <Row
-                label="SHA"
-                value={
-                  <span className="font-mono text-xs">
-                    {s.latestSha?.slice(0, 10)}
-                  </span>
-                }
-              />
-              <Row label="Author" value={s.latestAuthor} />
-              <Row
-                label="Committed"
-                value={s.latestCommitAt ? formatDate(s.latestCommitAt) : "—"}
-              />
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Message
-                </div>
-                <div className="mt-1 truncate">{s.latestMessage ?? "—"}</div>
-              </div>
-              <Row
-                label="Deployed SHA"
-                value={
-                  s.deployedSha ? (
-                    <span className="font-mono text-xs">
-                      {s.deployedSha.slice(0, 10)}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      unknown (set BUILD_COMMIT_SHA)
-                    </span>
-                  )
-                }
-              />
-              {s.htmlUrl && (
-                <Button asChild variant="outline" size="sm">
-                  <a href={s.htmlUrl} target="_blank" rel="noreferrer">
-                    View on GitHub <ExternalLink className="ml-1 h-3 w-3" />
-                  </a>
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+          {s.configured && !hasBlockingError && (
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    {inSync ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" /> In
+                        sync
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="h-4 w-4 text-amber-500" /> Out
+                        of sync
+                      </>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <Row label="Repository" value={s.repo} />
+                  <Row label="Branch" value={s.branch} />
+                  <Row
+                    label="Auth"
+                    value={
+                      s.hasToken ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-600">
+                          <KeyRound className="h-3 w-3" /> Token attached
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                          <Info className="h-3 w-3" /> Anonymous (60 req/hr)
+                        </span>
+                      )
+                    }
+                  />
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <ArrowDown className="h-3 w-3 text-amber-500" />
+                      <span className="font-mono text-lg font-semibold">
+                        {s.behindBy ?? "—"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        behind
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <ArrowUp className="h-3 w-3 text-sky-500" />
+                      <span className="font-mono text-lg font-semibold">
+                        {s.aheadBy ?? "—"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ahead
+                      </span>
+                    </div>
+                  </div>
+                  <Row label="Last checked" value={formatDate(s.checkedAt)} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">
+                    Latest commit on {s.branch}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <Row
+                    label="SHA"
+                    value={
+                      <span className="font-mono text-xs">
+                        {s.latestSha?.slice(0, 10)}
+                      </span>
+                    }
+                  />
+                  <Row label="Author" value={s.latestAuthor} />
+                  <Row
+                    label="Committed"
+                    value={
+                      s.latestCommitAt ? formatDate(s.latestCommitAt) : "—"
+                    }
+                  />
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Message
+                    </div>
+                    <div className="mt-1 truncate">
+                      {s.latestMessage ?? "—"}
+                    </div>
+                  </div>
+                  <Row
+                    label="Deployed SHA"
+                    value={
+                      s.deployedSha ? (
+                        <span className="font-mono text-xs">
+                          {s.deployedSha.slice(0, 10)}
+                          {s.deployedShaSource && (
+                            <span className="ml-1 text-[10px] text-muted-foreground">
+                              ({s.deployedShaSource})
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          unknown
+                        </span>
+                      )
+                    }
+                  />
+                  {s.htmlUrl && (
+                    <Button asChild variant="outline" size="sm">
+                      <a href={s.htmlUrl} target="_blank" rel="noreferrer">
+                        View on GitHub{" "}
+                        <ExternalLink className="ml-1 h-3 w-3" />
+                      </a>
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+function IssueCard({ issue }: { issue: GitSyncIssue }) {
+  const isError = issue.severity === "error";
+  const Icon = isError ? AlertCircle : AlertTriangle;
+  const tone = isError
+    ? "border-destructive/40 bg-destructive/5"
+    : "border-amber-500/40 bg-amber-500/5";
+  const iconTone = isError ? "text-destructive" : "text-amber-500";
+
+  return (
+    <Card className={tone}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-start gap-2 text-sm">
+          <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${iconTone}`} />
+          <div className="flex-1">
+            <div>{issue.title}</div>
+            {issue.status && (
+              <Badge variant="outline" className="mt-1 font-mono text-[10px]">
+                HTTP {issue.status}
+              </Badge>
+            )}
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <p className="text-muted-foreground">{issue.detail}</p>
+        {issue.remediation.length > 0 && (
+          <div>
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              How to fix
+            </div>
+            <ul className="list-disc space-y-1 pl-5 text-sm">
+              {issue.remediation.map((r, i) => (
+                <li key={i}>{r}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
