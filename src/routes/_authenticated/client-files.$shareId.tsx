@@ -82,6 +82,12 @@ function copy(text: string, label: string) {
 function ShareDetailsPage() {
   const { shareId } = Route.useParams();
   const qc = useQueryClient();
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [ipQuery, setIpQuery] = useState("");
+  const [uaQuery, setUaQuery] = useState("");
+  const [platform, setPlatform] = useState<string>("all");
+
 
   const share = useQuery({
     queryKey: ["client-file-share", shareId],
