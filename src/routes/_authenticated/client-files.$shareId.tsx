@@ -353,69 +353,22 @@ function ShareDetailsPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <Eye className="h-4 w-4 text-gold" /> Access history
-            <Badge variant="outline" className="ml-1">
-              {s.view_count} total
-            </Badge>
-            {s.last_viewed_at && (
-              <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" /> last{" "}
-                {formatDate(s.last_viewed_at)}
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {views.isLoading ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              <Loader2 className="mx-auto mb-2 h-4 w-4 animate-spin" />
-              Loading views…
-            </div>
-          ) : (views.data ?? []).length === 0 ? (
-            <EmptyState
-              icon={Eye}
-              title="No views yet"
-              description="Client views will appear here after they open the portal."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  <tr className="border-b border-border/60">
-                    <th className="py-2 pr-4">When</th>
-                    <th className="py-2 pr-4">IP</th>
-                    <th className="py-2">User agent</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(views.data ?? []).map((v) => (
-                    <tr
-                      key={v.id}
-                      className="border-b border-border/30 last:border-0"
-                    >
-                      <td className="py-2 pr-4 whitespace-nowrap">
-                        {formatDate(v.viewed_at)}
-                      </td>
-                      <td className="py-2 pr-4 font-mono text-xs">
-                        {v.ip_address ?? "—"}
-                      </td>
-                      <td
-                        className="max-w-md truncate py-2 text-xs text-muted-foreground"
-                        title={v.user_agent ?? undefined}
-                      >
-                        {v.user_agent ?? "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <AccessHistoryCard
+        views={views.data ?? []}
+        loading={views.isLoading}
+        totalViews={s.view_count}
+        lastViewedAt={s.last_viewed_at}
+        fromDate={fromDate}
+        toDate={toDate}
+        ipQuery={ipQuery}
+        uaQuery={uaQuery}
+        platform={platform}
+        onFromDate={setFromDate}
+        onToDate={setToDate}
+        onIp={setIpQuery}
+        onUa={setUaQuery}
+        onPlatform={setPlatform}
+      />
     </div>
   );
 }
