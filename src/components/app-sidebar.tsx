@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
   Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
   BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus, Receipt, Wallet,
-  ShieldAlert, GitBranch,
+  ShieldAlert, GitBranch, FolderLock,
 } from "lucide-react";
 import { useRole } from "@/hooks/use-auth";
 
@@ -28,6 +28,7 @@ const PIPELINE = [
   { title: "Clients", url: "/clients", icon: Users },
   { title: "Projects", url: "/projects", icon: Briefcase },
   { title: "Field Capture", url: "/field-capture", icon: Camera },
+  { title: "Client Files", url: "/client-files", icon: FolderLock },
 ];
 const BUILD = [
   { title: "Estimates", url: "/estimates", icon: Calculator },
