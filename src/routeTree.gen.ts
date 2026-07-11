@@ -37,6 +37,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedContainerBuildsRouteImport } from './routes/_authenticated/container-builds'
 import { Route as AuthenticatedConceptStudioRouteImport } from './routes/_authenticated/concept-studio'
 import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedClientFilesRouteImport } from './routes/_authenticated/client-files'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as PortalProposalTokenRouteImport } from './routes/portal.proposal.$token'
@@ -196,6 +197,12 @@ const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedClientFilesRoute =
+  AuthenticatedClientFilesRouteImport.update({
+    id: '/client-files',
+    path: '/client-files',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -275,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/client-files': typeof AuthenticatedClientFilesRoute
   '/clients': typeof AuthenticatedClientsRouteWithChildren
   '/concept-studio': typeof AuthenticatedConceptStudioRoute
   '/container-builds': typeof AuthenticatedContainerBuildsRoute
@@ -317,6 +325,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/client-files': typeof AuthenticatedClientFilesRoute
   '/clients': typeof AuthenticatedClientsRouteWithChildren
   '/concept-studio': typeof AuthenticatedConceptStudioRoute
   '/container-builds': typeof AuthenticatedContainerBuildsRoute
@@ -361,6 +370,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/_authenticated/client-files': typeof AuthenticatedClientFilesRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRouteWithChildren
   '/_authenticated/concept-studio': typeof AuthenticatedConceptStudioRoute
   '/_authenticated/container-builds': typeof AuthenticatedContainerBuildsRoute
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/client-files'
     | '/clients'
     | '/concept-studio'
     | '/container-builds'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/client-files'
     | '/clients'
     | '/concept-studio'
     | '/container-builds'
@@ -490,6 +502,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/_authenticated/client-files'
     | '/_authenticated/clients'
     | '/_authenticated/concept-studio'
     | '/_authenticated/container-builds'
@@ -741,6 +754,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/client-files': {
+      id: '/_authenticated/client-files'
+      path: '/client-files'
+      fullPath: '/client-files'
+      preLoaderRoute: typeof AuthenticatedClientFilesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
       path: '/.well-known/oauth-protected-resource'
@@ -875,6 +895,7 @@ const AuthenticatedProjectsRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedClientFilesRoute: typeof AuthenticatedClientFilesRoute
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRouteWithChildren
   AuthenticatedConceptStudioRoute: typeof AuthenticatedConceptStudioRoute
   AuthenticatedContainerBuildsRoute: typeof AuthenticatedContainerBuildsRoute
@@ -901,6 +922,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedClientFilesRoute: AuthenticatedClientFilesRoute,
   AuthenticatedClientsRoute: AuthenticatedClientsRouteWithChildren,
   AuthenticatedConceptStudioRoute: AuthenticatedConceptStudioRoute,
   AuthenticatedContainerBuildsRoute: AuthenticatedContainerBuildsRoute,
