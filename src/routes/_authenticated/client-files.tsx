@@ -249,8 +249,11 @@ function ClientFilesPage() {
                       </a>
                     </Button>
                     <Button asChild variant="ghost" size="sm">
-                      <Link to="/projects/$id" params={{ id: s.project_id }}>
-                        Manage
+                      <Link
+                        to="/client-files/$shareId"
+                        params={{ shareId: s.id }}
+                      >
+                        Details
                       </Link>
                     </Button>
                   </div>
