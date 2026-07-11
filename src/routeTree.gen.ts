@@ -46,6 +46,7 @@ import { Route as PortalClientFileTokenRouteImport } from './routes/portal.clien
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedFieldCaptureProjectIdRouteImport } from './routes/_authenticated/field-capture.$projectId'
 import { Route as AuthenticatedClientsIdRouteImport } from './routes/_authenticated/clients.$id'
+import { Route as AuthenticatedClientFilesShareIdRouteImport } from './routes/_authenticated/client-files.$shareId'
 import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
 import { Route as AuthenticatedAdminGitSyncRouteImport } from './routes/_authenticated/admin.git-sync'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -246,6 +247,12 @@ const AuthenticatedClientsIdRoute = AuthenticatedClientsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedClientsRoute,
 } as any)
+const AuthenticatedClientFilesShareIdRoute =
+  AuthenticatedClientFilesShareIdRouteImport.update({
+    id: '/$shareId',
+    path: '/$shareId',
+    getParentRoute: () => AuthenticatedClientFilesRoute,
+  } as any)
 const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
   id: '/admin/logs',
   path: '/admin/logs',
@@ -282,7 +289,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/client-files': typeof AuthenticatedClientFilesRoute
+  '/client-files': typeof AuthenticatedClientFilesRouteWithChildren
   '/clients': typeof AuthenticatedClientsRouteWithChildren
   '/concept-studio': typeof AuthenticatedConceptStudioRoute
   '/container-builds': typeof AuthenticatedContainerBuildsRoute
@@ -309,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/git-sync': typeof AuthenticatedAdminGitSyncRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/client-files/$shareId': typeof AuthenticatedClientFilesShareIdRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -325,7 +333,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/client-files': typeof AuthenticatedClientFilesRoute
+  '/client-files': typeof AuthenticatedClientFilesRouteWithChildren
   '/clients': typeof AuthenticatedClientsRouteWithChildren
   '/concept-studio': typeof AuthenticatedConceptStudioRoute
   '/container-builds': typeof AuthenticatedContainerBuildsRoute
@@ -352,6 +360,7 @@ export interface FileRoutesByTo {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/git-sync': typeof AuthenticatedAdminGitSyncRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/client-files/$shareId': typeof AuthenticatedClientFilesShareIdRoute
   '/clients/$id': typeof AuthenticatedClientsIdRoute
   '/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -370,7 +379,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/_authenticated/client-files': typeof AuthenticatedClientFilesRoute
+  '/_authenticated/client-files': typeof AuthenticatedClientFilesRouteWithChildren
   '/_authenticated/clients': typeof AuthenticatedClientsRouteWithChildren
   '/_authenticated/concept-studio': typeof AuthenticatedConceptStudioRoute
   '/_authenticated/container-builds': typeof AuthenticatedContainerBuildsRoute
@@ -397,6 +406,7 @@ export interface FileRoutesById {
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/admin/git-sync': typeof AuthenticatedAdminGitSyncRoute
   '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/_authenticated/client-files/$shareId': typeof AuthenticatedClientFilesShareIdRoute
   '/_authenticated/clients/$id': typeof AuthenticatedClientsIdRoute
   '/_authenticated/field-capture/$projectId': typeof AuthenticatedFieldCaptureProjectIdRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/admin/git-sync'
     | '/admin/logs'
+    | '/client-files/$shareId'
     | '/clients/$id'
     | '/field-capture/$projectId'
     | '/projects/$id'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/admin/git-sync'
     | '/admin/logs'
+    | '/client-files/$shareId'
     | '/clients/$id'
     | '/field-capture/$projectId'
     | '/projects/$id'
@@ -529,6 +541,7 @@ export interface FileRouteTypes {
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/admin/git-sync'
     | '/_authenticated/admin/logs'
+    | '/_authenticated/client-files/$shareId'
     | '/_authenticated/clients/$id'
     | '/_authenticated/field-capture/$projectId'
     | '/_authenticated/projects/$id'
@@ -817,6 +830,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClientsIdRouteImport
       parentRoute: typeof AuthenticatedClientsRoute
     }
+    '/_authenticated/client-files/$shareId': {
+      id: '/_authenticated/client-files/$shareId'
+      path: '/$shareId'
+      fullPath: '/client-files/$shareId'
+      preLoaderRoute: typeof AuthenticatedClientFilesShareIdRouteImport
+      parentRoute: typeof AuthenticatedClientFilesRoute
+    }
     '/_authenticated/admin/logs': {
       id: '/_authenticated/admin/logs'
       path: '/admin/logs'
@@ -854,6 +874,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedClientFilesRouteChildren {
+  AuthenticatedClientFilesShareIdRoute: typeof AuthenticatedClientFilesShareIdRoute
+}
+
+const AuthenticatedClientFilesRouteChildren: AuthenticatedClientFilesRouteChildren =
+  {
+    AuthenticatedClientFilesShareIdRoute: AuthenticatedClientFilesShareIdRoute,
+  }
+
+const AuthenticatedClientFilesRouteWithChildren =
+  AuthenticatedClientFilesRoute._addFileChildren(
+    AuthenticatedClientFilesRouteChildren,
+  )
 
 interface AuthenticatedClientsRouteChildren {
   AuthenticatedClientsIdRoute: typeof AuthenticatedClientsIdRoute
@@ -895,7 +929,7 @@ const AuthenticatedProjectsRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedClientFilesRoute: typeof AuthenticatedClientFilesRoute
+  AuthenticatedClientFilesRoute: typeof AuthenticatedClientFilesRouteWithChildren
   AuthenticatedClientsRoute: typeof AuthenticatedClientsRouteWithChildren
   AuthenticatedConceptStudioRoute: typeof AuthenticatedConceptStudioRoute
   AuthenticatedContainerBuildsRoute: typeof AuthenticatedContainerBuildsRoute
@@ -922,7 +956,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedClientFilesRoute: AuthenticatedClientFilesRoute,
+  AuthenticatedClientFilesRoute: AuthenticatedClientFilesRouteWithChildren,
   AuthenticatedClientsRoute: AuthenticatedClientsRouteWithChildren,
   AuthenticatedConceptStudioRoute: AuthenticatedConceptStudioRoute,
   AuthenticatedContainerBuildsRoute: AuthenticatedContainerBuildsRoute,
