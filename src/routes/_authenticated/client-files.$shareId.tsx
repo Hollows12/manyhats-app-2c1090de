@@ -1,16 +1,29 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import {
   ArrowLeft, Copy, ExternalLink, Eye, Clock, ShieldOff, ShieldCheck,
   KeyRound, RefreshCw, Loader2, Mail, FileText, User as UserIcon,
+  Filter, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/empty-state";
 import { formatDate } from "@/lib/manyhats";
+
+function parseUA(ua: string | null): string {
+  if (!ua) return "Unknown";
+  if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+  if (/Android/i.test(ua)) return "Android";
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Mac OS X/i.test(ua)) return "macOS";
+  if (/Linux/i.test(ua)) return "Linux";
+  return "Other";
+}
 
 export const Route = createFileRoute("/_authenticated/client-files/$shareId")({
   component: ShareDetailsPage,
