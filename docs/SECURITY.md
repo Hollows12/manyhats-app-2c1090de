@@ -247,7 +247,17 @@ The role hierarchy (`admin` → `crew` → `client`) provides within-tenant acce
 
 | Gap | Risk | Mitigation | Recommended Fix |
 |-----|------|-----------|----------------|
-| `scope-writer.functions.ts` has no `requireSupabaseAuth` | AI calls accessible without Supabase user verification | LOVABLE_API_KEY required (server-only) | Add `requireSupabaseAuth` middleware |
+| ~~`scope-writer.functions.ts` has no `requireSupabaseAuth`~~ **Fixed** | ~~AI calls accessible without Supabase user verification~~ | Fixed: `requireSupabaseAuth` middleware added | ✅ Resolved — commit on `copilot/auditrestore-july-10-11-work-one-more-time` |
 | No `password_hibp_enabled` on Supabase Auth | Weak/breached passwords accepted | Supabase default policy still applies | Enable HIBP in Supabase Auth settings |
 | Client portal PIN sent via manual email | PIN transmission not audited | Share is time-limited and revocable | Implement automated email via app email infra |
 | No rate limiting on portal token endpoints | Token enumeration possible | UUIDs are not enumerable | Add edge-level rate limiting |
+
+### Security fix log
+
+#### 2026-07-15 — scope-writer authorization gap closed
+
+**What changed:** `src/lib/scope-writer.functions.ts` — added `.middleware([requireSupabaseAuth])` to the `writeScope` server function.
+
+**Why:** The `writeScope` function was validating `LOVABLE_API_KEY` (confirming the call came from a trusted server context) but was not verifying that the caller held a valid Supabase JWT. Any request with the correct server-side key could invoke the AI scope writer without an authenticated session. All other AI-backed server functions (`transcribeVoiceNote`, `generateConceptImage`, `enrichMaterialPrice`) already required `requireSupabaseAuth`. This one-line middleware addition brings scope-writer in line with the existing security model.
+
+**What did NOT change:** RLS policies, tenant isolation, database schema, and all other server functions are unchanged. The fix is additive — it adds a pre-condition guard, not a redesign.

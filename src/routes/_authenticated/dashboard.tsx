@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Users, Briefcase, FileText, Camera, Calculator, Sparkles, ClipboardList,
   TrendingUp, BookOpen, Home, Container, Landmark, Droplets, Inbox, ArrowRight,
-  Receipt, Wallet, DollarSign, AlertCircle, Send, Eye, PenLine, Bell,
+  Receipt, Wallet, DollarSign, AlertCircle, Send, Eye, PenLine, Bell, Percent,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,6 +91,7 @@ function Dashboard() {
 
       <FinanceKpis />
       <PortalKpis />
+      <ProfitabilityKpis />
       <NotificationsFeed />
 
 
@@ -267,6 +268,95 @@ function PortalKpis() {
         <FKpi icon={AlertCircle} label="Invoices Awaiting Pay" value={String(d?.awaiting ?? 0)} tone="amber" />
         <FKpi icon={DollarSign} label="Deposits Pending" value={String(d?.depositsPending ?? 0)} />
         <FKpi icon={Wallet} label="Paid (Month)" value={formatMoney(d?.paidMonth ?? 0)} tone="emerald" />
+      </div>
+    </div>
+  );
+}
+
+function ProfitabilityKpis() {
+  const q = useQuery({
+    queryKey: ["dash", "profitability"],
+    queryFn: async () => {
+      const [costsRes, invoicesRes] = await Promise.all([
+        supabase.from("job_costs").select("estimated_cost,actual_cost"),
+        supabase.from("invoices").select("total,balance_due,status"),
+      ]);
+
+      const estimatedCost = (costsRes.data ?? []).reduce(
+        (s: number, c: any) => s + Number(c.estimated_cost ?? 0),
+        0,
+      );
+      const actualCost = (costsRes.data ?? []).reduce(
+        (s: number, c: any) => s + Number(c.actual_cost ?? 0),
+        0,
+      );
+      const invoiced = (invoicesRes.data ?? [])
+        .filter((i: any) => i.status !== "void")
+        .reduce((s: number, i: any) => s + Number(i.total ?? 0), 0);
+      const paid = (invoicesRes.data ?? [])
+        .filter((i: any) => i.status !== "void")
+        .reduce(
+          (s: number, i: any) =>
+            s + (Number(i.total ?? 0) - Number(i.balance_due ?? 0)),
+          0,
+        );
+
+      const grossProfit = invoiced - estimatedCost;
+      const netProfit = paid - actualCost;
+      const marginPct =
+        invoiced > 0 ? Math.round((grossProfit / invoiced) * 100) : 0;
+
+      const [totalProps, approvedProps] = await Promise.all([
+        supabase.from("proposals").select("id", { count: "exact", head: true }),
+        supabase
+          .from("proposals")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "approved"),
+      ]);
+      const conversionPct =
+        (totalProps.count ?? 0) > 0
+          ? Math.round(((approvedProps.count ?? 0) / (totalProps.count ?? 1)) * 100)
+          : 0;
+
+      return {
+        invoiced,
+        paid,
+        grossProfit,
+        netProfit,
+        marginPct,
+        conversionPct,
+        totalProps: totalProps.count ?? 0,
+        approvedProps: approvedProps.count ?? 0,
+      };
+    },
+  });
+  const d = q.data;
+  return (
+    <div>
+      <h2 className="font-display text-sm text-muted-foreground uppercase tracking-wide mb-2">
+        Profitability
+      </h2>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <FKpi icon={DollarSign} label="Invoiced (All)" value={formatMoney(d?.invoiced ?? 0)} />
+        <FKpi icon={Wallet} label="Collected" value={formatMoney(d?.paid ?? 0)} tone="emerald" />
+        <FKpi
+          icon={TrendingUp}
+          label="Gross Profit"
+          value={formatMoney(d?.grossProfit ?? 0)}
+          tone={(d?.grossProfit ?? 0) >= 0 ? "emerald" : "amber"}
+        />
+        <FKpi
+          icon={TrendingUp}
+          label="Net Profit"
+          value={formatMoney(d?.netProfit ?? 0)}
+          tone={(d?.netProfit ?? 0) >= 0 ? "emerald" : "amber"}
+        />
+        <FKpi icon={Percent} label="Margin %" value={`${d?.marginPct ?? 0}%`} />
+        <FKpi
+          icon={FileText}
+          label="Proposal Conv."
+          value={`${d?.conversionPct ?? 0}% (${d?.approvedProps ?? 0}/${d?.totalProps ?? 0})`}
+        />
       </div>
     </div>
   );
