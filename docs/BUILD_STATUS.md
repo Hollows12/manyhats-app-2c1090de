@@ -1,6 +1,32 @@
 # ManyHats Lovable Build Status
 
-_Audit date: 2026-07-06 · Scope: Lovable frontend + Supabase backend only. Flutter is out of scope._
+_Last updated: 2026-07-15 · Restoration merge complete · Architecture V1 baseline established_
+_Prior audit date: 2026-07-06 · Scope: Lovable frontend + Supabase backend only. Flutter is out of scope._
+
+## Restoration Merge — 2026-07-15
+
+Branch `copilot/auditrestore-july-10-11-work-one-more-time` merged into `main` (commit `7ec39aa`).
+
+All validation checks passed (2026-07-14):
+- Build: `npm run build` exit 0
+- Tests: 4 passed / 1 skipped (e2e requires live Supabase)
+- TypeScript: 9 pre-existing errors (TanStack Router search param, unrelated to restoration)
+- Lint: ~3902 pre-existing Prettier formatting violations
+- Merge markers: none
+- Secrets: no hardcoded credentials
+- Migrations: untouched
+- RLS: unchanged, tenant isolation intact
+
+Restoration applied:
+- `src/routes/_authenticated/projects.$id.tsx`: Shared Vision + site context inline editor (summary, budget min/max, timeline, site notes, measurement notes)
+- `JULY_07_11_2026_SOURCE_TO_LOVABLE_AUDIT.md`: Source-to-Lovable reconciliation audit artifact
+- `JULY_10_11_2026_RESTORATION_AUDIT.md`: Per-commit audit trail
+- `package-lock.json`: `@lovable.dev/vite-tanstack-config` 2.7.0 → 2.7.1 (aligns with package.json)
+
+Architecture documentation baseline created on `docs/platform-architecture-v1` branch.
+See `docs/ARCHITECTURE.md` and related documents for the V1 architecture reference.
+
+---
 
 ## Overall completion
 
