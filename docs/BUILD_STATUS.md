@@ -114,6 +114,39 @@ PR #6 should only be retargeted to `main` after confirming:
 - No Flutter-specific or destructive changes
 - All new V1 payment/portal changes from main are not overwritten
 
+### PR #6 retarget assessment — 2026-07-17 ✅ SAFE TO RETARGET
+
+After fetching `origin/main` and running `git diff origin/main...HEAD --name-status`, the complete diff was reviewed. All changes vs main are:
+
+**Documentation** (additive, safe):
+- 12 new `docs/` architecture files
+- 2 audit trail markdown files at root
+- `README.md`
+
+**Security improvement** (safe):
+- `src/lib/scope-writer.functions.ts` — adds `requireSupabaseAuth` middleware (fixes a pre-existing security gap)
+
+**New features** (all additive, safe):
+- `financial.tsx` — Send invoice email button
+- `proposal.tsx` — Email delivery wired to "Send" button
+- `dashboard.tsx` — `ProfitabilityKpis` component
+- `client-file-tab.tsx` — Send PIN by email button (this PR)
+- `email.functions.ts`, `email.server.ts` — Resend email infrastructure
+- `stripe.functions.ts`, `stripe.server.ts`, `stripe.webhook.tsx` — Stripe payment infrastructure
+- `portal.invoice.$token.tsx`, `portal.proposal.$token.tsx` — Stripe Elements portal UIs (this PR)
+- `20260717005500_recalculate_invoice_balance_rpc.sql` — new additive migration (this PR)
+- `projects.$id.tsx` — Shared Vision inline editor restoration
+
+**Package additions** (safe, no known vulnerabilities):
+- `@stripe/stripe-js`, `@stripe/react-stripe-js`, `resend@6.17.2`, `stripe@22.3.1`
+
+**Not present**: No Flutter-specific code, no table drops, no RLS weakening, no duplicate migrations, no conflicting schemas.
+
+**Conclusion**: PR #6 is safe to retarget from `audit/restore-july-10-11-work` to `main`. Command to retarget:
+```
+gh pr edit 6 --base main
+```
+
 ---
 
 ## Restoration Merge — 2026-07-15
