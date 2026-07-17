@@ -137,3 +137,68 @@ export const createPortalInvoicePaymentIntent = createServerFn({ method: "POST" 
 
     return { clientSecret: intent.client_secret, intentId: intent.id, amountCents };
   });
+
+// ---------------------------------------------------------------------------
+// Public portal: create payment intent for deposit without staff auth (token-gated)
+// ---------------------------------------------------------------------------
+
+const CreatePortalDepositPaymentIntentInput = z.object({
+  deposit_id: z.string().uuid(),
+  portal_token: z.string().min(1),
+});
+
+export const createPortalDepositPaymentIntent = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => CreatePortalDepositPaymentIntentInput.parse(d))
+  .handler(async ({ data }) => {
+    const { createClient } = await import("@supabase/supabase-js");
+    const url = process.env.SUPABASE_URL!;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    if (!url || !key) throw new Error("Supabase environment variables not set");
+
+    const adminClient = createClient(url, key);
+
+    // Validate portal token via the proposal RPC
+    const { data: tokenCheck, error: tcErr } = await (adminClient.rpc as any)(
+      "portal_get_proposal",
+      { _token: data.portal_token },
+    );
+    if (tcErr || !tokenCheck) throw new Error("Invalid portal token");
+    const payload = tokenCheck as any;
+    if (payload.error) throw new Error("Invalid or expired portal link");
+
+    // Look up the deposit and confirm it belongs to the same project
+    const { data: deposit, error: depErr } = await adminClient
+      .from("deposits")
+      .select("id, amount, status, project_id")
+      .eq("id", data.deposit_id)
+      .single();
+    if (depErr || !deposit) throw new Error("Deposit not found");
+
+    // Verify the deposit is for the same project as the portal proposal
+    const proposalProjectId: string | undefined =
+      (payload.project as any)?.id ?? (payload as any).project_id;
+    if (proposalProjectId && String(deposit.project_id) !== String(proposalProjectId)) {
+      throw new Error("Deposit/proposal mismatch");
+    }
+
+    if ((deposit.status as string) === "paid") throw new Error("Deposit already paid");
+
+    const amountCents = Math.round(Number(deposit.amount) * 100);
+    if (amountCents <= 0) throw new Error("Deposit amount is zero");
+
+    const { createPaymentIntent } = await import("./stripe.server");
+    const intent = await createPaymentIntent({
+      amountCents,
+      description: `Deposit — ${(payload.project as any)?.name ?? "Project"}`,
+      metadata: {
+        deposit_id: deposit.id,
+        project_id: String(deposit.project_id),
+        portal_token: data.portal_token,
+        client_name: payload.client_name ?? "",
+        type: "deposit",
+      },
+    });
+
+    return { clientSecret: intent.client_secret, intentId: intent.id, amountCents };
+  });
+

@@ -58,27 +58,31 @@ async function handlePaymentSucceeded(intent: {
     const invoiceId = meta.invoice_id;
     if (!invoiceId) return;
 
-    // Record the payment
-    await (supabase as any).from("payments").insert({
-      invoice_id: invoiceId,
-      project_id: meta.project_id ?? null,
-      amount: amountDollars,
-      payment_date: new Date().toISOString().slice(0, 10),
-      payment_method: "stripe",
-      reference_number: intent.id,
-      notes: "Stripe online payment",
-    });
+    // Idempotency: skip if a payment with this Stripe intent ID already exists
+    const { data: existing } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("invoice_id", invoiceId)
+      .eq("reference_number", intent.id)
+      .maybeSingle();
+    if (!existing) {
+      // payments.project_id does not exist; derive it from the invoice FK
+      await supabase.from("payments").insert({
+        invoice_id: invoiceId,
+        amount: amountDollars,
+        payment_date: new Date().toISOString().slice(0, 10),
+        payment_method: "stripe" as any,
+        reference_number: intent.id,
+        notes: "Stripe online payment",
+      } as any);
+    }
 
-    // Recalculate invoice status via RPC (if available), else direct update
+    // Recalculate invoice balance via the dedicated RPC
     const { error: rpcErr } = await (supabase.rpc as any)("recalculate_invoice_balance", {
       _invoice_id: invoiceId,
     });
     if (rpcErr) {
-      // Fallback: mark as paid
-      await supabase
-        .from("invoices")
-        .update({ status: "paid" as any, balance_due: 0 as any })
-        .eq("id", invoiceId);
+      console.error(`[Stripe webhook] recalculate_invoice_balance failed:`, rpcErr.message);
     }
 
     console.log(`[Stripe webhook] Recorded payment ${intent.id} for invoice ${invoiceId}`);
@@ -89,22 +93,12 @@ async function handlePaymentSucceeded(intent: {
     const depositId = meta.deposit_id;
     if (!depositId) return;
 
+    // Idempotency: mark paid only if not already paid
     await supabase
       .from("deposits")
-      .update({ status: "paid" as any } as any)
-      .eq("id", depositId);
-
-    // Also record in payments table if project_id available
-    if (meta.project_id) {
-      await (supabase as any).from("payments").insert({
-        project_id: meta.project_id,
-        amount: amountDollars,
-        payment_date: new Date().toISOString().slice(0, 10),
-        payment_method: "stripe",
-        reference_number: intent.id,
-        notes: `Deposit — Stripe online payment`,
-      });
-    }
+      .update({ status: "paid" as any, paid_at: new Date().toISOString() } as any)
+      .eq("id", depositId)
+      .neq("status" as any, "paid");
 
     console.log(`[Stripe webhook] Recorded deposit payment ${intent.id} for deposit ${depositId}`);
   }

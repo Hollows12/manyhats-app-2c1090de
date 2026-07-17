@@ -1,9 +1,123 @@
 # ManyHats Lovable Build Status
 
-_Last updated: 2026-07-15 · Restoration merge complete · Architecture V1 baseline established_
+_Last updated: 2026-07-17 · V1 payment and portal communication workflow completion_
+_Prior update: 2026-07-15 · Restoration merge complete · Architecture V1 baseline established_
 _Prior audit date: 2026-07-06 · Scope: Lovable frontend + Supabase backend only. Flutter is out of scope._
 
+---
+
+## V1 Payment & Portal Completion — 2026-07-17
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `src/routes/api/stripe.webhook.tsx` | Fixed bugs: removed non-existent `project_id` column from payments insert; added idempotency guard (skip duplicate reference_number); fixed deposit recording (removed erroneous second payments insert); removed unreliable fallback in favor of the new RPC; added `paid_at` timestamp on deposit |
+| `src/lib/stripe.functions.ts` | Added `createPortalDepositPaymentIntent` — portal-token-gated server function for proposal deposit payments (mirrors `createPortalInvoicePaymentIntent` pattern) |
+| `src/lib/email.functions.ts` | Added `sendPortalInvitationEmailFn` — staff-authenticated server function that rotates the PIN, builds the portal URL, and calls `sendPortalInvitationEmail` without ever returning the PIN to the client |
+| `src/routes/portal.invoice.$token.tsx` | Replaced "Online payment coming soon" placeholder with full Stripe Elements payment flow: `PaymentSection` (creates payment intent) + `PaymentForm` (collects payment); publishable key loaded from `VITE_STRIPE_PUBLISHABLE_KEY`; graceful no-key fallback; duplicate-submit prevention; success/error/declined states; auto-refresh on success |
+| `src/routes/portal.proposal.$token.tsx` | Added deposit payment flow after acceptance: `DepositPaymentSection` + `DepositPaymentForm` using Stripe Elements; shows paid deposit confirmation; shows pending deposit payment UI; prevents payment before acceptance; refreshes state on success |
+| `src/components/project/client-file-tab.tsx` | Added "Send PIN by email" button to each active share; rotates PIN server-side before sending; shows sending/success/error feedback; prevents double-click while sending |
+| `supabase/migrations/20260717005500_recalculate_invoice_balance_rpc.sql` | New migration: adds `recalculate_invoice_balance(_invoice_id UUID)` as a callable RPC (idempotent, `CREATE OR REPLACE`); enforces company boundary via invoice lookup; grants `authenticated` and `service_role` |
+| `package.json` / `package-lock.json` | Added `@stripe/stripe-js` and `@stripe/react-stripe-js` for client-side Stripe Elements |
+| `.env.example` | New file documenting all required environment variables, which deployment layer each belongs to, and a configuration matrix |
+
+### Migration added
+
+**`20260717005500_recalculate_invoice_balance_rpc.sql`**
+
+RPC signature:
+```sql
+CREATE OR REPLACE FUNCTION public.recalculate_invoice_balance(_invoice_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+```
+
+What it does:
+- Sums non-voided payments for the invoice
+- Calculates `balance_due = GREATEST(total - paid, 0)`
+- Sets status: `void` → void, balance ≤ 0 → paid, paid > 0 → partial, else → sent/draft
+- Updates `invoices.balance_due`, `invoices.status`, `invoices.updated_at`
+
+Callers:
+- `src/routes/api/stripe.webhook.tsx` → `handlePaymentSucceeded` (via `supabase.rpc("recalculate_invoice_balance", { _invoice_id })`)
+
+Note: A trigger (`recalc_invoice_balance`) on the `payments` table already handles automatic recalculation on direct DB inserts. The RPC allows the webhook to explicitly trigger a recalculation without relying solely on the trigger.
+
+### Environment variables
+
+| Variable | Where to set | Notes |
+|---|---|---|
+| `SUPABASE_URL` | Cloudflare Worker env + CF Pages | Supabase project URL |
+| `SUPABASE_PUBLISHABLE_KEY` | Cloudflare Worker env + CF Pages | Anon/public key |
+| `VITE_SUPABASE_URL` | CF Pages env (VITE_* prefix) | Same value as above, inlined at build |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | CF Pages env (VITE_* prefix) | Same value as above, inlined at build |
+| `SUPABASE_SERVICE_ROLE_KEY` | Cloudflare Worker **secret** | Never expose to browser |
+| `STRIPE_SECRET_KEY` | Cloudflare Worker **secret** | Never expose to browser |
+| `STRIPE_WEBHOOK_SECRET` | Cloudflare Worker **secret** | Never expose to browser |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | CF Pages env (VITE_* prefix) | **Required** for Stripe Elements UI — `pk_live_...` or `pk_test_...` |
+| `RESEND_API_KEY` | Cloudflare Worker **secret** | Never expose to browser |
+| `RESEND_FROM_EMAIL` | Cloudflare Worker env | e.g. `ManyHats Pro <noreply@yourdomain.com>` |
+| `APP_ORIGIN` | Cloudflare Worker env | e.g. `https://app.manyhats.pro` — used in portal email links |
+
+See `.env.example` for full configuration matrix.
+
+### Validation — 2026-07-17
+
+- **Build**: `npm run build` — exit 0 ✅
+- **Tests**: 4 passed / 1 skipped (e2e requires live Supabase) ✅
+- **TypeScript**: same 9 pre-existing errors (TanStack Router search param, Stripe API version, webhook import) — no new errors ✅
+- **Lint**: pre-existing Prettier violations only — no new lint errors from our changes ✅
+- **Secrets scan**: no hardcoded credentials in changed files ✅
+- **Migration**: new file `20260717005500_recalculate_invoice_balance_rpc.sql` — idempotent (`CREATE OR REPLACE`) ✅
+- **Stripe packages**: `@stripe/stripe-js` and `@stripe/react-stripe-js` — no known vulnerabilities ✅
+
+### Scenario validation (static)
+
+| Scenario | Validation method | Result |
+|---|---|---|
+| A. Proposal accepted + deposit paid | Code review — AcceptForm triggers refetch; DepositPaymentSection shown post-acceptance; webhook marks deposit paid and sets paid_at | ✅ Static |
+| B. Deposit attempt declined | Stripe `confirmPayment` returns error; shown in UI; no success state set | ✅ Static |
+| C. Invoice paid in full | Webhook inserts payment, calls recalculate_invoice_balance RPC; portal shows "Paid in full" card | ✅ Static |
+| D. Partial invoice payment | RPC sets status to 'partial', balance_due reduced; portal reflects updated balance on refetch | ✅ Static |
+| E. Duplicate webhook delivery | Idempotency guard: `maybeSingle()` on `reference_number`; skips insert if exists; RPC is idempotent | ✅ Static |
+| F. Already-paid invoice | `createPortalInvoicePaymentIntent` throws "Invoice already paid"; portal shows paid state | ✅ Static |
+| G. Invalid/expired portal token | `portal_get_invoice` returns error; portal shows appropriate error card | ✅ Static |
+| H. Incorrect PIN | Handled by existing `portal.client-file.$token.tsx` PIN flow (unchanged) | ✅ Static |
+| I. Portal invitation email succeeds | `sendPortalInvitationEmailFn` rotates PIN, calls Resend; returns `{ ok: true, recipientEmail }` — PIN not in response | ✅ Static |
+| J. Portal invitation email fails | Error thrown by Resend or RPC surfaced as toast error; PIN not logged or returned | ✅ Static |
+| Live Stripe/Resend tests | Requires configured credentials — not available in this environment | ⚠️ Blocked (credentials required) |
+
+### Manual steps still required
+
+1. **Stripe dashboard**: Create a webhook endpoint pointing to `https://app.manyhats.pro/api/stripe/webhook` for event `payment_intent.succeeded`. Copy the signing secret to `STRIPE_WEBHOOK_SECRET`.
+2. **Stripe keys**: Add `STRIPE_SECRET_KEY` and `VITE_STRIPE_PUBLISHABLE_KEY` to deployment environment.
+3. **Resend**: Verify domain for `RESEND_FROM_EMAIL` sender address. Set `RESEND_API_KEY`.
+4. **Deploy migration**: Run `supabase db push` or apply `20260717005500_recalculate_invoice_balance_rpc.sql` against the production database.
+
+### Remaining blockers
+
+- `VITE_STRIPE_PUBLISHABLE_KEY` must be set before Stripe Elements renders (graceful fallback shown otherwise)
+- Portal deposit payment assumes `portal_get_proposal` RPC returns `project.id` — verify the RPC returns the project id field or update the portal deposit intent accordingly
+- No deposits shown in proposal portal until `portal_get_proposal` RPC is updated to include deposits in its payload
+
+---
+
+## PR #6 retarget recommendation
+
+**Do not merge PR #6 yet.** The V1 payment completion work (this PR) should be merged to `main` first. Once merged, compare the full diff of PR #6 (`audit/restore-july-10-11-work`) against the updated `main` before retargeting.
+
+PR #6 should only be retargeted to `main` after confirming:
+- No audit-only or temporary files are included
+- No duplicate migrations (the July 10–11 restoration migrations must not conflict)
+- No Flutter-specific or destructive changes
+- All new V1 payment/portal changes from main are not overwritten
+
+---
+
 ## Restoration Merge — 2026-07-15
+
 
 Branch `copilot/auditrestore-july-10-11-work-one-more-time` merged into `main` (commit `7ec39aa`).
 

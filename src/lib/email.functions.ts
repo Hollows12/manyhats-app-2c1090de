@@ -108,3 +108,71 @@ export const sendInvoiceEmailFn = createServerFn({ method: "POST" })
 
     return { ok: true, portalUrl };
   });
+
+// ---------------------------------------------------------------------------
+// Send portal invitation email (client file share PIN delivery)
+// ---------------------------------------------------------------------------
+
+const SendPortalInvitationInput = z.object({
+  share_id: z.string().uuid(),
+});
+
+export const sendPortalInvitationEmailFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SendPortalInvitationInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    // Load the share — confirm it belongs to the caller's company via project/company scope
+    const { data: share, error: shareErr } = await (supabase as any)
+      .from("client_file_shares")
+      .select(
+        "id, token, recipient_email, pin_hash, expires_at, revoked_at, projects(id, name, clients(name, email), company_id)",
+      )
+      .eq("id", data.share_id)
+      .single();
+    if (shareErr || !share) throw new Error("Share not found or access denied");
+    if (share.revoked_at) throw new Error("This share link has been revoked");
+    if (new Date(share.expires_at) < new Date()) throw new Error("This share link has expired");
+
+    // Determine recipient email — prefer share.recipient_email, fall back to client email
+    const project = share.projects as any;
+    const client = project?.clients as any;
+    const recipientEmail: string | null =
+      share.recipient_email ?? client?.email ?? null;
+    if (!recipientEmail) {
+      throw new Error(
+        "No email address on file. Add an email to the share or the client record.",
+      );
+    }
+
+    // Basic email format validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+      throw new Error("The recipient email address is not valid");
+    }
+
+    // Rotate the PIN so the client always gets a fresh one via email
+    const { data: rotated, error: rotErr } = await (supabase.rpc as any)(
+      "rotate_client_file_share_pin",
+      { _share_id: data.share_id },
+    );
+    if (rotErr) throw rotErr;
+    const newPin: string = (rotated as any)?.pin;
+    if (!newPin) throw new Error("Could not rotate PIN");
+
+    const origin = process.env.APP_ORIGIN ?? "https://app.manyhats.pro";
+    const portalUrl = `${origin}/portal/client-file/${share.token}`;
+
+    const { sendPortalInvitationEmail } = await import("./email.server");
+    await sendPortalInvitationEmail({
+      recipientEmail,
+      clientName: client?.name ?? "Valued Client",
+      projectName: project?.name ?? "Your Project",
+      portalUrl,
+      pin: newPin,
+    });
+
+    // Return only a confirmation — never expose pin in the response payload
+    return { ok: true, recipientEmail };
+  });
+
