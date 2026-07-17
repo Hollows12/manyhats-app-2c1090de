@@ -82,10 +82,9 @@ npm run test      # Vitest (4 pass / 1 skipped)
 
 ## V1 completion status
 
-~75% complete. The contractor spine (lead → estimate → proposal → e-signature) is fully implemented.
-Email delivery, Stripe payment processing, and several UI completions are in progress.
+**Money loop complete.** The full contractor workflow — lead → estimate → proposal → e-signature → deposit → project → invoice → payment → profit dashboard → client portal — is implemented end-to-end.
 
-See [`docs/BUILD_STATUS.md`](./docs/BUILD_STATUS.md) for the full feature audit.
+See [`docs/BUILD_STATUS.md`](./docs/BUILD_STATUS.md) for the detailed feature audit and [`docs/ROADMAP_V1.md`](./docs/ROADMAP_V1.md) for remaining V1 work.
 
 ---
 

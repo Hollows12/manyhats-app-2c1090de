@@ -1,8 +1,109 @@
 # ManyHats Lovable Build Status
 
-_Last updated: 2026-07-17 · V1 payment and portal communication workflow completion_
+_Last updated: 2026-07-17 · V1 money loop complete · Phase 7 final report_
+_Prior update: 2026-07-17 · V1 payment and portal communication workflow completion_
 _Prior update: 2026-07-15 · Restoration merge complete · Architecture V1 baseline established_
 _Prior audit date: 2026-07-06 · Scope: Lovable frontend + Supabase backend only. Flutter is out of scope._
+
+---
+
+## Phase 7 — Final Report · 2026-07-17
+
+### PR #6 Status
+- **Branch:** `copilot/auditrestore-july-10-11-work-one-more-time` → target: `main`
+- **Head SHA:** `07a4d16bc310007e7a94f09c15723901d1708df2`
+- **State:** Open · validated · clean mergeable state
+- **Retarget action required:** `gh pr edit 6 --base main` (GitHub owner action)
+
+### Architecture Branch
+- **Branch:** `copilot/auditrestore-july-10-11-work-one-more-time`
+- **Commits ahead of main:** 14 (all additive — no conflicts)
+- **Build:** `npm run build` → exit 0 (Vite + Nitro)
+- **Tests:** `npm run test` → 4 pass / 1 skipped (e2e skipped without live Supabase)
+
+### Security Fix
+- **File:** `src/lib/scope-writer.functions.ts`
+- **Change:** `.middleware([requireSupabaseAuth])` added to `writeScope` server function
+- **Commit:** on `copilot/auditrestore-july-10-11-work-one-more-time`
+- **Documented:** `docs/SECURITY.md` — fix log section
+
+### Files Changed (full PR #6 scope)
+
+| Category | Files |
+|---|---|
+| Core feature | `src/routes/_authenticated/projects.$id.tsx` (Shared Vision editor) |
+| Stripe | `src/lib/stripe.server.ts`, `src/lib/stripe.functions.ts`, `src/routes/api/stripe.webhook.tsx` |
+| Email | `src/lib/email.server.ts`, `src/lib/email.functions.ts` |
+| Portal payments | `src/routes/portal.proposal.$token.tsx`, `src/routes/portal.invoice.$token.tsx` |
+| Client file | `src/components/project/client-file-tab.tsx` |
+| Security fix | `src/lib/scope-writer.functions.ts` |
+| Migration | `supabase/migrations/20260717005500_recalculate_invoice_balance_rpc.sql` |
+| Dependencies | `package.json`, `package-lock.json` (`@stripe/stripe-js`, `@stripe/react-stripe-js`, `resend`, `stripe`) |
+| Environment | `.env.example` |
+| Audit artifacts | `JULY_07_11_2026_SOURCE_TO_LOVABLE_AUDIT.md`, `JULY_10_11_2026_RESTORATION_AUDIT.md` |
+| Documentation | 12 files under `docs/` (ARCHITECTURE, SYSTEM_OVERVIEW, DATABASE_SCHEMA, SHARED_VISION, WORKFLOWS, SECURITY, AI_ARCHITECTURE, CLIENT_PORTAL, API_REFERENCE, EDGE_FUNCTIONS, ROADMAP_V1, V1_ARCHITECTURE_FREEZE) |
+
+### Documentation Created
+
+| File | Content |
+|---|---|
+| `docs/ARCHITECTURE.md` | Stack, system diagram, directory map, auth flow |
+| `docs/SYSTEM_OVERVIEW.md` | Full route inventory with completion status |
+| `docs/DATABASE_SCHEMA.md` | 46 tables, 14 enums, RPCs, storage buckets, ER diagram |
+| `docs/SHARED_VISION.md` | Capture Once → Use Everywhere philosophy |
+| `docs/WORKFLOWS.md` | 7 Mermaid workflow diagrams |
+| `docs/SECURITY.md` | Auth, RLS patterns, portal security, fix log |
+| `docs/AI_ARCHITECTURE.md` | Lovable AI Gateway, scope writer, concept rendering |
+| `docs/CLIENT_PORTAL.md` | Portal routes, token + PIN two-factor access |
+| `docs/API_REFERENCE.md` | Server functions + Supabase RPC reference |
+| `docs/EDGE_FUNCTIONS.md` | Confirms zero Deno edge functions |
+| `docs/ROADMAP_V1.md` | Prioritized backlog, updated to reflect money loop completion |
+| `docs/V1_ARCHITECTURE_FREEZE.md` | V1 baseline freeze marker |
+
+### Money Loop Status
+
+| Step | Status |
+|---|---|
+| Shared Vision | ✅ Inline editor on project detail |
+| Field Capture | ✅ Photos, measurements, voice notes |
+| Estimate | ✅ Line-item costing |
+| Proposal | ✅ Good/Better/Best, PDF generation |
+| Client Approval | ✅ Portal proposal view + accept |
+| E-Signature | ✅ Portal digital signature |
+| Deposit Payment | ✅ Stripe Elements on portal proposal |
+| Project Management | ✅ Daily logs, change orders, job tasks |
+| Invoice | ✅ Generation + email send |
+| Final Payment | ✅ Stripe Elements on portal invoice |
+| Profit Dashboard | ✅ FinanceKpis + ProfitabilityKpis + per-project snapshot |
+| Client Portal | ✅ Proposal, invoice, client file routes |
+
+### Remaining Technical Debt
+
+| Item | Priority | Impact |
+|---|---|---|
+| Settings — Service Area Editor | P2 | `upsertServiceArea` RPC exists, no UI |
+| Settings — Role Editor | P2 | Required for onboarding (crew → admin) |
+| Leads Kanban drag-to-move | P3 | UX improvement only |
+| Specialty module intakes (Home Builder, Container, Historic, Septic) | P3 | Schema exists, intake forms missing |
+| Password strength (HIBP) | P4 | Supabase config only, no code change |
+| Client portal rate limiting | P4 | Cloudflare WAF rules |
+| 9 pre-existing TanStack Router TS errors | Low | Build succeeds, cosmetic only |
+| ~3902 Prettier formatting violations | Low | Pre-existing, cosmetic only |
+
+### Recommended Implementation Order
+
+1. **Merge PR #6 to main** (owner action: `gh pr edit 6 --base main`, then merge)
+2. **Settings — Service Area Editor** (one RPC already exists, wire a simple form)
+3. **Settings — Role Editor** (admin role management for onboarding)
+4. **Specialty module intakes** (extend existing schema with intake forms)
+5. **Security hardening** (HIBP config, rate limiting)
+
+### V1 Architecture Baseline
+
+This commit set is designated **ManyHats Pro Platform Architecture V1**.  
+See `docs/V1_ARCHITECTURE_FREEZE.md` for the freeze declaration.
+
+Core philosophy: **Capture Once. Use Everywhere.**
 
 ---
 
