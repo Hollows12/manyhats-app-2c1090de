@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Phone, MapPin, Calendar, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/status-badge";
@@ -55,6 +58,42 @@ function ProjectDetail() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["project", id] }); toast.success("Status updated."); },
   });
 
+  const [overview, setOverview] = useState({
+    summary: "",
+    budget_min: "",
+    budget_max: "",
+    desired_timeline: "",
+    site_notes: "",
+    measurement_notes: "",
+  });
+  useEffect(() => {
+    if (!project.data) return;
+    setOverview({
+      summary: project.data.summary ?? "",
+      budget_min: project.data.budget_min ? String(project.data.budget_min) : "",
+      budget_max: project.data.budget_max ? String(project.data.budget_max) : "",
+      desired_timeline: project.data.desired_timeline ?? "",
+      site_notes: project.data.site_notes ?? "",
+      measurement_notes: project.data.measurement_notes ?? "",
+    });
+  }, [project.data]);
+
+  const saveOverview = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("projects").update({
+        summary: overview.summary || null,
+        budget_min: overview.budget_min ? Number(overview.budget_min) : null,
+        budget_max: overview.budget_max ? Number(overview.budget_max) : null,
+        desired_timeline: overview.desired_timeline || null,
+        site_notes: overview.site_notes || null,
+        measurement_notes: overview.measurement_notes || null,
+      }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["project", id] }); toast.success("Project overview saved."); },
+    onError: (e) => toast.error(e.message),
+  });
+
   if (project.isLoading) return <div className="p-8 text-sm text-muted-foreground">Loading…</div>;
   if (!project.data) return <div className="p-8">Project not found.</div>;
   const p = project.data;
@@ -63,6 +102,13 @@ function ProjectDetail() {
   const isContainer = CONTAINER_TYPES.has(p.project_type);
   const isHistoric = HISTORIC_TYPES.has(p.project_type);
   const isSeptic = SEPTIC_TYPES.has(p.project_type);
+  const overviewDirty =
+    overview.summary !== (p.summary ?? "") ||
+    overview.budget_min !== (p.budget_min ? String(p.budget_min) : "") ||
+    overview.budget_max !== (p.budget_max ? String(p.budget_max) : "") ||
+    overview.desired_timeline !== (p.desired_timeline ?? "") ||
+    overview.site_notes !== (p.site_notes ?? "") ||
+    overview.measurement_notes !== (p.measurement_notes ?? "");
 
   return (
     <div className="space-y-6 p-4 md:p-8">
@@ -120,10 +166,44 @@ function ProjectDetail() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <InfoCard title="Site notes" content={p.site_notes} />
-            <InfoCard title="Measurement notes" content={p.measurement_notes} />
-          </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-sm">Shared vision + site context</CardTitle>
+              <Button size="sm" onClick={() => saveOverview.mutate()} disabled={!overviewDirty || saveOverview.isPending}>
+                Save
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Project summary</Label>
+                <Textarea rows={3} value={overview.summary} onChange={(e) => setOverview({ ...overview, summary: e.target.value })} />
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Budget min</Label>
+                  <Input type="number" value={overview.budget_min} onChange={(e) => setOverview({ ...overview, budget_min: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Budget max</Label>
+                  <Input type="number" value={overview.budget_max} onChange={(e) => setOverview({ ...overview, budget_max: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Timeline</Label>
+                  <Input value={overview.desired_timeline} onChange={(e) => setOverview({ ...overview, desired_timeline: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Site notes</Label>
+                  <Textarea rows={4} value={overview.site_notes} onChange={(e) => setOverview({ ...overview, site_notes: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Measurement notes</Label>
+                  <Textarea rows={4} value={overview.measurement_notes} onChange={(e) => setOverview({ ...overview, measurement_notes: e.target.value })} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="field" className="mt-6"><ProjectFieldCapture projectId={id} /></TabsContent>
         <TabsContent value="voice" className="mt-6"><ProjectVoiceNotes projectId={id} /></TabsContent>
@@ -148,16 +228,6 @@ function ProjectDetail() {
 
 function Row({ icon: Icon, children }: { icon: any; children: React.ReactNode }) {
   return <div className="flex items-center gap-1.5 lg:justify-end"><Icon className="h-3 w-3"/>{children}</div>;
-}
-function InfoCard({ title, content }: { title: string; content?: string | null }) {
-  return (
-    <Card>
-      <CardHeader><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
-      <CardContent className="text-sm text-muted-foreground whitespace-pre-wrap">
-        {content || "—"}
-      </CardContent>
-    </Card>
-  );
 }
 function SpecialtyPlaceholder({ name }: { name: string }) {
   return (
