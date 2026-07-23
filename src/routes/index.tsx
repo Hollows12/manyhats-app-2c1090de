@@ -23,10 +23,10 @@ function Landing() {
           <BrandMark className="[&_.text-muted-foreground]:text-gold/70 [&_.font-display]:text-white" />
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost" className="text-ivory hover:bg-white/10 hover:text-ivory">
-              <Link to="/auth">Sign in</Link>
+              <Link to="/auth" search={{}}>Sign in</Link>
             </Button>
             <Button asChild className="bg-gold text-gold-foreground hover:bg-gold/90">
-              <Link to="/auth">Open dashboard <ArrowRight className="ml-1 h-4 w-4" /></Link>
+              <Link to="/auth" search={{}}>Open dashboard <ArrowRight className="ml-1 h-4 w-4" /></Link>
             </Button>
           </div>
         </div>
@@ -58,7 +58,7 @@ function Landing() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" className="bg-gold text-gold-foreground hover:bg-gold/90">
-                <Link to="/auth">Get started <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <Link to="/auth" search={{}}>Get started <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
               <a
                 href={`tel:${COMPANY.phone.replace(/-/g, "")}`}

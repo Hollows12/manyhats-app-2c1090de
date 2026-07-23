@@ -262,7 +262,7 @@ function EmailHelpPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-3xl px-4 py-10 md:py-16">
-        <Link to="/auth" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link to="/auth" search={{}} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back to sign in
         </Link>
 
@@ -585,7 +585,7 @@ function EmailHelpPage() {
               <AccordionTrigger>7. The account is already verified</AccordionTrigger>
               <AccordionContent className="text-sm text-muted-foreground">
                 If you've clicked a previous link, no new email will be sent. Try signing in
-                directly at the <Link to="/auth" className="underline">sign in page</Link>.
+                directly at the <Link to="/auth" search={{}} className="underline">sign in page</Link>.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
