@@ -3,7 +3,17 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { CheckCircle2, FileText, ShieldCheck, AlertCircle, Loader2, PenLine, Type as TypeIcon, Eraser, Wallet } from "lucide-react";
+import {
+  CheckCircle2,
+  FileText,
+  ShieldCheck,
+  AlertCircle,
+  Loader2,
+  PenLine,
+  Type as TypeIcon,
+  Eraser,
+  Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,17 +46,32 @@ type PortalPayload = {
     approved_at?: string | null;
   };
   options: Array<{
-    id: string; tier: string; title: string; description?: string | null;
-    price: number; is_recommended: boolean; sort_order: number;
+    id: string;
+    tier: string;
+    title: string;
+    description?: string | null;
+    price: number;
+    is_recommended: boolean;
+    sort_order: number;
   }>;
   project: { id?: string; name: string; address?: string | null; city_state_zip?: string | null };
   client_name?: string | null;
   invoices: Array<{
-    id: string; invoice_number: string; invoice_date: string; due_date?: string | null;
-    subtotal: number; tax: number; total: number; balance_due: number; status: string;
+    id: string;
+    invoice_number: string;
+    invoice_date: string;
+    due_date?: string | null;
+    subtotal: number;
+    tax: number;
+    total: number;
+    balance_due: number;
+    status: string;
   }>;
   deposits?: Array<{
-    id: string; amount: number; status: string; due_date?: string | null;
+    id: string;
+    amount: number;
+    status: string;
+    due_date?: string | null;
   }>;
   totals: { invoiced: number; outstanding: number };
   error?: string;
@@ -62,10 +87,14 @@ export const Route = createFileRoute("/portal/proposal/$token")({
   }),
   component: PortalProposalPage,
   errorComponent: ({ error }) => (
-    <PortalShell><ErrorBox title="Something went wrong" body={error.message} /></PortalShell>
+    <PortalShell>
+      <ErrorBox title="Something went wrong" body={error.message} />
+    </PortalShell>
   ),
   notFoundComponent: () => (
-    <PortalShell><ErrorBox title="Proposal not found" body="This link is invalid or has been revoked." /></PortalShell>
+    <PortalShell>
+      <ErrorBox title="Proposal not found" body="This link is invalid or has been revoked." />
+    </PortalShell>
   ),
 });
 
@@ -87,7 +116,13 @@ function PortalProposalPage() {
   });
 
   if (q.isLoading) {
-    return <PortalShell><div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading proposal…</div></PortalShell>;
+    return (
+      <PortalShell>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading proposal…
+        </div>
+      </PortalShell>
+    );
   }
 
   const payload = q.data;
@@ -97,42 +132,65 @@ function PortalProposalPage() {
       expired: { title: "Link expired", body: "Please contact your contractor for a fresh link." },
       invalid_token: { title: "Invalid link", body: "This URL is malformed." },
     };
-    const m = map[payload?.error ?? ""] ?? { title: "Unavailable", body: "This proposal isn't available right now." };
-    return <PortalShell><ErrorBox title={m.title} body={m.body} /></PortalShell>;
+    const m = map[payload?.error ?? ""] ?? {
+      title: "Unavailable",
+      body: "This proposal isn't available right now.",
+    };
+    return (
+      <PortalShell>
+        <ErrorBox title={m.title} body={m.body} />
+      </PortalShell>
+    );
   }
 
   const { proposal, options, project, client_name, invoices, deposits, totals } = payload;
   const accepted = proposal.status === "approved";
 
   // Find an unpaid deposit to show payment UI for
-  const pendingDeposit = (deposits ?? []).find((d) => d.status !== "paid" && d.status !== "void" && d.status !== "waived");
+  const pendingDeposit = (deposits ?? []).find(
+    (d) => d.status !== "paid" && d.status !== "void" && d.status !== "waived",
+  );
   const paidDeposit = (deposits ?? []).find((d) => d.status === "paid");
 
   return (
     <PortalShell>
       <header className="space-y-1">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline"><FileText className="mr-1 h-3 w-3" />{proposal.proposal_number}</Badge>
-          <Badge variant={accepted ? "default" : "outline"} className="capitalize">{proposal.status}</Badge>
+          <Badge variant="outline">
+            <FileText className="mr-1 h-3 w-3" />
+            {proposal.proposal_number}
+          </Badge>
+          <Badge variant={accepted ? "default" : "outline"} className="capitalize">
+            {proposal.status}
+          </Badge>
           {proposal.sent_at && <span>Sent {formatDate(proposal.sent_at)}</span>}
         </div>
         <h1 className="font-display text-2xl md:text-3xl font-bold">{project.name}</h1>
         {client_name && <p className="text-sm text-muted-foreground">Prepared for {client_name}</p>}
         {(project.address || project.city_state_zip) && (
-          <p className="text-xs text-muted-foreground">{[project.address, project.city_state_zip].filter(Boolean).join(" · ")}</p>
+          <p className="text-xs text-muted-foreground">
+            {[project.address, project.city_state_zip].filter(Boolean).join(" · ")}
+          </p>
         )}
       </header>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="md:col-span-2">
-          <CardHeader><CardTitle className="text-sm">Proposal</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm">Proposal</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <Section title="Executive Summary" body={proposal.executive_summary} />
             <Section title="Scope of Work" body={proposal.scope_of_work} />
             <Section title="Recommendation" body={proposal.recommendation} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Section title="Timeline" body={proposal.timeline} />
-              <Section title="Warranty" body={[proposal.warranty_length, proposal.warranty_notes].filter(Boolean).join(" — ")} />
+              <Section
+                title="Warranty"
+                body={[proposal.warranty_length, proposal.warranty_notes]
+                  .filter(Boolean)
+                  .join(" — ")}
+              />
             </div>
             <Section title="Exclusions" body={proposal.exclusions} />
             <Section title="Payment Terms" body={proposal.payment_terms} />
@@ -141,18 +199,32 @@ function PortalProposalPage() {
 
         <div className="space-y-4">
           <Card>
-            <CardHeader><CardTitle className="text-sm">Options</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-sm">Options</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-2">
-              {options.length === 0 && <p className="text-xs text-muted-foreground">No pricing options listed.</p>}
+              {options.length === 0 && (
+                <p className="text-xs text-muted-foreground">No pricing options listed.</p>
+              )}
               {options.map((o) => (
                 <div key={o.id} className="rounded-md border p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="font-semibold">{o.title}</div>
-                    <div className="tabular-nums font-display text-lg">{formatMoney(Number(o.price))}</div>
+                    <div className="tabular-nums font-display text-lg">
+                      {formatMoney(Number(o.price))}
+                    </div>
                   </div>
-                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{o.tier}</div>
-                  {o.description && <p className="text-xs text-muted-foreground mt-1">{o.description}</p>}
-                  {o.is_recommended && <Badge className="mt-2" variant="secondary">Recommended</Badge>}
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {o.tier}
+                  </div>
+                  {o.description && (
+                    <p className="text-xs text-muted-foreground mt-1">{o.description}</p>
+                  )}
+                  {o.is_recommended && (
+                    <Badge className="mt-2" variant="secondary">
+                      Recommended
+                    </Badge>
+                  )}
                 </div>
               ))}
             </CardContent>
@@ -165,8 +237,16 @@ function PortalProposalPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm">Invoices & Balances</CardTitle>
             <div className="text-xs text-muted-foreground">
-              Invoiced <span className="font-semibold text-foreground tabular-nums">{formatMoney(totals.invoiced)}</span>
-              {" · "}Outstanding <span className={`font-semibold tabular-nums ${totals.outstanding > 0 ? "text-amber-700" : "text-emerald-700"}`}>{formatMoney(totals.outstanding)}</span>
+              Invoiced{" "}
+              <span className="font-semibold text-foreground tabular-nums">
+                {formatMoney(totals.invoiced)}
+              </span>
+              {" · "}Outstanding{" "}
+              <span
+                className={`font-semibold tabular-nums ${totals.outstanding > 0 ? "text-amber-700" : "text-emerald-700"}`}
+              >
+                {formatMoney(totals.outstanding)}
+              </span>
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -174,12 +254,26 @@ function PortalProposalPage() {
               {invoices.map((i) => {
                 const meta = INVOICE_STATUS_META[i.status] ?? { label: i.status, color: "" };
                 return (
-                  <div key={i.id} className="grid grid-cols-12 items-center gap-2 px-4 py-2 text-sm">
+                  <div
+                    key={i.id}
+                    className="grid grid-cols-12 items-center gap-2 px-4 py-2 text-sm"
+                  >
                     <div className="col-span-4 font-mono text-xs">{i.invoice_number}</div>
-                    <div className="col-span-3 text-xs text-muted-foreground">{formatDate(i.invoice_date)}{i.due_date ? ` · due ${formatDate(i.due_date)}` : ""}</div>
+                    <div className="col-span-3 text-xs text-muted-foreground">
+                      {formatDate(i.invoice_date)}
+                      {i.due_date ? ` · due ${formatDate(i.due_date)}` : ""}
+                    </div>
                     <div className="col-span-2 tabular-nums">{formatMoney(Number(i.total))}</div>
-                    <div className={`col-span-2 tabular-nums ${Number(i.balance_due) > 0 ? "text-amber-700 font-semibold" : "text-emerald-700"}`}>{formatMoney(Number(i.balance_due))}</div>
-                    <div className="col-span-1 text-right"><Badge variant="outline" className="text-[10px] capitalize">{meta.label}</Badge></div>
+                    <div
+                      className={`col-span-2 tabular-nums ${Number(i.balance_due) > 0 ? "text-amber-700 font-semibold" : "text-emerald-700"}`}
+                    >
+                      {formatMoney(Number(i.balance_due))}
+                    </div>
+                    <div className="col-span-1 text-right">
+                      <Badge variant="outline" className="text-[10px] capitalize">
+                        {meta.label}
+                      </Badge>
+                    </div>
                   </div>
                 );
               })}
@@ -193,7 +287,8 @@ function PortalProposalPage() {
           <Card className="border-emerald-200 bg-emerald-50">
             <CardContent className="flex items-center gap-2 py-4 text-sm text-emerald-800">
               <CheckCircle2 className="h-5 w-5" />
-              Proposal accepted{proposal.approved_at ? ` on ${formatDate(proposal.approved_at)}` : ""}. Thank you!
+              Proposal accepted
+              {proposal.approved_at ? ` on ${formatDate(proposal.approved_at)}` : ""}. Thank you!
             </CardContent>
           </Card>
           {paidDeposit && (
@@ -217,7 +312,8 @@ function PortalProposalPage() {
       )}
 
       <p className="pt-4 text-center text-[11px] text-muted-foreground">
-        <ShieldCheck className="inline h-3 w-3 mr-1" /> Secure link. Do not share this URL — anyone with it can view this proposal.
+        <ShieldCheck className="inline h-3 w-3 mr-1" /> Secure link. Do not share this URL — anyone
+        with it can view this proposal.
       </p>
     </PortalShell>
   );
@@ -278,13 +374,22 @@ function DepositPaymentSection({
   if (!clientSecret) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Wallet className="h-4 w-4" />Deposit required</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            Deposit required
+          </CardTitle>
+        </CardHeader>
         <CardContent className="space-y-3">
           <div className="text-sm">
             A deposit of{" "}
-            <span className="font-semibold tabular-nums text-amber-700">{formatMoney(Number(deposit.amount))}</span>{" "}
+            <span className="font-semibold tabular-nums text-amber-700">
+              {formatMoney(Number(deposit.amount))}
+            </span>{" "}
             is required to begin work.
-            {deposit.due_date && <span className="text-muted-foreground"> Due {formatDate(deposit.due_date)}.</span>}
+            {deposit.due_date && (
+              <span className="text-muted-foreground"> Due {formatDate(deposit.due_date)}.</span>
+            )}
           </div>
           {createError && (
             <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
@@ -372,7 +477,12 @@ function DepositPaymentForm({
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Wallet className="h-4 w-4" />Pay deposit {formatMoney(amount)}</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Wallet className="h-4 w-4" />
+          Pay deposit {formatMoney(amount)}
+        </CardTitle>
+      </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <PaymentElement />
@@ -392,7 +502,8 @@ function DepositPaymentForm({
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground text-center">
-            <ShieldCheck className="inline h-3 w-3 mr-1" /> Payments are processed securely by Stripe.
+            <ShieldCheck className="inline h-3 w-3 mr-1" /> Payments are processed securely by
+            Stripe.
           </p>
         </form>
       </CardContent>
@@ -410,7 +521,11 @@ function Section({ title, body }: { title: string; body?: string | null }) {
   );
 }
 
-function AcceptForm({ token, options, onAccepted }: {
+function AcceptForm({
+  token,
+  options,
+  onAccepted,
+}: {
   token: string;
   options: PortalPayload["options"];
   onAccepted: () => void;
@@ -446,28 +561,40 @@ function AcceptForm({ token, options, onAccepted }: {
       if (r?.error) throw new Error(r.error);
       return r;
     },
-    onSuccess: () => { toast.success("Proposal accepted. Thank you!"); onAccepted(); },
+    onSuccess: () => {
+      toast.success("Proposal accepted. Thank you!");
+      onAccepted();
+    },
     onError: (e: any) => toast.error(e.message ?? "Could not accept"),
   });
 
-  const canSubmit = name.trim().length >= 2 && terms && (mode === "typed" || (drawnData && drawnData.length > 100));
+  const canSubmit =
+    name.trim().length >= 2 && terms && (mode === "typed" || (drawnData && drawnData.length > 100));
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-sm">Accept & Sign</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="text-sm">Accept & Sign</CardTitle>
+      </CardHeader>
       <CardContent className="space-y-3">
         {options.length > 1 && (
           <div>
             <Label className="text-xs">Selected option</Label>
             <div className="mt-1 grid gap-2 sm:grid-cols-2">
               {options.map((o) => (
-                <button key={o.id} type="button" onClick={() => setSelected(o.id)}
-                  className={`text-left rounded-md border p-2 transition ${selected === o.id ? "border-gold ring-1 ring-gold" : "hover:border-muted-foreground/40"}`}>
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => setSelected(o.id)}
+                  className={`text-left rounded-md border p-2 transition ${selected === o.id ? "border-gold ring-1 ring-gold" : "hover:border-muted-foreground/40"}`}
+                >
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-sm">{o.title}</span>
                     <span className="tabular-nums text-sm">{formatMoney(Number(o.price))}</span>
                   </div>
-                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{o.tier}</div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {o.tier}
+                  </div>
                 </button>
               ))}
             </div>
@@ -477,31 +604,64 @@ function AcceptForm({ token, options, onAccepted }: {
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
             <Label className="text-xs">Full name *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Smith" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jane Smith"
+            />
           </div>
           <div>
             <Label className="text-xs">Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@example.com" />
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="jane@example.com"
+            />
           </div>
           <div>
             <Label className="text-xs">Phone</Label>
-            <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 555-5555" />
+            <Input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="(555) 555-5555"
+            />
           </div>
         </div>
 
         <div>
           <div className="flex gap-1 mb-2">
-            <Button type="button" size="sm" variant={mode === "typed" ? "default" : "outline"} onClick={() => setMode("typed")}>
-              <TypeIcon className="mr-1 h-3 w-3" />Type
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "typed" ? "default" : "outline"}
+              onClick={() => setMode("typed")}
+            >
+              <TypeIcon className="mr-1 h-3 w-3" />
+              Type
             </Button>
-            <Button type="button" size="sm" variant={mode === "drawn" ? "default" : "outline"} onClick={() => setMode("drawn")}>
-              <PenLine className="mr-1 h-3 w-3" />Draw
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "drawn" ? "default" : "outline"}
+              onClick={() => setMode("drawn")}
+            >
+              <PenLine className="mr-1 h-3 w-3" />
+              Draw
             </Button>
           </div>
           {mode === "typed" ? (
             <div className="rounded-md border bg-muted/30 px-4 py-6 text-center">
-              <span className="font-signature text-2xl italic" style={{ fontFamily: "'Great Vibes', 'Brush Script MT', cursive" }}>
-                {name || <span className="text-muted-foreground text-sm not-italic">Your signature will appear as typed name</span>}
+              <span
+                className="font-signature text-2xl italic"
+                style={{ fontFamily: "'Great Vibes', 'Brush Script MT', cursive" }}
+              >
+                {name || (
+                  <span className="text-muted-foreground text-sm not-italic">
+                    Your signature will appear as typed name
+                  </span>
+                )}
               </span>
             </div>
           ) : (
@@ -510,15 +670,28 @@ function AcceptForm({ token, options, onAccepted }: {
         </div>
 
         <div className="flex items-start gap-2">
-          <Checkbox id="terms" checked={terms} onCheckedChange={(v) => setTerms(!!v)} className="mt-0.5" />
+          <Checkbox
+            id="terms"
+            checked={terms}
+            onCheckedChange={(v) => setTerms(!!v)}
+            className="mt-0.5"
+          />
           <Label htmlFor="terms" className="text-xs leading-relaxed">
-            I agree to the scope, pricing, and terms above. My electronic signature is legally binding and a copy is kept on file.
+            I agree to the scope, pricing, and terms above. My electronic signature is legally
+            binding and a copy is kept on file.
           </Label>
         </div>
 
-        <Button className="w-full" disabled={accept.isPending || !canSubmit}
-          onClick={() => accept.mutate()}>
-          {accept.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+        <Button
+          className="w-full"
+          disabled={accept.isPending || !canSubmit}
+          onClick={() => accept.mutate()}
+        >
+          {accept.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+          )}
           Accept proposal
         </Button>
       </CardContent>
@@ -588,9 +761,7 @@ function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) => void
 function PortalShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-muted/30">
-      <div className="mx-auto max-w-5xl px-4 py-8 md:py-12 space-y-6">
-        {children}
-      </div>
+      <div className="mx-auto max-w-5xl px-4 py-8 md:py-12 space-y-6">{children}</div>
     </div>
   );
 }

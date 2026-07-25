@@ -18,7 +18,9 @@ export const sendProposalEmailFn = createServerFn({ method: "POST" })
     // Load proposal + project + client in one query
     const { data: prop, error: propErr } = await supabase
       .from("proposals")
-      .select("id, proposal_number, portal_token, portal_token_expires_at, status, projects(id, name, clients(name, email))")
+      .select(
+        "id, proposal_number, portal_token, portal_token_expires_at, status, projects(id, name, clients(name, email))",
+      )
       .eq("id", data.proposal_id)
       .single();
     if (propErr || !prop) throw new Error("Proposal not found");
@@ -138,12 +140,9 @@ export const sendPortalInvitationEmailFn = createServerFn({ method: "POST" })
     // Determine recipient email — prefer share.recipient_email, fall back to client email
     const project = share.projects as any;
     const client = project?.clients as any;
-    const recipientEmail: string | null =
-      share.recipient_email ?? client?.email ?? null;
+    const recipientEmail: string | null = share.recipient_email ?? client?.email ?? null;
     if (!recipientEmail) {
-      throw new Error(
-        "No email address on file. Add an email to the share or the client record.",
-      );
+      throw new Error("No email address on file. Add an email to the share or the client record.");
     }
 
     // Basic email format validation

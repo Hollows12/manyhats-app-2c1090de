@@ -28,8 +28,10 @@ export const writeScope = createServerFn({ method: "POST" })
 
     const toneText = {
       professional: "Professional, clear, contractor-grade.",
-      board_ready: "Board-ready: formal, concise, suitable for nonprofit board or municipal review.",
-      grant_friendly: "Grant / donation-friendly: emphasize stewardship, historic value, public benefit, phased stabilization.",
+      board_ready:
+        "Board-ready: formal, concise, suitable for nonprofit board or municipal review.",
+      grant_friendly:
+        "Grant / donation-friendly: emphasize stewardship, historic value, public benefit, phased stabilization.",
     }[data.tone];
 
     const system = `You are the proposal writer for ManyHats Construction LLC (Mike Canter, CEO, 740-600-1374, veteran-owned).

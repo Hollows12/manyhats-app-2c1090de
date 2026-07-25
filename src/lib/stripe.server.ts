@@ -36,9 +36,7 @@ export async function createPaymentIntent(
   });
 }
 
-export async function retrievePaymentIntent(
-  intentId: string,
-): Promise<Stripe.PaymentIntent> {
+export async function retrievePaymentIntent(intentId: string): Promise<Stripe.PaymentIntent> {
   const stripe = getStripeClient();
   return stripe.paymentIntents.retrieve(intentId);
 }

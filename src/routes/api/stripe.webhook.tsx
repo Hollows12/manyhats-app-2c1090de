@@ -1,40 +1,40 @@
 // Stripe webhook handler — records confirmed payments in the database.
 // Route: POST /api/stripe/webhook
 
-import { createAPIFileRoute } from "@tanstack/react-start/api";
-import { getWebRequest } from "@tanstack/react-start/server";
+import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-export const APIRoute = createAPIFileRoute("/api/stripe/webhook")({
-  POST: async () => {
-    const req = getWebRequest();
-    if (!req) return new Response("No request", { status: 500 });
+export const Route = createFileRoute("/api/stripe/webhook")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const req = request;
+        const body = await req.text();
+        const sig = req.headers.get("stripe-signature") ?? "";
+        if (!sig) return new Response("Missing stripe-signature header", { status: 400 });
 
-    const body = await req.text();
-    const sig = req.headers.get("stripe-signature") ?? "";
-    if (!sig) return new Response("Missing stripe-signature header", { status: 400 });
+        const { constructWebhookEvent, getStripeWebhookSecret } =
+          await import("@/lib/stripe.server");
 
-    const { constructWebhookEvent, getStripeWebhookSecret } = await import(
-      "@/lib/stripe.server"
-    );
+        let event;
+        try {
+          event = constructWebhookEvent(body, sig, getStripeWebhookSecret());
+        } catch (err: any) {
+          console.error("[Stripe webhook] signature verification failed:", err.message);
+          return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+        }
 
-    let event;
-    try {
-      event = constructWebhookEvent(body, sig, getStripeWebhookSecret());
-    } catch (err: any) {
-      console.error("[Stripe webhook] signature verification failed:", err.message);
-      return new Response(`Webhook Error: ${err.message}`, { status: 400 });
-    }
+        if (event.type === "payment_intent.succeeded") {
+          await handlePaymentSucceeded(event.data.object as any);
+        }
 
-    if (event.type === "payment_intent.succeeded") {
-      await handlePaymentSucceeded(event.data.object as any);
-    }
-
-    return new Response(JSON.stringify({ received: true }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+        return new Response(JSON.stringify({ received: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+    },
   },
 });
 

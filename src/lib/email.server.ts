@@ -110,7 +110,9 @@ export async function sendInvoiceEmail(d: InvoiceEmailData): Promise<{ id: strin
   const invoiceNumber = escapeHtml(d.invoiceNumber);
   const totalAmount = escapeHtml(d.totalAmount);
   const portalUrl = escapeHtml(d.portalUrl);
-  const dueLine = d.dueDate ? `<p>Payment is due by <strong>${escapeHtml(d.dueDate)}</strong>.</p>` : "";
+  const dueLine = d.dueDate
+    ? `<p>Payment is due by <strong>${escapeHtml(d.dueDate)}</strong>.</p>`
+    : "";
   return sendEmail({
     to: d.recipientEmail,
     subject: `Invoice ${invoiceNumber} — ${totalAmount}`,
@@ -151,7 +153,9 @@ export interface PortalInvitationEmailData {
   companyName?: string;
 }
 
-export async function sendPortalInvitationEmail(d: PortalInvitationEmailData): Promise<{ id: string }> {
+export async function sendPortalInvitationEmail(
+  d: PortalInvitationEmailData,
+): Promise<{ id: string }> {
   const company = escapeHtml(d.companyName ?? "ManyHats Construction LLC");
   const clientName = escapeHtml(d.clientName);
   const projectName = escapeHtml(d.projectName);
