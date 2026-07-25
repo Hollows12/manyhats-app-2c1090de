@@ -1,12 +1,23 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { AlertCircle, CheckCircle2, FileText, Loader2, ShieldCheck, Wallet } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatMoney, formatDate } from "@/lib/manyhats";
 import { INVOICE_STATUS_META } from "@/lib/finance";
+import { createPortalInvoicePaymentIntent } from "@/lib/stripe.functions";
+
+// ---------------------------------------------------------------------------
+// Stripe publishable key — must be set in VITE_STRIPE_PUBLISHABLE_KEY env var
+// ---------------------------------------------------------------------------
+const STRIPE_PK = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
 
 type Payload = {
   invoice: {
@@ -146,12 +157,13 @@ function PortalInvoicePage() {
           )}
 
           {!isPaid && invoice.status !== "void" && (
-            <Card>
-              <CardContent className="py-4 text-xs text-muted-foreground space-y-2">
-                <div className="font-semibold text-foreground">Online payment coming soon</div>
-                <div>Please contact your contractor to arrange payment for the remaining balance of {formatMoney(Number(invoice.balance_due))}.</div>
-              </CardContent>
-            </Card>
+            <PaymentSection
+              invoiceId={invoice.id}
+              invoiceNumber={invoice.invoice_number}
+              balanceDue={Number(invoice.balance_due)}
+              portalToken={token}
+              onSuccess={() => q.refetch()}
+            />
           )}
         </div>
       </div>
@@ -160,6 +172,181 @@ function PortalInvoicePage() {
         <ShieldCheck className="inline h-3 w-3 mr-1" /> Secure link. Do not share this URL — anyone with it can view this invoice.
       </p>
     </Shell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Payment section — shown when balance is due
+// ---------------------------------------------------------------------------
+
+type PaymentSectionProps = {
+  invoiceId: string;
+  invoiceNumber: string;
+  balanceDue: number;
+  portalToken: string;
+  onSuccess: () => void;
+};
+
+function PaymentSection({ invoiceId, invoiceNumber, balanceDue, portalToken, onSuccess }: PaymentSectionProps) {
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const handleCreate = useCallback(async () => {
+    if (!stripePromise) {
+      setCreateError("Online payment is not configured. Please contact your contractor.");
+      return;
+    }
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const result = await createPortalInvoicePaymentIntent({
+        data: { invoice_id: invoiceId, portal_token: portalToken },
+      });
+      setClientSecret(result.clientSecret!);
+    } catch (e: any) {
+      setCreateError(e.message ?? "Could not initialize payment");
+    } finally {
+      setCreating(false);
+    }
+  }, [invoiceId, portalToken]);
+
+  if (!stripePromise) {
+    return (
+      <Card>
+        <CardContent className="py-4 text-xs text-muted-foreground space-y-2">
+          <div className="font-semibold text-foreground">Pay online</div>
+          <div>
+            Online payment is not currently available. Please contact your contractor to arrange
+            payment for the remaining balance of <strong>{formatMoney(balanceDue)}</strong>.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!clientSecret) {
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Wallet className="h-4 w-4" />Pay online</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="text-sm">
+            Balance due: <span className="font-semibold tabular-nums text-amber-700">{formatMoney(balanceDue)}</span>
+          </div>
+          {createError && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{createError}</span>
+            </div>
+          )}
+          <Button onClick={handleCreate} disabled={creating} className="w-full">
+            {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Pay {formatMoney(balanceDue)} now
+          </Button>
+          <p className="text-[11px] text-muted-foreground">
+            You will be charged {formatMoney(balanceDue)} for invoice {invoiceNumber}.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: "stripe" } }}>
+      <PaymentForm
+        balanceDue={balanceDue}
+        invoiceNumber={invoiceNumber}
+        onSuccess={onSuccess}
+        onCancel={() => setClientSecret(null)}
+      />
+    </Elements>
+  );
+}
+
+type PaymentFormProps = {
+  balanceDue: number;
+  invoiceNumber: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+};
+
+function PaymentForm({ balanceDue, invoiceNumber, onSuccess, onCancel }: PaymentFormProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [succeeded, setSucceeded] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements || submitting) return;
+    setSubmitting(true);
+    setError(null);
+
+    const { error: submitErr } = await elements.submit();
+    if (submitErr) {
+      setError(submitErr.message ?? "Form error");
+      setSubmitting(false);
+      return;
+    }
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const { error: confirmErr } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: `${origin}${window.location.pathname}?paid=1` },
+      redirect: "if_required",
+    });
+
+    if (confirmErr) {
+      setError(confirmErr.message ?? "Payment failed");
+      setSubmitting(false);
+    } else {
+      setSucceeded(true);
+      toast.success("Payment successful! Thank you.");
+      setTimeout(onSuccess, 1500);
+    }
+  };
+
+  if (succeeded) {
+    return (
+      <Card className="border-emerald-200 bg-emerald-50">
+        <CardContent className="flex items-center gap-2 py-6 text-sm text-emerald-800">
+          <CheckCircle2 className="h-5 w-5" /> Payment received! Refreshing your invoice…
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Wallet className="h-4 w-4" />Pay {formatMoney(balanceDue)}</CardTitle></CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="text-xs text-muted-foreground">
+            Paying balance due for invoice <span className="font-mono">{invoiceNumber}</span>
+          </div>
+          <PaymentElement />
+          {error && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button type="submit" className="flex-1" disabled={!stripe || !elements || submitting}>
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {submitting ? "Processing…" : `Pay ${formatMoney(balanceDue)}`}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
+              Cancel
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground text-center">
+            <ShieldCheck className="inline h-3 w-3 mr-1" /> Payments are processed securely by Stripe.
+          </p>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 

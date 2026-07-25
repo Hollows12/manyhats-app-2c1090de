@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   DollarSign, FileText, Receipt, TrendingUp, Plus, Trash2,
-  Printer, Ban, Wallet, Percent, AlertCircle, Link2,
+  Printer, Ban, Wallet, Percent, AlertCircle, Link2, Send,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -306,6 +306,7 @@ function InvoiceCard({ invoice, onChanged }: { invoice: any; onChanged: () => vo
           <Button size="sm" variant="outline" onClick={() => setPayOpen(true)} disabled={invoice.status === "void" || Number(invoice.balance_due) <= 0}>
             <Wallet className="mr-1 h-3 w-3" />Record payment
           </Button>
+          <SendInvoiceButton invoiceId={invoice.id} sentAt={invoice.sent_at} onChanged={onChanged} />
           <InvoicePortalLinkButton invoiceId={invoice.id} onChanged={onChanged} />
           <Button size="sm" variant="ghost" onClick={() => window.print()}>
             <Printer className="h-3 w-3" />
@@ -592,6 +593,31 @@ function ProfitTile({ label, value, muted, highlight }: { label: string; value: 
         {formatMoney(value)}
       </div>
     </div>
+  );
+}
+
+function SendInvoiceButton({ invoiceId, sentAt, onChanged }: { invoiceId: string; sentAt?: string | null; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  async function send() {
+    setBusy(true);
+    try {
+      const { sendInvoiceEmailFn } = await import("@/lib/email.functions");
+      await sendInvoiceEmailFn({ data: { invoice_id: invoiceId } });
+      toast.success("Invoice sent to client.");
+      onChanged();
+    } catch (e: any) {
+      const msg: string = e?.message ?? "Could not send invoice";
+      if (msg.includes("RESEND_API_KEY")) {
+        toast.error("Email not configured — set RESEND_API_KEY in server environment.");
+      } else {
+        toast.error(msg);
+      }
+    } finally { setBusy(false); }
+  }
+  return (
+    <Button size="sm" variant={sentAt ? "outline" : "default"} disabled={busy} onClick={send} title={sentAt ? `Resend invoice (last sent ${formatDate(sentAt)})` : "Send invoice by email"}>
+      <Send className="mr-1 h-3 w-3" />{sentAt ? "Resend" : "Send"}
+    </Button>
   );
 }
 

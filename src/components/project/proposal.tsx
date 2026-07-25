@@ -277,7 +277,22 @@ function SendProposalButton({ proposalId, status }: { proposalId: string; status
       if (r?.error) throw new Error(r.error);
       const url = `${window.location.origin}/portal/proposal/${r.token}`;
       await navigator.clipboard.writeText(url);
-      toast.success("Proposal marked sent. Client link copied.");
+
+      // Attempt email delivery (requires RESEND_API_KEY to be configured)
+      try {
+        const { sendProposalEmailFn } = await import("@/lib/email.functions");
+        await sendProposalEmailFn({ data: { proposal_id: proposalId } });
+        toast.success("Proposal sent by email. Client link also copied.");
+      } catch (emailErr: any) {
+        const msg: string = emailErr?.message ?? "";
+        if (msg.includes("RESEND_API_KEY")) {
+          toast.success("Proposal marked sent. Client link copied. (Email not configured — set RESEND_API_KEY to enable email delivery.)");
+        } else {
+          toast.success("Proposal marked sent. Client link copied.");
+          console.warn("[proposal send] Email delivery failed:", msg);
+        }
+      }
+
       qc.invalidateQueries({ queryKey: ["proposal"] });
     } catch (e: any) {
       toast.error(e.message ?? "Could not send");

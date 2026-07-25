@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CheckCircle2, FileText, ShieldCheck, AlertCircle, Loader2, PenLine, Type as TypeIcon, Eraser } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { CheckCircle2, FileText, ShieldCheck, AlertCircle, Loader2, PenLine, Type as TypeIcon, Eraser, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +14,10 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatMoney, formatDate } from "@/lib/manyhats";
 import { INVOICE_STATUS_META } from "@/lib/finance";
+import { createPortalDepositPaymentIntent } from "@/lib/stripe.functions";
+
+const STRIPE_PK = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
 
 type PortalPayload = {
   proposal: {
@@ -33,11 +39,14 @@ type PortalPayload = {
     id: string; tier: string; title: string; description?: string | null;
     price: number; is_recommended: boolean; sort_order: number;
   }>;
-  project: { name: string; address?: string | null; city_state_zip?: string | null };
+  project: { id?: string; name: string; address?: string | null; city_state_zip?: string | null };
   client_name?: string | null;
   invoices: Array<{
     id: string; invoice_number: string; invoice_date: string; due_date?: string | null;
     subtotal: number; tax: number; total: number; balance_due: number; status: string;
+  }>;
+  deposits?: Array<{
+    id: string; amount: number; status: string; due_date?: string | null;
   }>;
   totals: { invoiced: number; outstanding: number };
   error?: string;
@@ -92,8 +101,12 @@ function PortalProposalPage() {
     return <PortalShell><ErrorBox title={m.title} body={m.body} /></PortalShell>;
   }
 
-  const { proposal, options, project, client_name, invoices, totals } = payload;
+  const { proposal, options, project, client_name, invoices, deposits, totals } = payload;
   const accepted = proposal.status === "approved";
+
+  // Find an unpaid deposit to show payment UI for
+  const pendingDeposit = (deposits ?? []).find((d) => d.status !== "paid" && d.status !== "void" && d.status !== "waived");
+  const paidDeposit = (deposits ?? []).find((d) => d.status === "paid");
 
   return (
     <PortalShell>
@@ -176,12 +189,29 @@ function PortalProposalPage() {
       )}
 
       {accepted ? (
-        <Card className="border-emerald-200 bg-emerald-50">
-          <CardContent className="flex items-center gap-2 py-4 text-sm text-emerald-800">
-            <CheckCircle2 className="h-5 w-5" />
-            Proposal accepted{proposal.approved_at ? ` on ${formatDate(proposal.approved_at)}` : ""}. Thank you!
-          </CardContent>
-        </Card>
+        <>
+          <Card className="border-emerald-200 bg-emerald-50">
+            <CardContent className="flex items-center gap-2 py-4 text-sm text-emerald-800">
+              <CheckCircle2 className="h-5 w-5" />
+              Proposal accepted{proposal.approved_at ? ` on ${formatDate(proposal.approved_at)}` : ""}. Thank you!
+            </CardContent>
+          </Card>
+          {paidDeposit && (
+            <Card className="border-emerald-200 bg-emerald-50">
+              <CardContent className="flex items-center gap-2 py-4 text-sm text-emerald-800">
+                <CheckCircle2 className="h-5 w-5" />
+                Deposit of {formatMoney(Number(paidDeposit.amount))} received. Thank you!
+              </CardContent>
+            </Card>
+          )}
+          {pendingDeposit && (
+            <DepositPaymentSection
+              deposit={pendingDeposit}
+              portalToken={token}
+              onSuccess={() => q.refetch()}
+            />
+          )}
+        </>
       ) : (
         <AcceptForm token={token} options={options} onAccepted={() => router.invalidate()} />
       )}
@@ -190,6 +220,183 @@ function PortalProposalPage() {
         <ShieldCheck className="inline h-3 w-3 mr-1" /> Secure link. Do not share this URL — anyone with it can view this proposal.
       </p>
     </PortalShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Deposit payment section
+// ---------------------------------------------------------------------------
+
+type DepositEntry = { id: string; amount: number; status: string; due_date?: string | null };
+
+function DepositPaymentSection({
+  deposit,
+  portalToken,
+  onSuccess,
+}: {
+  deposit: DepositEntry;
+  portalToken: string;
+  onSuccess: () => void;
+}) {
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const handleCreate = useCallback(async () => {
+    if (!stripePromise) {
+      setCreateError("Online payment is not configured. Please contact your contractor.");
+      return;
+    }
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const result = await createPortalDepositPaymentIntent({
+        data: { deposit_id: deposit.id, portal_token: portalToken },
+      });
+      setClientSecret(result.clientSecret!);
+    } catch (e: any) {
+      setCreateError(e.message ?? "Could not initialize payment");
+    } finally {
+      setCreating(false);
+    }
+  }, [deposit.id, portalToken]);
+
+  if (!stripePromise) {
+    return (
+      <Card>
+        <CardContent className="py-4 text-xs text-muted-foreground space-y-2">
+          <div className="font-semibold text-foreground">Deposit required</div>
+          <div>
+            A deposit of <strong>{formatMoney(Number(deposit.amount))}</strong> is required to begin
+            work. Please contact your contractor to arrange payment.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!clientSecret) {
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Wallet className="h-4 w-4" />Deposit required</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="text-sm">
+            A deposit of{" "}
+            <span className="font-semibold tabular-nums text-amber-700">{formatMoney(Number(deposit.amount))}</span>{" "}
+            is required to begin work.
+            {deposit.due_date && <span className="text-muted-foreground"> Due {formatDate(deposit.due_date)}.</span>}
+          </div>
+          {createError && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{createError}</span>
+            </div>
+          )}
+          <Button onClick={handleCreate} disabled={creating} className="w-full">
+            {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Pay deposit {formatMoney(Number(deposit.amount))}
+          </Button>
+          <p className="text-[11px] text-muted-foreground">
+            Payment is processed securely via Stripe. Work begins after deposit is confirmed.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: "stripe" } }}>
+      <DepositPaymentForm
+        amount={Number(deposit.amount)}
+        onSuccess={onSuccess}
+        onCancel={() => setClientSecret(null)}
+      />
+    </Elements>
+  );
+}
+
+function DepositPaymentForm({
+  amount,
+  onSuccess,
+  onCancel,
+}: {
+  amount: number;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [succeeded, setSucceeded] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements || submitting) return;
+    setSubmitting(true);
+    setError(null);
+
+    const { error: submitErr } = await elements.submit();
+    if (submitErr) {
+      setError(submitErr.message ?? "Form error");
+      setSubmitting(false);
+      return;
+    }
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const { error: confirmErr } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: `${origin}${window.location.pathname}?deposit_paid=1` },
+      redirect: "if_required",
+    });
+
+    if (confirmErr) {
+      setError(confirmErr.message ?? "Payment failed");
+      setSubmitting(false);
+    } else {
+      setSucceeded(true);
+      toast.success("Deposit received! We'll be in touch soon.");
+      setTimeout(onSuccess, 1500);
+    }
+  };
+
+  if (succeeded) {
+    return (
+      <Card className="border-emerald-200 bg-emerald-50">
+        <CardContent className="flex items-center gap-2 py-6 text-sm text-emerald-800">
+          <CheckCircle2 className="h-5 w-5" /> Deposit received! Thank you.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Wallet className="h-4 w-4" />Pay deposit {formatMoney(amount)}</CardTitle></CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <PaymentElement />
+          {error && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button type="submit" className="flex-1" disabled={!stripe || !elements || submitting}>
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {submitting ? "Processing…" : `Pay ${formatMoney(amount)}`}
+            </Button>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
+              Cancel
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground text-center">
+            <ShieldCheck className="inline h-3 w-3 mr-1" /> Payments are processed securely by Stripe.
+          </p>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 

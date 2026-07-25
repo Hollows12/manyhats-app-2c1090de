@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  Copy, KeyRound, RefreshCw, ShieldOff, Eye, ExternalLink, Loader2, Link2, ShieldCheck, Clock,
+  Copy, KeyRound, RefreshCw, ShieldOff, Eye, ExternalLink, Loader2, Link2, ShieldCheck, Clock, Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/empty-state";
 import { formatDate } from "@/lib/manyhats";
+import { sendPortalInvitationEmailFn } from "@/lib/email.functions";
 
 type Share = {
   id: string;
@@ -99,6 +100,18 @@ export function ClientFileTab({ projectId }: { projectId: string }) {
       toast.success("Share revoked");
     },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  const sendEmail = useMutation({
+    mutationFn: async (shareId: string) => {
+      const result = await sendPortalInvitationEmailFn({ data: { share_id: shareId } });
+      return result;
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["client-file-shares", projectId] });
+      toast.success(`Portal invitation sent to ${result.recipientEmail}`);
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to send email"),
   });
 
   function copy(text: string, label: string) {
@@ -226,6 +239,18 @@ export function ClientFileTab({ projectId }: { projectId: string }) {
                         <>
                           <Button size="sm" variant="outline" onClick={() => rotate.mutate(s.id)} disabled={rotate.isPending}>
                             <RefreshCw className="mr-1 h-3 w-3" /> New PIN
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => sendEmail.mutate(s.id)}
+                            disabled={sendEmail.isPending && sendEmail.variables === s.id}
+                            title={s.recipient_email ? `Send PIN to ${s.recipient_email}` : "No recipient email — add one to the share"}
+                          >
+                            {sendEmail.isPending && sendEmail.variables === s.id
+                              ? <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                              : <Mail className="mr-1 h-3 w-3" />}
+                            Send PIN
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => revoke.mutate(s.id)} disabled={revoke.isPending} className="text-destructive hover:text-destructive">
                             <ShieldOff className="mr-1 h-3 w-3" /> Revoke
