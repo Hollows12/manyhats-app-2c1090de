@@ -13,7 +13,7 @@ The Stripe invoice-balance recalculation path is restricted to the trusted serve
 - The only application caller is `src/routes/api/stripe.webhook.tsx`
 - The webhook constructs its Supabase client with `process.env.SUPABASE_SERVICE_ROLE_KEY`; the key has no `VITE_` prefix and is not included in the browser bundle
 
-The repository migration is hardened. Deployment to the live Supabase database must be verified separately after the project is active.
+The repository migration is hardened. Live verification on 2026-08-05 found that this RPC is not deployed and its prerequisite `public.invoices`, `public.payments`, and `public.invoice_status` objects are absent. The prerequisite migration chain must be reconciled before deployment.
 
 ---
 
