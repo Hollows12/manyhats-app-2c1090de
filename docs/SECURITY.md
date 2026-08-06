@@ -171,8 +171,10 @@ The three portal routes (`/portal/proposal/:token`, `/portal/invoice/:token`, `/
 ### Proposal Portal
 - Token is a UUID stored in `proposals.portal_token`
 - `portal_get_proposal(token)` RPC only returns data if token is valid and not expired
+- `portal_get_proposal(token)` now returns `project.id`/`project_id` and non-void deposits for that same project
 - No internal cost data, AI draft history, or staff notes returned
 - Client signature → `portal_accept_proposal()` — only writes to `proposal_signatures` scoped to the token
+- Deposit payment intent creation enforces `deposit.project_id === proposal.project_id` server-side and rejects cross-project mismatches
 
 ### Invoice Portal
 - Token in `invoices.portal_token`
@@ -270,6 +272,18 @@ The role hierarchy (`admin` → `crew` → `client`) provides within-tenant acce
 | No rate limiting on portal token endpoints | Token enumeration possible | UUIDs are not enumerable | Add edge-level rate limiting |
 
 ### Security fix log
+
+#### 2026-08-06 — invoice-balance RPC hardened to service-role only
+
+**File:** `supabase/migrations/20260717005500_recalculate_invoice_balance_rpc.sql`
+
+- Uses `SECURITY INVOKER`, not `SECURITY DEFINER`
+- Uses `SET search_path = ''` and fully qualified `public.` objects
+- Revokes execution from `PUBLIC`, `anon`, and `authenticated`
+- Grants execution only to `service_role`
+- The Stripe webhook creates its Supabase client with `process.env.SUPABASE_SERVICE_ROLE_KEY`
+- No frontend component calls this RPC
+- The caller already has the required privileges, avoiding definer-rights privilege escalation
 
 #### 2026-07-15 — scope-writer authorization gap closed
 
