@@ -176,8 +176,13 @@ export const createPortalDepositPaymentIntent = createServerFn({ method: "POST" 
 
     // Verify the deposit is for the same project as the portal proposal
     const proposalProjectId: string | undefined =
-      (payload.project as any)?.id ?? (payload as any).project_id;
-    if (proposalProjectId && String(deposit.project_id) !== String(proposalProjectId)) {
+      (payload.project as any)?.id ??
+      (payload.project as any)?.project_id ??
+      (payload as any).project_id;
+    if (!proposalProjectId) {
+      throw new Error("Proposal project context missing");
+    }
+    if (String(deposit.project_id) !== String(proposalProjectId)) {
       throw new Error("Deposit/proposal mismatch");
     }
 
@@ -201,4 +206,3 @@ export const createPortalDepositPaymentIntent = createServerFn({ method: "POST" 
 
     return { clientSecret: intent.client_secret, intentId: intent.id, amountCents };
   });
-
