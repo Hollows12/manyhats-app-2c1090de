@@ -7,6 +7,18 @@ _Prior audit date: 2026-07-06 · Scope: Lovable frontend + Supabase backend only
 
 ---
 
+## 2026-08-06 — PR #6 unresolved blocker fixes (same branch)
+
+Resolved on `copilot/auditrestore-july-10-11-work-one-more-time`:
+
+- Preserved `overdue` invoice status in `recalculate_invoice_balance()` when paid amount is zero
+- Extended `portal_get_proposal()` payload to include `project.id`/`project_id` plus non-void project deposits
+- Fixed React type imports in `portal.invoice.$token.tsx` and `portal.proposal.$token.tsx`, removed unused imports
+- Enforced strict server-side deposit/proposal project linkage in `createPortalDepositPaymentIntent`
+- Updated dashboard profitability query to throw Supabase query errors instead of silently returning zeroed KPIs
+
+---
+
 ## Phase 7 — Final Report · 2026-07-17
 
 ### PR #6 Status
@@ -200,8 +212,8 @@ See `.env.example` for full configuration matrix.
 ### Remaining blockers
 
 - `VITE_STRIPE_PUBLISHABLE_KEY` must be set before Stripe Elements renders (graceful fallback shown otherwise)
-- Portal deposit payment assumes `portal_get_proposal` RPC returns `project.id` — verify the RPC returns the project id field or update the portal deposit intent accordingly
-- No deposits shown in proposal portal until `portal_get_proposal` RPC is updated to include deposits in its payload
+- ~~Portal deposit payment assumes `portal_get_proposal` RPC returns `project.id`~~ **Resolved 2026-08-06**
+- ~~No deposits shown in proposal portal until `portal_get_proposal` RPC is updated to include deposits~~ **Resolved 2026-08-06**
 
 ---
 

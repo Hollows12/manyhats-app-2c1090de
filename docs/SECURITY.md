@@ -154,8 +154,10 @@ The three portal routes (`/portal/proposal/:token`, `/portal/invoice/:token`, `/
 ### Proposal Portal
 - Token is a UUID stored in `proposals.portal_token`
 - `portal_get_proposal(token)` RPC only returns data if token is valid and not expired
+- `portal_get_proposal(token)` now returns `project.id`/`project_id` and non-void deposits for that same project
 - No internal cost data, AI draft history, or staff notes returned
 - Client signature → `portal_accept_proposal()` — only writes to `proposal_signatures` scoped to the token
+- Deposit payment intent creation now enforces `deposit.project_id === proposal.project_id` server-side and rejects cross-project mismatches
 
 ### Invoice Portal
 - Token in `invoices.portal_token`

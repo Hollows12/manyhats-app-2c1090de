@@ -281,6 +281,8 @@ function ProfitabilityKpis() {
         supabase.from("job_costs").select("estimated_cost,actual_cost"),
         supabase.from("invoices").select("total,balance_due,status"),
       ]);
+      if (costsRes.error) throw costsRes.error;
+      if (invoicesRes.error) throw invoicesRes.error;
 
       const estimatedCost = (costsRes.data ?? []).reduce(
         (s: number, c: any) => s + Number(c.estimated_cost ?? 0),
@@ -313,6 +315,8 @@ function ProfitabilityKpis() {
           .select("id", { count: "exact", head: true })
           .eq("status", "approved"),
       ]);
+      if (totalProps.error) throw totalProps.error;
+      if (approvedProps.error) throw approvedProps.error;
       const conversionPct =
         (totalProps.count ?? 0) > 0
           ? Math.round(((approvedProps.count ?? 0) / (totalProps.count ?? 1)) * 100)
