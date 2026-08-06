@@ -9,7 +9,7 @@ This section supersedes older point-in-time status statements below.
 - Verified security commit: `2cfe7b25073b529ec53a96aa2b74215a33243f07`
 - The `recalculate_invoice_balance(UUID)` migration uses `SECURITY INVOKER`, an empty `search_path`, fully qualified `public.` objects, and service-role-only execution.
 - The Stripe webhook uses `process.env.SUPABASE_SERVICE_ROLE_KEY` server-side.
-- Live Supabase project is ACTIVE_HEALTHY, but the invoice-balance RPC is not deployed. The live schema currently lacks `public.invoices`, `public.payments`, and `public.invoice_status`, so prerequisite migrations must be reconciled before applying the RPC migration.
+- Correct Lovable-connected database verified with 46 public tables. The hardened `public.recalculate_invoice_balance(UUID)` RPC is deployed and live ACL verification confirms: `anon=false`, `authenticated=false`, `sandbox_exec=false`, `service_role=true`; function owner remains `postgres`.
 - Lovable synchronization must be confirmed against the final GitHub head after this documentation update.
 - PR #6 must remain unmerged until it targets `main` and final validation is complete.
 
@@ -45,7 +45,7 @@ Consolidated from PR #7 into `copilot/auditrestore-july-10-11-work-one-more-time
 | Authorized caller | `src/routes/api/stripe.webhook.tsx` via `SUPABASE_SERVICE_ROLE_KEY` |
 | Browser exposure | None; no `VITE_` prefix and no frontend RPC call |
 
-Static validation previously reported: build exit 0; 4 tests passed and 1 skipped; no new TypeScript errors; no credentials in changed files. Live verification on 2026-08-05 found the RPC and its prerequisite invoice/payment schema absent. Do not apply this isolated RPC migration until the complete prerequisite migration chain is reconciled.
+Static validation previously reported: build exit 0; 4 tests passed and 1 skipped; no new TypeScript errors; no credentials in changed files. Live verification on 2026-08-05 confirmed deployment to the correct Lovable-connected 46-table database and service-role-only application execution.
 
 ---
 
