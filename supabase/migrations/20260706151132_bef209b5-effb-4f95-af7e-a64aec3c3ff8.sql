@@ -18,6 +18,7 @@ DECLARE
   prop RECORD;
   opts JSONB;
   invs JSONB;
+  deps JSONB;
   proj RECORD;
   client_name TEXT;
 BEGIN
@@ -55,6 +56,15 @@ BEGIN
     INTO invs FROM public.invoices i
     WHERE i.project_id = proj.id AND i.status <> 'void';
 
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'id', d.id,
+    'amount', d.amount,
+    'status', d.status,
+    'due_date', d.due_date
+  ) ORDER BY d.due_date NULLS LAST, d.created_at DESC), '[]'::jsonb)
+    INTO deps FROM public.deposits d
+    WHERE d.project_id = proj.id AND d.status <> 'void';
+
   RETURN jsonb_build_object(
     'proposal', jsonb_build_object(
       'id', prop.id,
@@ -73,12 +83,16 @@ BEGIN
     ),
     'options', opts,
     'project', jsonb_build_object(
+      'id', proj.id,
+      'project_id', proj.id,
       'name', proj.name,
       'address', proj.job_address,
       'city_state_zip', concat_ws(', ', proj.city, concat_ws(' ', proj.state, proj.zip))
     ),
+    'project_id', proj.id,
     'client_name', client_name,
     'invoices', invs,
+    'deposits', deps,
     'totals', jsonb_build_object(
       'invoiced', COALESCE((SELECT SUM(total) FROM public.invoices WHERE project_id = proj.id AND status <> 'void'), 0),
       'outstanding', COALESCE((SELECT SUM(balance_due) FROM public.invoices WHERE project_id = proj.id AND status <> 'void'), 0)
