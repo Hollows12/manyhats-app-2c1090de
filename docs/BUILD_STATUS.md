@@ -17,6 +17,38 @@ Historical audit sections below are retained as point-in-time records and must n
 
 ---
 
+## 2026-08-06 — PR #6 unresolved blocker fixes (consolidated)
+
+Consolidated from PR #7 into `copilot/auditrestore-july-10-11-work-one-more-time`:
+
+- Preserved `overdue` invoice status in `recalculate_invoice_balance()` when paid amount is zero
+- Extended `portal_get_proposal()` payload to include `project.id`/`project_id` plus non-void project deposits
+- Fixed React type imports in `portal.invoice.$token.tsx` and `portal.proposal.$token.tsx`, and removed unused imports
+- Enforced strict server-side deposit/proposal project linkage in `createPortalDepositPaymentIntent`
+- Updated dashboard profitability queries to throw Supabase errors instead of silently returning zeroed KPIs
+
+---
+
+## Invoice-Balance RPC Security Hardening — 2026-08-06
+
+**Security commit:** `2cfe7b25073b529ec53a96aa2b74215a33243f07`  
+**Consolidated PR #7 fixes:** `06f1b2e1554dcf0fe09343d4373b558e431708b9`
+
+| Property | Value |
+|---|---|
+| Signature | `public.recalculate_invoice_balance(_invoice_id UUID)` |
+| Security mode | `SECURITY INVOKER` |
+| Search path | `SET search_path = ''` |
+| Object qualification | `public.invoices`, `public.payments`, `public.invoice_status` |
+| PUBLIC, anon, authenticated | `REVOKE EXECUTE` |
+| service_role | `GRANT EXECUTE` |
+| Authorized caller | `src/routes/api/stripe.webhook.tsx` via `SUPABASE_SERVICE_ROLE_KEY` |
+| Browser exposure | None; no `VITE_` prefix and no frontend RPC call |
+
+Static validation previously reported: build exit 0; 4 tests passed and 1 skipped; no new TypeScript errors; no credentials in changed files. Live database verification is tracked separately and must be rerun after Supabase finishes restoring.
+
+---
+
 _Last updated: 2026-07-17 · V1 money loop complete · Phase 7 final report_
 _Prior update: 2026-07-17 · V1 payment and portal communication workflow completion_
 _Prior update: 2026-07-15 · Restoration merge complete · Architecture V1 baseline established_
@@ -217,8 +249,8 @@ See `.env.example` for full configuration matrix.
 ### Remaining blockers
 
 - `VITE_STRIPE_PUBLISHABLE_KEY` must be set before Stripe Elements renders (graceful fallback shown otherwise)
-- Portal deposit payment assumes `portal_get_proposal` RPC returns `project.id` — verify the RPC returns the project id field or update the portal deposit intent accordingly
-- No deposits shown in proposal portal until `portal_get_proposal` RPC is updated to include deposits in its payload
+- ~~Portal deposit payment assumes `portal_get_proposal` RPC returns `project.id`~~ **Resolved 2026-08-06**
+- ~~No deposits shown in proposal portal until `portal_get_proposal` RPC is updated to include deposits~~ **Resolved 2026-08-06**
 
 ---
 
