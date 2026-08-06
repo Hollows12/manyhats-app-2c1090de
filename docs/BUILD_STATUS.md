@@ -1,5 +1,22 @@
 # ManyHats Lovable Build Status
 
+## Authoritative current status — verified 2026-08-05
+
+This section supersedes older point-in-time status statements below.
+
+- GitHub PR #6 is open, draft, and unmerged.
+- PR head branch: `copilot/auditrestore-july-10-11-work-one-more-time`
+- Verified security commit: `2cfe7b25073b529ec53a96aa2b74215a33243f07`
+- The `recalculate_invoice_balance(UUID)` migration uses `SECURITY INVOKER`, an empty `search_path`, fully qualified `public.` objects, and service-role-only execution.
+- The Stripe webhook uses `process.env.SUPABASE_SERVICE_ROLE_KEY` server-side.
+- Live Supabase deployment verification remains pending until the inactive project can accept database connections.
+- Lovable synchronization must be confirmed against the final GitHub head after this documentation update.
+- PR #6 must remain unmerged until it targets `main` and final validation is complete.
+
+Historical audit sections below are retained as point-in-time records and must not be read as the current merge or deployment state.
+
+---
+
 _Last updated: 2026-07-17 · V1 money loop complete · Phase 7 final report_
 _Prior update: 2026-07-17 · V1 payment and portal communication workflow completion_
 _Prior update: 2026-07-15 · Restoration merge complete · Architecture V1 baseline established_
