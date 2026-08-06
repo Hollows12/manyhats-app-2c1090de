@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { AlertCircle, CheckCircle2, FileText, Loader2, ShieldCheck, Wallet } from "lucide-react";
@@ -281,7 +282,7 @@ function PaymentForm({ balanceDue, invoiceNumber, onSuccess, onCancel }: Payment
   const [error, setError] = useState<string | null>(null);
   const [succeeded, setSucceeded] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements || submitting) return;
     setSubmitting(true);
@@ -364,7 +365,7 @@ function Row({ label, value, bold, tone }: { label: string; value: string; bold?
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="mx-auto max-w-5xl px-4 py-8 md:py-12 space-y-6">{children}</div>
