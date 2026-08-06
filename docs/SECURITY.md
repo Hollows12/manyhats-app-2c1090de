@@ -1,5 +1,22 @@
 # ManyHats Pro — Security Architecture
 
+## Invoice balance RPC hardening — verified 2026-08-05
+
+The Stripe invoice-balance recalculation path is restricted to the trusted server-side webhook:
+
+- Function: `public.recalculate_invoice_balance(UUID)`
+- Execution mode: `SECURITY INVOKER`
+- Function setting: `SET search_path = ''`
+- All referenced application objects are qualified with the `public.` schema
+- `EXECUTE` is revoked from `PUBLIC`, `anon`, and `authenticated`
+- `EXECUTE` is granted only to `service_role`
+- The only application caller is `src/routes/api/stripe.webhook.tsx`
+- The webhook constructs its Supabase client with `process.env.SUPABASE_SERVICE_ROLE_KEY`; the key has no `VITE_` prefix and is not included in the browser bundle
+
+The repository migration is hardened. Deployment to the live Supabase database must be verified separately after the project is active.
+
+---
+
 > **Version:** V1 Baseline · 2026-07-15  
 > Describes the implemented security model. No planned or aspirational features.
 
