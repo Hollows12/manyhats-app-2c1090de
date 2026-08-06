@@ -54,7 +54,11 @@ BEGIN
   ELSIF paid > 0 THEN
     new_status := 'partial';
   ELSE
-    new_status := CASE WHEN cur_status = 'draft' THEN 'draft' ELSE 'sent' END;
+    new_status := CASE
+      WHEN cur_status = 'draft' THEN 'draft'
+      WHEN cur_status = 'overdue' THEN 'overdue'
+      ELSE 'sent'
+    END;
   END IF;
 
   UPDATE public.invoices
