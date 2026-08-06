@@ -254,6 +254,33 @@ The role hierarchy (`admin` → `crew` → `client`) provides within-tenant acce
 
 ### Security fix log
 
+#### 2026-08-06 — invoice-balance RPC hardened to service-role only
+
+**What changed:** `supabase/migrations/20260717005500_recalculate_invoice_balance_rpc.sql`
+
+**Security model for `public.recalculate_invoice_balance(_invoice_id UUID)`:**
+
+| Property | Value |
+|---|---|
+| Security mode | `SECURITY INVOKER` (not DEFINER) |
+| Search path | `SET search_path = ''` (empty — prevents schema spoofing) |
+| Object qualification | All references use explicit `public.` prefix (`public.invoices`, `public.payments`, `public.invoice_status`) |
+| PUBLIC / anon / authenticated | `REVOKE EXECUTE` — execution denied |
+| service_role | `GRANT EXECUTE` — only elevated server-side role may call this function |
+
+**Why SECURITY INVOKER:** The caller (service_role) already has the necessary table privileges. INVOKER mode avoids privilege escalation — the function runs with the caller's grants rather than the definer's.
+
+**Why empty search_path:** Prevents a malicious or misconfigured schema from shadowing `public` objects with identically named alternatives. All objects are fully qualified so the search path is irrelevant at runtime, and setting it to `''` makes this explicit and enforceable.
+
+**Authorized caller:** `src/routes/api/stripe.webhook.tsx` — the Stripe webhook handler. It creates a Supabase client with:
+```ts
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient<Database>(url, key);
+```
+`SUPABASE_SERVICE_ROLE_KEY` is read from `process.env` (server-side only, Cloudflare Worker secret). It has no `VITE_` prefix and is never bundled into the browser client.
+
+**No frontend exposure:** No React component or browser-side code calls `recalculate_invoice_balance` directly. The only call site is inside the server-executed webhook handler.
+
 #### 2026-07-15 — scope-writer authorization gap closed
 
 **What changed:** `src/lib/scope-writer.functions.ts` — added `.middleware([requireSupabaseAuth])` to the `writeScope` server function.

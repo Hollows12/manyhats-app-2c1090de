@@ -107,6 +107,58 @@ Core philosophy: **Capture Once. Use Everywhere.**
 
 ---
 
+## Invoice-Balance RPC Security Hardening — 2026-08-06
+
+**Commit:** `2cfe7b25073b529ec53a96aa2b74215a33243f07`  
+**Branch:** `copilot/auditrestore-july-10-11-work-one-more-time`
+
+### Summary
+
+This commit completes the security hardening of the `recalculate_invoice_balance` RPC and preserves six portal/dashboard fixes from commit `06f1b2e1554dcf0fe09343d4373b558e431708b9`.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `supabase/migrations/20260717005500_recalculate_invoice_balance_rpc.sql` | Hardened to SECURITY INVOKER, SET search_path = '', fully qualified database objects, REVOKE from PUBLIC/anon/authenticated, GRANT only to service_role |
+| `docs/SECURITY.md` | Added security fix log entry documenting the RPC security model |
+| `docs/BUILD_STATUS.md` | This entry |
+
+### RPC security model
+
+**Signature:** `public.recalculate_invoice_balance(_invoice_id UUID)`
+
+| Property | Value |
+|---|---|
+| Security mode | `SECURITY INVOKER` |
+| Search path | `SET search_path = ''` |
+| Object qualification | `public.invoices`, `public.payments`, `public.invoice_status` |
+| Execution — PUBLIC, anon, authenticated | `REVOKE EXECUTE` |
+| Execution — service_role | `GRANT EXECUTE` |
+| Authorized server caller | `src/routes/api/stripe.webhook.tsx` via `SUPABASE_SERVICE_ROLE_KEY` |
+| Browser exposure | None — no VITE_ prefix, no frontend call site |
+
+### Preserved fixes (from commit 06f1b2e)
+
+- Strict deposit/proposal project matching in `createPortalDepositPaymentIntent`
+- Rejection when proposal project context is missing
+- Project ID and non-void deposits returned by `portal_get_proposal()`
+- Preservation of the overdue invoice status in `recalculate_invoice_balance`
+- Correct React type-only imports in portal files
+- Dashboard Supabase errors thrown instead of silently returning false KPIs
+
+### Validation — 2026-08-06
+
+- **Build**: `npm run build` — exit 0 ✅
+- **Tests**: 4 passed / 1 skipped ✅
+- **TypeScript**: same 9 pre-existing errors — no new errors ✅
+- **Lint**: pre-existing Prettier violations only — no new lint errors ✅
+- **Secrets scan**: no credentials in changed files ✅
+- **SQL static analysis**: no SECURITY DEFINER, no unqualified objects, search_path = '' ✅
+- **RPC callers**: one call site (`stripe.webhook.tsx`), uses `SUPABASE_SERVICE_ROLE_KEY` from `process.env` ✅
+
+---
+
 ## V1 Payment & Portal Completion — 2026-07-17
 
 ### Files changed
