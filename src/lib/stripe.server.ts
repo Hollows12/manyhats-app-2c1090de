@@ -7,7 +7,7 @@ import Stripe from "stripe";
 export function getStripeClient(): Stripe {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Missing STRIPE_SECRET_KEY — configure in server environment");
-  return new Stripe(key, { apiVersion: "2025-06-30.basil" });
+  return new Stripe(key, { apiVersion: "2026-06-24.dahlia" });
 }
 
 export function getStripeWebhookSecret(): string {
@@ -36,9 +36,7 @@ export async function createPaymentIntent(
   });
 }
 
-export async function retrievePaymentIntent(
-  intentId: string,
-): Promise<Stripe.PaymentIntent> {
+export async function retrievePaymentIntent(intentId: string): Promise<Stripe.PaymentIntent> {
   const stripe = getStripeClient();
   return stripe.paymentIntents.retrieve(intentId);
 }

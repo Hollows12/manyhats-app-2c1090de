@@ -19,10 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  getGitSyncStatus,
-  type GitSyncIssue,
-} from "@/lib/git-sync.functions";
+import { getGitSyncStatus, type GitSyncIssue } from "@/lib/git-sync.functions";
 import { formatDate } from "@/lib/manyhats";
 
 export const Route = createFileRoute("/_authenticated/admin/git-sync")({
@@ -31,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/admin/git-sync")({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) throw redirect({ to: "/auth" });
+    if (!user) throw redirect({ to: "/auth", search: { invite: undefined } });
     const { data } = await supabase
       .from("user_roles")
       .select("role")
@@ -54,11 +51,7 @@ function GitSyncPage() {
 
   const s = q.data;
   const hasBlockingError = s?.issues?.some((i) => i.severity === "error");
-  const inSync =
-    s?.configured &&
-    !hasBlockingError &&
-    s.aheadBy === 0 &&
-    s.behindBy === 0;
+  const inSync = s?.configured && !hasBlockingError && s.aheadBy === 0 && s.behindBy === 0;
 
   return (
     <div className="space-y-6 p-4 md:p-8">
@@ -88,8 +81,8 @@ function GitSyncPage() {
         </Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Live comparison between the deployed build and the latest commit on the
-        tracked branch. Refreshes automatically every minute.
+        Live comparison between the deployed build and the latest commit on the tracked branch.
+        Refreshes automatically every minute.
       </p>
 
       {q.isLoading ? (
@@ -116,13 +109,11 @@ function GitSyncPage() {
                   <CardTitle className="flex items-center gap-2 text-sm">
                     {inSync ? (
                       <>
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" /> In
-                        sync
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" /> In sync
                       </>
                     ) : (
                       <>
-                        <AlertTriangle className="h-4 w-4 text-amber-500" /> Out
-                        of sync
+                        <AlertTriangle className="h-4 w-4 text-amber-500" /> Out of sync
                       </>
                     )}
                   </CardTitle>
@@ -147,21 +138,13 @@ function GitSyncPage() {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
                       <ArrowDown className="h-3 w-3 text-amber-500" />
-                      <span className="font-mono text-lg font-semibold">
-                        {s.behindBy ?? "—"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        behind
-                      </span>
+                      <span className="font-mono text-lg font-semibold">{s.behindBy ?? "—"}</span>
+                      <span className="text-xs text-muted-foreground">behind</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <ArrowUp className="h-3 w-3 text-sky-500" />
-                      <span className="font-mono text-lg font-semibold">
-                        {s.aheadBy ?? "—"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        ahead
-                      </span>
+                      <span className="font-mono text-lg font-semibold">{s.aheadBy ?? "—"}</span>
+                      <span className="text-xs text-muted-foreground">ahead</span>
                     </div>
                   </div>
                   <Row label="Last checked" value={formatDate(s.checkedAt)} />
@@ -170,33 +153,23 @@ function GitSyncPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">
-                    Latest commit on {s.branch}
-                  </CardTitle>
+                  <CardTitle className="text-sm">Latest commit on {s.branch}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
                   <Row
                     label="SHA"
-                    value={
-                      <span className="font-mono text-xs">
-                        {s.latestSha?.slice(0, 10)}
-                      </span>
-                    }
+                    value={<span className="font-mono text-xs">{s.latestSha?.slice(0, 10)}</span>}
                   />
                   <Row label="Author" value={s.latestAuthor} />
                   <Row
                     label="Committed"
-                    value={
-                      s.latestCommitAt ? formatDate(s.latestCommitAt) : "—"
-                    }
+                    value={s.latestCommitAt ? formatDate(s.latestCommitAt) : "—"}
                   />
                   <div>
                     <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                       Message
                     </div>
-                    <div className="mt-1 truncate">
-                      {s.latestMessage ?? "—"}
-                    </div>
+                    <div className="mt-1 truncate">{s.latestMessage ?? "—"}</div>
                   </div>
                   <Row
                     label="Deployed SHA"
@@ -211,17 +184,14 @@ function GitSyncPage() {
                           )}
                         </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">
-                          unknown
-                        </span>
+                        <span className="text-xs text-muted-foreground">unknown</span>
                       )
                     }
                   />
                   {s.htmlUrl && (
                     <Button asChild variant="outline" size="sm">
                       <a href={s.htmlUrl} target="_blank" rel="noreferrer">
-                        View on GitHub{" "}
-                        <ExternalLink className="ml-1 h-3 w-3" />
+                        View on GitHub <ExternalLink className="ml-1 h-3 w-3" />
                       </a>
                     </Button>
                   )}

@@ -1,14 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Copy, Github, Loader2, Mail, RefreshCw, PlugZap } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Copy,
+  Github,
+  Loader2,
+  Mail,
+  RefreshCw,
+  PlugZap,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,7 +68,14 @@ type Attempt = {
   message: string;
 };
 
-const OUTLOOK_DOMAINS = ["outlook.com", "hotmail.com", "live.com", "msn.com", "outlook.", "hotmail."];
+const OUTLOOK_DOMAINS = [
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "msn.com",
+  "outlook.",
+  "hotmail.",
+];
 
 function makeRequestId() {
   const rand =
@@ -65,7 +88,6 @@ function makeRequestId() {
 
 const STORAGE_KEY = "manyhats.emailHelp.resendAttempts.v1";
 const MAX_ATTEMPTS = 10;
-
 
 function EmailHelpPage() {
   const [email, setEmail] = useState("");
@@ -90,7 +112,13 @@ function EmailHelpPage() {
         pushedAt: string;
         checkedAt: string;
       }
-    | { state: "error"; repo: string; httpStatus: number | null; message: string; checkedAt: string }
+    | {
+        state: "error";
+        repo: string;
+        httpStatus: number | null;
+        message: string;
+        checkedAt: string;
+      }
   >({ state: "idle" });
 
   useEffect(() => {
@@ -178,7 +206,10 @@ function EmailHelpPage() {
       errorMsg = e instanceof Error ? e.message : "auth error";
     }
     try {
-      const { error: dbErr } = await supabase.from("profiles").select("id", { count: "exact", head: true }).limit(1);
+      const { error: dbErr } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .limit(1);
       dbLabel = dbErr ? `failed: ${dbErr.message}` : "reachable";
       if (dbErr && !errorMsg) errorMsg = dbErr.message;
     } catch (e) {
@@ -190,14 +221,24 @@ function EmailHelpPage() {
       setConnStatus({ state: "ok", auth: authLabel, db: dbLabel, checkedAt });
       toast.success("Backend connection healthy");
     } else {
-      setConnStatus({ state: "error", auth: authLabel, db: dbLabel, checkedAt, message: errorMsg || "Connection issue" });
+      setConnStatus({
+        state: "error",
+        auth: authLabel,
+        db: dbLabel,
+        checkedAt,
+        message: errorMsg || "Connection issue",
+      });
       toast.error("Backend connection issue");
     }
     setCheckingConn(false);
   }
 
   async function handleCheckRepo() {
-    const trimmed = repo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/$/, "");
+    const trimmed = repo
+      .trim()
+      .replace(/^https?:\/\/github\.com\//i, "")
+      .replace(/\.git$/i, "")
+      .replace(/\/$/, "");
     const match = trimmed.match(/^([\w.-]+)\/([\w.-]+)$/);
     const checkedAt = new Date().toLocaleString();
     if (!match) {
@@ -262,7 +303,11 @@ function EmailHelpPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-3xl px-4 py-10 md:py-16">
-        <Link to="/auth" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/auth"
+          search={{ invite: undefined }}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> Back to sign in
         </Link>
 
@@ -274,9 +319,9 @@ function EmailHelpPage() {
             Verification email not arriving?
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Outlook, Hotmail, and Live inboxes are the most common place messages go missing.
-            Here's how to find them — and if you still can't, resend a fresh one below with a
-            request ID our team can look up.
+            Outlook, Hotmail, and Live inboxes are the most common place messages go missing. Here's
+            how to find them — and if you still can't, resend a fresh one below with a request ID
+            our team can look up.
           </p>
         </header>
 
@@ -301,8 +346,9 @@ function EmailHelpPage() {
                 {isOutlookish && (
                   <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
                     <AlertCircle className="mt-0.5 h-3.5 w-3.5 text-gold" />
-                    Microsoft inbox detected — please also check the <strong>Junk Email</strong> and{" "}
-                    <strong>Other</strong> tabs after resending.
+                    Microsoft inbox detected — please also check the <strong>
+                      Junk Email
+                    </strong> and <strong>Other</strong> tabs after resending.
                   </p>
                 )}
               </div>
@@ -327,11 +373,19 @@ function EmailHelpPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Runs a quick check against auth and the database. Useful if resends fail or the app feels offline.
+              Runs a quick check against auth and the database. Useful if resends fail or the app
+              feels offline.
             </p>
-            <Button type="button" onClick={handleTestConnection} disabled={checkingConn} variant="outline">
+            <Button
+              type="button"
+              onClick={handleTestConnection}
+              disabled={checkingConn}
+              variant="outline"
+            >
               {checkingConn ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Checking...</>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Checking...
+                </>
               ) : (
                 <>Test connection</>
               )}
@@ -347,14 +401,22 @@ function EmailHelpPage() {
               >
                 <div className="flex items-center gap-2 font-medium">
                   {connStatus.state === "ok" ? (
-                    <><CheckCircle2 className="h-4 w-4 text-green-600" /> All systems reachable</>
+                    <>
+                      <CheckCircle2 className="h-4 w-4 text-green-600" /> All systems reachable
+                    </>
                   ) : (
-                    <><AlertCircle className="h-4 w-4 text-destructive" /> Connection issue detected</>
+                    <>
+                      <AlertCircle className="h-4 w-4 text-destructive" /> Connection issue detected
+                    </>
                   )}
                 </div>
                 <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <li>Auth: <span className="font-mono">{connStatus.auth}</span></li>
-                  <li>Database: <span className="font-mono">{connStatus.db}</span></li>
+                  <li>
+                    Auth: <span className="font-mono">{connStatus.auth}</span>
+                  </li>
+                  <li>
+                    Database: <span className="font-mono">{connStatus.db}</span>
+                  </li>
                   <li>Checked: {connStatus.checkedAt}</li>
                   {connStatus.state === "error" && (
                     <li className="text-destructive">Details: {connStatus.message}</li>
@@ -394,7 +456,9 @@ function EmailHelpPage() {
               </div>
               <Button type="submit" variant="outline" disabled={checkingRepo || !repo.trim()}>
                 {checkingRepo ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Checking...</>
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Checking...
+                  </>
                 ) : (
                   <>Check repository</>
                 )}
@@ -411,23 +475,36 @@ function EmailHelpPage() {
               >
                 <div className="flex items-center gap-2 font-medium">
                   {repoStatus.state === "ok" ? (
-                    <><CheckCircle2 className="h-4 w-4 text-green-600" /> Repository reachable</>
+                    <>
+                      <CheckCircle2 className="h-4 w-4 text-green-600" /> Repository reachable
+                    </>
                   ) : (
-                    <><AlertCircle className="h-4 w-4 text-destructive" /> Check failed</>
+                    <>
+                      <AlertCircle className="h-4 w-4 text-destructive" /> Check failed
+                    </>
                   )}
                 </div>
                 <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <li>Repo: <span className="font-mono">{repoStatus.repo}</span></li>
+                  <li>
+                    Repo: <span className="font-mono">{repoStatus.repo}</span>
+                  </li>
                   {repoStatus.state === "ok" ? (
                     <>
-                      <li>Default branch: <span className="font-mono">{repoStatus.defaultBranch}</span></li>
-                      <li>Visibility: <span className="font-mono">{repoStatus.visibility}</span></li>
+                      <li>
+                        Default branch:{" "}
+                        <span className="font-mono">{repoStatus.defaultBranch}</span>
+                      </li>
+                      <li>
+                        Visibility: <span className="font-mono">{repoStatus.visibility}</span>
+                      </li>
                       <li>Last push: {repoStatus.pushedAt}</li>
                     </>
                   ) : (
                     <>
                       {repoStatus.httpStatus !== null && (
-                        <li>HTTP status: <span className="font-mono">{repoStatus.httpStatus}</span></li>
+                        <li>
+                          HTTP status: <span className="font-mono">{repoStatus.httpStatus}</span>
+                        </li>
                       )}
                       <li className="text-destructive">Details: {repoStatus.message}</li>
                     </>
@@ -438,10 +515,6 @@ function EmailHelpPage() {
             )}
           </CardContent>
         </Card>
-
-
-
-
 
         {attempts.length > 0 && (
           <Card className="mt-6">
@@ -459,8 +532,8 @@ function EmailHelpPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clear resend history?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This removes all saved resend attempts and request IDs from this browser.
-                      You won't be able to reference them for support afterwards.
+                      This removes all saved resend attempts and request IDs from this browser. You
+                      won't be able to reference them for support afterwards.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -484,7 +557,10 @@ function EmailHelpPage() {
             </CardHeader>
             <CardContent className="divide-y">
               {attempts.map((a) => (
-                <div key={a.requestId} className="flex flex-col gap-2 py-3 text-sm md:flex-row md:items-center md:justify-between">
+                <div
+                  key={a.requestId}
+                  className="flex flex-col gap-2 py-3 text-sm md:flex-row md:items-center md:justify-between"
+                >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       {a.status === "sent" ? (
@@ -525,14 +601,18 @@ function EmailHelpPage() {
         )}
 
         <div className="mt-10">
-          <h2 className="font-display text-xl font-semibold">Common reasons Outlook emails don't arrive</h2>
+          <h2 className="font-display text-xl font-semibold">
+            Common reasons Outlook emails don't arrive
+          </h2>
           <Accordion type="multiple" className="mt-3">
             <AccordionItem value="junk">
-              <AccordionTrigger>1. It's in Junk Email or the "Other" focused-inbox tab</AccordionTrigger>
+              <AccordionTrigger>
+                1. It's in Junk Email or the "Other" focused-inbox tab
+              </AccordionTrigger>
               <AccordionContent className="space-y-2 text-sm text-muted-foreground">
                 <p>
-                  Outlook.com and the Outlook desktop app split mail into <strong>Focused</strong> and{" "}
-                  <strong>Other</strong>. Automated verification emails frequently land in{" "}
+                  Outlook.com and the Outlook desktop app split mail into <strong>Focused</strong>{" "}
+                  and <strong>Other</strong>. Automated verification emails frequently land in{" "}
                   <strong>Other</strong> or <strong>Junk Email</strong>.
                 </p>
                 <p>Check both, and mark the message as "Not junk" to whitelist future sends.</p>
@@ -550,17 +630,19 @@ function EmailHelpPage() {
               <AccordionTrigger>3. You signed up with an alias or plus-address</AccordionTrigger>
               <AccordionContent className="text-sm text-muted-foreground">
                 Outlook supports aliases like <code>you+work@outlook.com</code>. Some corporate
-                tenants strip the "+" segment or route aliases to a different mailbox. Try
-                resending to the exact address on your account instead.
+                tenants strip the "+" segment or route aliases to a different mailbox. Try resending
+                to the exact address on your account instead.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="tenant">
-              <AccordionTrigger>4. Your company's Microsoft 365 tenant is blocking us</AccordionTrigger>
+              <AccordionTrigger>
+                4. Your company's Microsoft 365 tenant is blocking us
+              </AccordionTrigger>
               <AccordionContent className="space-y-2 text-sm text-muted-foreground">
                 <p>
-                  Microsoft 365 admins can quarantine mail from unknown senders. Ask your IT team
-                  to check the <strong>Microsoft Defender quarantine</strong> and safelist the
-                  sender domain.
+                  Microsoft 365 admins can quarantine mail from unknown senders. Ask your IT team to
+                  check the <strong>Microsoft Defender quarantine</strong> and safelist the sender
+                  domain.
                 </p>
                 <p>Share the request ID from the resend log so IT can match it to their logs.</p>
               </AccordionContent>
@@ -585,7 +667,11 @@ function EmailHelpPage() {
               <AccordionTrigger>7. The account is already verified</AccordionTrigger>
               <AccordionContent className="text-sm text-muted-foreground">
                 If you've clicked a previous link, no new email will be sent. Try signing in
-                directly at the <Link to="/auth" className="underline">sign in page</Link>.
+                directly at the{" "}
+                <Link to="/auth" search={{ invite: undefined }} className="underline">
+                  sign in page
+                </Link>
+                .
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -594,9 +680,9 @@ function EmailHelpPage() {
         <div className="mt-10 rounded-lg border bg-muted/30 p-4 text-sm">
           <p className="font-semibold">Still stuck?</p>
           <p className="mt-1 text-muted-foreground">
-            Copy the most recent request ID above and reply to your onboarding thread, or reach
-            out from the sign-in page. We can trace the exact send timestamp and delivery
-            response on our side.
+            Copy the most recent request ID above and reply to your onboarding thread, or reach out
+            from the sign-in page. We can trace the exact send timestamp and delivery response on
+            our side.
           </p>
         </div>
       </div>

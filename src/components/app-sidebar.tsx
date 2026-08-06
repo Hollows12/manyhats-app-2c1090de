@@ -1,19 +1,43 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Inbox, Users, Briefcase, Camera, Calculator, FileText,
-  Sparkles, Home, Container, Landmark, Droplets, ClipboardList, TrendingUp,
-  BookOpen, Settings, LogOut, Phone, DollarSign, UserPlus, Receipt, Wallet,
-  ShieldAlert, GitBranch,
+  LayoutDashboard,
+  Inbox,
+  Users,
+  Briefcase,
+  Camera,
+  Calculator,
+  FileText,
+  Sparkles,
+  Home,
+  Container,
+  Landmark,
+  Droplets,
+  ClipboardList,
+  TrendingUp,
+  BookOpen,
+  Settings,
+  LogOut,
+  Phone,
+  DollarSign,
+  UserPlus,
+  Receipt,
+  Wallet,
+  ShieldAlert,
+  GitBranch,
 } from "lucide-react";
 import { useRole } from "@/hooks/use-auth";
 
-
-
-
-
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
-  SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { BrandMark } from "@/components/brand-mark";
@@ -51,7 +75,6 @@ const OPS = [
   { title: "Knowledge Base", url: "/knowledge-base", icon: BookOpen },
 ];
 
-
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -60,19 +83,22 @@ export function AppSidebar() {
   const qc = useQueryClient();
   const role = useRole();
 
-
   const isActive = (url: string) => pathname === url || pathname.startsWith(url + "/");
 
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    navigate({ to: "/auth", search: { invite: undefined }, replace: true });
   }
 
   const renderGroup = (label: string, items: typeof PIPELINE) => (
     <SidebarGroup>
-      {!collapsed && <SidebarGroupLabel className="text-sidebar-foreground/60 text-[10px] uppercase tracking-[0.15em]">{label}</SidebarGroupLabel>}
+      {!collapsed && (
+        <SidebarGroupLabel className="text-sidebar-foreground/60 text-[10px] uppercase tracking-[0.15em]">
+          {label}
+        </SidebarGroupLabel>
+      )}
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
@@ -93,11 +119,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="border-b border-sidebar-border/40 px-4 py-4">
-        {collapsed ? (
-          <BrandMark hideTagline className="[&_.font-display]:hidden" />
-        ) : (
-          <BrandMark />
-        )}
+        {collapsed ? <BrandMark hideTagline className="[&_.font-display]:hidden" /> : <BrandMark />}
       </SidebarHeader>
       <SidebarContent>
         {renderGroup("Pipeline", PIPELINE)}
@@ -127,7 +149,11 @@ export function AppSidebar() {
               {role === "admin" && (
                 <>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive("/admin/logs")} tooltip="Admin logs">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive("/admin/logs")}
+                      tooltip="Admin logs"
+                    >
                       <Link to="/admin/logs" className="flex items-center gap-3">
                         <ShieldAlert className="h-4 w-4 shrink-0 text-gold" />
                         {!collapsed && <span>Admin logs</span>}
@@ -135,7 +161,11 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive("/admin/git-sync")} tooltip="Git sync">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive("/admin/git-sync")}
+                      tooltip="Git sync"
+                    >
                       <Link to="/admin/git-sync" className="flex items-center gap-3">
                         <GitBranch className="h-4 w-4 shrink-0 text-gold" />
                         {!collapsed && <span>Git sync</span>}
@@ -144,7 +174,6 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 </>
               )}
-
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
