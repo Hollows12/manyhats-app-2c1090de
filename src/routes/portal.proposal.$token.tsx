@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent, PointerEvent, ReactNode } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
@@ -330,7 +331,7 @@ function DepositPaymentForm({
   const [error, setError] = useState<string | null>(null);
   const [succeeded, setSucceeded] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements || submitting) return;
     setSubmitting(true);
@@ -531,16 +532,16 @@ function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) => void
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
 
-  function pos(e: React.PointerEvent) {
+  function pos(e: PointerEvent) {
     const rect = canvasRef.current!.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }
-  function start(e: React.PointerEvent) {
+  function start(e: PointerEvent) {
     drawing.current = true;
     last.current = pos(e);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }
-  function move(e: React.PointerEvent) {
+  function move(e: PointerEvent) {
     if (!drawing.current || !last.current) return;
     const p = pos(e);
     const ctx = canvasRef.current!.getContext("2d")!;
@@ -585,7 +586,7 @@ function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) => void
   );
 }
 
-function PortalShell({ children }: { children: React.ReactNode }) {
+function PortalShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-muted/30">
       <div className="mx-auto max-w-5xl px-4 py-8 md:py-12 space-y-6">
