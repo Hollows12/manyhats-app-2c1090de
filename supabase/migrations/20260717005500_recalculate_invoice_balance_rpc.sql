@@ -1,12 +1,24 @@
 -- Add recalculate_invoice_balance as a callable RPC so the Stripe webhook
 -- can trigger a recalculation without relying solely on the payments trigger.
 -- Idempotent: uses CREATE OR REPLACE. Safe to apply multiple times.
+--
+-- SECURITY HARDENING (2026-08-06):
+-- - Changed from SECURITY DEFINER to SECURITY INVOKER
+--   (caller must have the privileges to modify invoices/payments)
+-- - Set search_path = '' to prevent schema spoofing attacks
+-- - Fully qualified all database objects with public. prefix
+-- - Revoked access from PUBLIC, anon, and authenticated
+-- - Granted access only to service_role (Stripe webhook's elevated client)
+--
+-- The Stripe webhook handler (src/routes/api/stripe.webhook.tsx) uses:
+--   const supabase = createClient(url, SUPABASE_SERVICE_ROLE_KEY)
+-- This ensures the RPC is called with service_role privileges only.
 
 CREATE OR REPLACE FUNCTION public.recalculate_invoice_balance(_invoice_id UUID)
 RETURNS VOID
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
+SECURITY INVOKER
+SET search_path = ''
 AS $$
 DECLARE
   paid      NUMERIC(12,2);
@@ -53,6 +65,8 @@ BEGIN
 END;
 $$;
 
--- Grant to authenticated staff and service_role (webhook uses service_role)
-REVOKE EXECUTE ON FUNCTION public.recalculate_invoice_balance(UUID) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.recalculate_invoice_balance(UUID) TO authenticated, service_role;
+-- Privilege grants: INVOKER mode requires caller to have necessary privileges.
+-- Only service_role (Stripe webhook's elevated client) is granted access.
+-- All other roles revoked to prevent unauthorized invocations.
+REVOKE EXECUTE ON FUNCTION public.recalculate_invoice_balance(UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.recalculate_invoice_balance(UUID) TO service_role;
