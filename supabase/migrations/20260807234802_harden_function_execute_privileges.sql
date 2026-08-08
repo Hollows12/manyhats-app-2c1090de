@@ -15,6 +15,33 @@ REVOKE EXECUTE ON FUNCTION public.is_staff(UUID) FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM authenticated;
 REVOKE EXECUTE ON FUNCTION public.set_updated_at() FROM authenticated;
 
+-- Internal notification/trigger/accounting functions: revoke from PUBLIC, anon, and authenticated.
+-- These are invoked only by triggers or service-role internal paths and must never be
+-- directly callable by client roles.
+REVOKE EXECUTE ON FUNCTION public.notify_staff(TEXT, TEXT, UUID, TEXT, UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.notify_staff(TEXT, TEXT, UUID, TEXT, UUID) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.notify_staff(TEXT, TEXT, UUID, TEXT, UUID) FROM authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.on_payment_insert() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.on_payment_insert() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.on_payment_insert() FROM authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.on_proposal_signature_insert() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.on_proposal_signature_insert() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.on_proposal_signature_insert() FROM authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.recalc_invoice_balance() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.recalc_invoice_balance() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.recalc_invoice_balance() FROM authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.sync_invoice_backrefs() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.sync_invoice_backrefs() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.sync_invoice_backrefs() FROM authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.sync_invoice_balance_from_total() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.sync_invoice_balance_from_total() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.sync_invoice_balance_from_total() FROM authenticated;
+
 -- Staff/internal RPCs must never be callable anonymously.
 REVOKE EXECUTE ON FUNCTION public.accept_invitation(TEXT) FROM anon;
 REVOKE EXECUTE ON FUNCTION public.create_client_file_share(UUID, TEXT, INT, BOOLEAN) FROM anon;
