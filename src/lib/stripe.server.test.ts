@@ -5,15 +5,17 @@ const retrievePaymentIntentMock = vi.fn();
 const constructWebhookEventMock = vi.fn();
 
 vi.mock("stripe", () => {
-  const StripeMock = vi.fn().mockImplementation(() => ({
-    paymentIntents: {
-      create: createPaymentIntentMock,
-      retrieve: retrievePaymentIntentMock,
-    },
-    webhooks: {
-      constructEvent: constructWebhookEventMock,
-    },
-  }));
+  const StripeMock = vi.fn(function StripeMock() {
+    return {
+      paymentIntents: {
+        create: createPaymentIntentMock,
+        retrieve: retrievePaymentIntentMock,
+      },
+      webhooks: {
+        constructEvent: constructWebhookEventMock,
+      },
+    };
+  });
 
   return {
     default: StripeMock,
