@@ -12,7 +12,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Leads, estimates, proposals, field capture, and job intelligence for ManyHats Construction LLC.",
+          "ManyHats Pro is the contractor command center owned and field-tested by ManyHats Construction LLC.",
       },
     ],
   }),
@@ -61,12 +61,12 @@ function Landing() {
               <ShieldCheck className="h-3.5 w-3.5" /> {COMPANY.tagline}
             </div>
             <h1 className="mt-6 font-display text-5xl font-bold leading-[1.05] md:text-6xl">
-              The contractor command center for <span className="text-gold">{COMPANY.name}.</span>
+              The contractor command center for <span className="text-gold">ManyHats Pro.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-ivory/80">
-              Leads. Clients. Field capture. Estimates. Proposals. Concepts. Job costing. Every
-              project ties back to the same source of truth — built for{" "}
-              {COMPANY.specialties.toLowerCase()}.
+              Owned and field-tested by {COMPANY.name}. Leads, clients, field capture, estimates,
+              proposals, concepts, and job costing all tie back to one source of truth — built
+              for contractors who work in the field.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" className="bg-gold text-gold-foreground hover:bg-gold/90">
