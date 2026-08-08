@@ -69,7 +69,9 @@ jobs:
       - name: Supabase DB lint
         run: |
           if [ -f supabase/config.toml ]; then
+            supabase start
             supabase db lint
+            supabase stop --no-backup
           fi
 
       - name: Setup Deno (for edge functions)
