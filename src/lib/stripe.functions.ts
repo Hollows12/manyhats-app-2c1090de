@@ -2,6 +2,7 @@
 // Deposit and final payment flows for the contractor workflow.
 
 import { createServerFn } from "@tanstack/react-start";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -13,6 +14,22 @@ const CreateDepositIntentInput = z.object({
   deposit_id: z.string().uuid(),
 });
 
+function buildIdempotencyKey(params: {
+  scope: "deposit" | "invoice" | "portal_deposit" | "portal_invoice";
+  resourceId: string;
+  amountCents: number;
+  updatedAt?: string | null;
+}) {
+  const materialized = [
+    params.scope,
+    params.resourceId,
+    String(params.amountCents),
+    params.updatedAt ?? "unknown",
+  ].join("|");
+  const hash = createHash("sha256").update(materialized).digest("hex");
+  return `manyhats_${params.scope}_${hash}`;
+}
+
 export const createDepositPaymentIntent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => CreateDepositIntentInput.parse(d))
@@ -21,7 +38,7 @@ export const createDepositPaymentIntent = createServerFn({ method: "POST" })
 
     const { data: deposit, error } = await supabase
       .from("deposits")
-      .select("id, amount, status, project_id, projects(name, clients(name))")
+      .select("id, amount, status, project_id, updated_at, projects(name, clients(name))")
       .eq("id", data.deposit_id)
       .single();
     if (error || !deposit) throw new Error("Deposit not found");
@@ -30,10 +47,17 @@ export const createDepositPaymentIntent = createServerFn({ method: "POST" })
     const project = deposit.projects as any;
     const client = project?.clients as any;
     const amountCents = Math.round(Number(deposit.amount) * 100);
+    const idempotencyKey = buildIdempotencyKey({
+      scope: "deposit",
+      resourceId: deposit.id,
+      amountCents,
+      updatedAt: deposit.updated_at,
+    });
 
     const { createPaymentIntent } = await import("./stripe.server");
     const intent = await createPaymentIntent({
       amountCents,
+      idempotencyKey,
       description: `Deposit — ${project?.name ?? "Project"}`,
       metadata: {
         deposit_id: deposit.id,
@@ -62,7 +86,7 @@ export const createInvoicePaymentIntent = createServerFn({ method: "POST" })
 
     const { data: inv, error } = await supabase
       .from("invoices")
-      .select("id, invoice_number, balance_due, status, project_id, projects(name, clients(name))")
+      .select("id, invoice_number, balance_due, status, project_id, updated_at, projects(name, clients(name))")
       .eq("id", data.invoice_id)
       .single();
     if (error || !inv) throw new Error("Invoice not found");
@@ -72,10 +96,17 @@ export const createInvoicePaymentIntent = createServerFn({ method: "POST" })
     const client = project?.clients as any;
     const amountCents = Math.round(Number(inv.balance_due) * 100);
     if (amountCents <= 0) throw new Error("Invoice balance is zero");
+    const idempotencyKey = buildIdempotencyKey({
+      scope: "invoice",
+      resourceId: inv.id,
+      amountCents,
+      updatedAt: inv.updated_at,
+    });
 
     const { createPaymentIntent } = await import("./stripe.server");
     const intent = await createPaymentIntent({
       amountCents,
+      idempotencyKey,
       description: `Invoice ${inv.invoice_number} — ${project?.name ?? "Project"}`,
       metadata: {
         invoice_id: inv.id,
@@ -121,15 +152,21 @@ export const createPortalInvoicePaymentIntent = createServerFn({ method: "POST" 
     const inv = payload.invoice;
     const amountCents = Math.round(Number(inv.balance_due) * 100);
     if (amountCents <= 0) throw new Error("No balance due");
+    const idempotencyKey = buildIdempotencyKey({
+      scope: "portal_invoice",
+      resourceId: data.invoice_id,
+      amountCents,
+      updatedAt: inv.updated_at,
+    });
 
     const { createPaymentIntent } = await import("./stripe.server");
     const intent = await createPaymentIntent({
       amountCents,
+      idempotencyKey,
       description: `Invoice ${inv.invoice_number} — ${payload.project?.name ?? "Project"}`,
       metadata: {
         invoice_id: data.invoice_id,
         invoice_number: inv.invoice_number,
-        portal_token: data.portal_token,
         client_name: payload.client_name ?? "",
         type: "portal_invoice_payment",
       },
@@ -169,7 +206,7 @@ export const createPortalDepositPaymentIntent = createServerFn({ method: "POST" 
     // Look up the deposit and confirm it belongs to the same project
     const { data: deposit, error: depErr } = await adminClient
       .from("deposits")
-      .select("id, amount, status, project_id")
+      .select("id, amount, status, project_id, updated_at")
       .eq("id", data.deposit_id)
       .single();
     if (depErr || !deposit) throw new Error("Deposit not found");
@@ -190,15 +227,21 @@ export const createPortalDepositPaymentIntent = createServerFn({ method: "POST" 
 
     const amountCents = Math.round(Number(deposit.amount) * 100);
     if (amountCents <= 0) throw new Error("Deposit amount is zero");
+    const idempotencyKey = buildIdempotencyKey({
+      scope: "portal_deposit",
+      resourceId: deposit.id,
+      amountCents,
+      updatedAt: deposit.updated_at,
+    });
 
     const { createPaymentIntent } = await import("./stripe.server");
     const intent = await createPaymentIntent({
       amountCents,
+      idempotencyKey,
       description: `Deposit — ${(payload.project as any)?.name ?? "Project"}`,
       metadata: {
         deposit_id: deposit.id,
         project_id: String(deposit.project_id),
-        portal_token: data.portal_token,
         client_name: payload.client_name ?? "",
         type: "deposit",
       },

@@ -1,5 +1,12 @@
 # ManyHats Pro — Security Architecture
 
+## Current merge/deployment status — verified 2026-08-08
+
+- PR #6 security baseline is merged.
+- PR #10 (`copilot/manyhats-backend-stabilization`) contains additional Stripe idempotency and Supabase privilege hardening and is still unmerged.
+- These stabilization changes are not deployed to production yet.
+- The Flutter backend contract remains unfrozen until PR #10 merges and the new migrations are applied.
+
 ## Invoice balance RPC hardening — verified 2026-08-05
 
 The Stripe invoice-balance recalculation path is restricted to the trusted server-side webhook:
