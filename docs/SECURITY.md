@@ -1,5 +1,11 @@
 # ManyHats Pro — Security Architecture
 
+## Backend stabilization status — 2026-08-10
+
+- PR #6 is **merged** into `main`.
+- The `codex/backend-stabilization` branch adds Stripe idempotency enforcement, RPC privilege hardening, and a unique index on payments — but these are **not yet deployed to production**.
+- The Flutter backend contract is **not frozen** until the stabilization PR merges and migrations are applied to the production database.
+
 ## Invoice balance RPC hardening — verified 2026-08-05
 
 The Stripe invoice-balance recalculation path is restricted to the trusted server-side webhook:
