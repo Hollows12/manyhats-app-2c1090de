@@ -10,6 +10,8 @@ jobs:
   frontend:
     name: Frontend (lint, typecheck, test, build)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -46,6 +48,8 @@ jobs:
   backend:
     name: Backend (Supabase migrations + edge functions)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
