@@ -1,5 +1,40 @@
-import { describe, it, expect } from "vitest";
-import { supabase } from "@/integrations/supabase/client";
+import { describe, it, expect, vi, beforeAll } from "vitest";
+
+// Stub env vars before the module is imported so createSupabaseClient does not throw.
+vi.stubEnv("VITE_SUPABASE_URL", "https://stub.supabase.co");
+vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "stub-anon-key");
+
+// Mock @supabase/supabase-js so no real network calls are made.
+const mockUnsubscribe = vi.fn();
+const mockOnAuthStateChange = vi.fn(() => ({
+  data: { subscription: { unsubscribe: mockUnsubscribe } },
+}));
+const mockGetSession = vi.fn(async () => ({
+  data: { session: null },
+  error: null,
+}));
+const mockGetUser = vi.fn(async () => ({ data: { user: null }, error: null }));
+const mockSignInWithPassword = vi.fn();
+const mockSignOut = vi.fn();
+
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(() => ({
+    auth: {
+      getSession: mockGetSession,
+      getUser: mockGetUser,
+      onAuthStateChange: mockOnAuthStateChange,
+      signInWithPassword: mockSignInWithPassword,
+      signOut: mockSignOut,
+    },
+  })),
+}));
+
+// Dynamic import after stubs + mocks are in place.
+let supabase: Awaited<typeof import("@/integrations/supabase/client")>["supabase"];
+beforeAll(async () => {
+  const mod = await import("@/integrations/supabase/client");
+  supabase = mod.supabase;
+});
 
 describe("supabase client smoke", () => {
   it("initializes with configured env vars", () => {
