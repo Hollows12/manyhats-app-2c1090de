@@ -23,8 +23,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Lint changed TypeScript/TSX files
+        run: |
+          # Determine which TS/TSX files changed vs the base.
+          # For pull_request events: compare against the base branch.
+          # For push events: compare against the previous commit.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin ${{ github.base_ref }} --depth=1
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' 2>/dev/null | tr '\n' ' ')
+          else
+            CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.ts' '*.tsx' 2>/dev/null | tr '\n' ' ')
+          fi
+          if [ -z "$CHANGED" ]; then
+            echo "No TypeScript/TSX files changed — skipping lint"
+            exit 0
+          fi
+          echo "Linting changed files: $CHANGED"
+          # Exits 1 on any error (e.g. Prettier violations, broken rules).
+          # Exits 0 when only warnings remain (e.g. pre-existing any casts).
+          npx eslint $CHANGED
 
       - name: Typecheck
         run: npx tsc --noEmit

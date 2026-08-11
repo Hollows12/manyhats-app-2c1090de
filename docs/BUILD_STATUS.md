@@ -1,13 +1,18 @@
 # ManyHats Lovable Build Status
 
-## Authoritative current status — verified 2026-08-10
+## Authoritative current status — verified 2026-08-11
 
 This section supersedes older point-in-time status statements below.
 
 - GitHub PR #6 is **merged** into `main`.
-- The stabilization work described in this document (Stripe idempotency, RPC hardening, unique index) is **not yet deployed to production**.
-- The Flutter backend contract is **not frozen** until the `codex/backend-stabilization` PR merges and its migrations are applied to the production database.
-- Do not treat production as containing the complete repository schema until those steps are verified.
+- GitHub PR #11 (`codex/backend-stabilization`) is **open and not yet merged**.
+- Stabilization migrations (Stripe unique index, RPC hardening) are **not deployed to production**.
+- The Flutter backend contract is **not frozen** until:
+  1. PR #11 merges into `main`
+  2. Migrations are applied to the production database
+  3. Production ACLs are verified (anonymous users cannot call internal RPCs)
+  4. Supabase types are regenerated from the live schema
+- Do not treat production as containing the complete repository schema until all four steps above are confirmed.
 
 Historical audit sections below are retained as point-in-time records and must not be read as the current merge or deployment state.
 
