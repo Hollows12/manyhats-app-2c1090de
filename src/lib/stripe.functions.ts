@@ -64,7 +64,9 @@ export const createInvoicePaymentIntent = createServerFn({ method: "POST" })
 
     const { data: inv, error } = await supabase
       .from("invoices")
-      .select("id, invoice_number, balance_due, status, updated_at, project_id, projects(name, clients(name))")
+      .select(
+        "id, invoice_number, balance_due, status, updated_at, project_id, projects(name, clients(name))",
+      )
       .eq("id", data.invoice_id)
       .single();
     if (error || !inv) throw new Error("Invoice not found");

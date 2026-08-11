@@ -68,7 +68,9 @@ async function handlePaymentSucceeded(intent: Stripe.PaymentIntent) {
     if (insertError) {
       // 23505 = unique_violation — payment already recorded, treat as success
       if ((insertError as any).code === "23505") {
-        console.log(`[Stripe webhook] Duplicate payment ${intent.id} for invoice ${invoiceId} — already recorded`);
+        console.log(
+          `[Stripe webhook] Duplicate payment ${intent.id} for invoice ${invoiceId} — already recorded`,
+        );
         return;
       }
       throw insertError;
