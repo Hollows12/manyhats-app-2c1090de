@@ -1,17 +1,18 @@
 # ManyHats Lovable Build Status
 
-## Authoritative current status — verified 2026-08-05
+## Authoritative current status — verified 2026-08-11
 
 This section supersedes older point-in-time status statements below.
 
-- GitHub PR #6 is open, draft, and unmerged.
-- PR head branch: `copilot/auditrestore-july-10-11-work-one-more-time`
-- Verified security commit: `2cfe7b25073b529ec53a96aa2b74215a33243f07`
-- The `recalculate_invoice_balance(UUID)` migration uses `SECURITY INVOKER`, an empty `search_path`, fully qualified `public.` objects, and service-role-only execution.
-- The Stripe webhook uses `process.env.SUPABASE_SERVICE_ROLE_KEY` server-side.
-- Correct Lovable-connected database verified with 46 public tables. The hardened `public.recalculate_invoice_balance(UUID)` RPC is deployed and live ACL verification confirms: `anon=false`, `authenticated=false`, `sandbox_exec=false`, `service_role=true`; function owner remains `postgres`.
-- Lovable synchronization must be confirmed against the final GitHub head after this documentation update.
-- PR #6 must remain unmerged until it targets `main` and final validation is complete.
+- GitHub PR #6 is **merged** into `main`.
+- GitHub PR #11 (`codex/backend-stabilization`) is **open and not yet merged**.
+- Stabilization migrations (Stripe unique index, RPC hardening) are **not deployed to production**.
+- The Flutter backend contract is **not frozen** until:
+  1. PR #11 merges into `main`
+  2. Migrations are applied to the production database
+  3. Production ACLs are verified (anonymous users cannot call internal RPCs)
+  4. Supabase types are regenerated from the live schema
+- Do not treat production as containing the complete repository schema until all four steps above are confirmed.
 
 Historical audit sections below are retained as point-in-time records and must not be read as the current merge or deployment state.
 

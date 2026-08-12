@@ -21,19 +21,23 @@ export interface CreatePaymentIntentOptions {
   currency?: string;
   metadata?: Record<string, string>;
   description?: string;
+  idempotencyKey: string;
 }
 
 export async function createPaymentIntent(
   opts: CreatePaymentIntentOptions,
 ): Promise<Stripe.PaymentIntent> {
   const stripe = getStripeClient();
-  return stripe.paymentIntents.create({
-    amount: opts.amountCents,
-    currency: opts.currency ?? "usd",
-    automatic_payment_methods: { enabled: true },
-    metadata: opts.metadata ?? {},
-    description: opts.description,
-  });
+  return stripe.paymentIntents.create(
+    {
+      amount: opts.amountCents,
+      currency: opts.currency ?? "usd",
+      automatic_payment_methods: { enabled: true },
+      metadata: opts.metadata ?? {},
+      description: opts.description,
+    },
+    { idempotencyKey: opts.idempotencyKey },
+  );
 }
 
 export async function retrievePaymentIntent(intentId: string): Promise<Stripe.PaymentIntent> {

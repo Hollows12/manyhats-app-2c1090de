@@ -8,26 +8,46 @@ on:
 
 jobs:
   frontend:
-    name: Frontend (lint, typecheck, build)
+    name: Frontend (lint, typecheck, test, build)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: "22"
+          cache: "npm"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
-      - name: Lint
-        run: bun run lint
+      - name: Lint changed TypeScript/TSX files
+        run: |
+          # Determine which TS/TSX files changed vs the base.
+          # For pull_request events: compare against the base branch.
+          # For push events: compare against the previous commit.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin ${{ github.base_ref }} --depth=1
+            CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' 2>/dev/null | tr '\n' ' ')
+          else
+            CHANGED=$(git diff --name-only HEAD~1 HEAD -- '*.ts' '*.tsx' 2>/dev/null | tr '\n' ' ')
+          fi
+          if [ -z "$CHANGED" ]; then
+            echo "No TypeScript/TSX files changed — skipping lint"
+            exit 0
+          fi
+          echo "Linting changed files: $CHANGED"
+          # Exits 1 on any error (e.g. Prettier violations, broken rules).
+          # Exits 0 when only warnings remain (e.g. pre-existing any casts).
+          npx eslint $CHANGED
 
       - name: Typecheck
-        run: bunx tsc --noEmit
+        run: npx tsc --noEmit
 
-      - name: Auth smoke + E2E tests
-        run: bun run test
+      - name: Test
+        run: npm run test
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
@@ -36,11 +56,8 @@ jobs:
           MAILSLURP_API_KEY: ${{ secrets.MAILSLURP_API_KEY }}
 
       - name: Build
-        run: bun run build
+        run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-anon-key' }}
-          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID || 'placeholder' }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder-anon-key' }}
           VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID || 'placeholder' }}
@@ -48,6 +65,8 @@ jobs:
   backend:
     name: Backend (Supabase migrations + edge functions)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 

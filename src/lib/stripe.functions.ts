@@ -21,7 +21,7 @@ export const createDepositPaymentIntent = createServerFn({ method: "POST" })
 
     const { data: deposit, error } = await supabase
       .from("deposits")
-      .select("id, amount, status, project_id, projects(name, clients(name))")
+      .select("id, amount, status, updated_at, project_id, projects(name, clients(name))")
       .eq("id", data.deposit_id)
       .single();
     if (error || !deposit) throw new Error("Deposit not found");
@@ -30,10 +30,12 @@ export const createDepositPaymentIntent = createServerFn({ method: "POST" })
     const project = deposit.projects as any;
     const client = project?.clients as any;
     const amountCents = Math.round(Number(deposit.amount) * 100);
+    const idempotencyKey = `deposit:${deposit.id}:${amountCents}:${deposit.updated_at}`;
 
     const { createPaymentIntent } = await import("./stripe.server");
     const intent = await createPaymentIntent({
       amountCents,
+      idempotencyKey,
       description: `Deposit — ${project?.name ?? "Project"}`,
       metadata: {
         deposit_id: deposit.id,
@@ -62,7 +64,9 @@ export const createInvoicePaymentIntent = createServerFn({ method: "POST" })
 
     const { data: inv, error } = await supabase
       .from("invoices")
-      .select("id, invoice_number, balance_due, status, project_id, projects(name, clients(name))")
+      .select(
+        "id, invoice_number, balance_due, status, updated_at, project_id, projects(name, clients(name))",
+      )
       .eq("id", data.invoice_id)
       .single();
     if (error || !inv) throw new Error("Invoice not found");
@@ -72,10 +76,12 @@ export const createInvoicePaymentIntent = createServerFn({ method: "POST" })
     const client = project?.clients as any;
     const amountCents = Math.round(Number(inv.balance_due) * 100);
     if (amountCents <= 0) throw new Error("Invoice balance is zero");
+    const idempotencyKey = `invoice:${inv.id}:${amountCents}:${inv.updated_at}`;
 
     const { createPaymentIntent } = await import("./stripe.server");
     const intent = await createPaymentIntent({
       amountCents,
+      idempotencyKey,
       description: `Invoice ${inv.invoice_number} — ${project?.name ?? "Project"}`,
       metadata: {
         invoice_id: inv.id,
@@ -123,13 +129,14 @@ export const createPortalInvoicePaymentIntent = createServerFn({ method: "POST" 
     if (amountCents <= 0) throw new Error("No balance due");
 
     const { createPaymentIntent } = await import("./stripe.server");
+    const idempotencyKey = `portal_invoice:${data.invoice_id}:${amountCents}:${inv.updated_at ?? inv.id}`;
     const intent = await createPaymentIntent({
       amountCents,
+      idempotencyKey,
       description: `Invoice ${inv.invoice_number} — ${payload.project?.name ?? "Project"}`,
       metadata: {
         invoice_id: data.invoice_id,
         invoice_number: inv.invoice_number,
-        portal_token: data.portal_token,
         client_name: payload.client_name ?? "",
         type: "portal_invoice_payment",
       },
@@ -169,7 +176,7 @@ export const createPortalDepositPaymentIntent = createServerFn({ method: "POST" 
     // Look up the deposit and confirm it belongs to the same project
     const { data: deposit, error: depErr } = await adminClient
       .from("deposits")
-      .select("id, amount, status, project_id")
+      .select("id, amount, status, updated_at, project_id")
       .eq("id", data.deposit_id)
       .single();
     if (depErr || !deposit) throw new Error("Deposit not found");
@@ -192,13 +199,14 @@ export const createPortalDepositPaymentIntent = createServerFn({ method: "POST" 
     if (amountCents <= 0) throw new Error("Deposit amount is zero");
 
     const { createPaymentIntent } = await import("./stripe.server");
+    const idempotencyKey = `portal_deposit:${deposit.id}:${amountCents}:${deposit.updated_at ?? deposit.id}`;
     const intent = await createPaymentIntent({
       amountCents,
+      idempotencyKey,
       description: `Deposit — ${(payload.project as any)?.name ?? "Project"}`,
       metadata: {
         deposit_id: deposit.id,
         project_id: String(deposit.project_id),
-        portal_token: data.portal_token,
         client_name: payload.client_name ?? "",
         type: "deposit",
       },

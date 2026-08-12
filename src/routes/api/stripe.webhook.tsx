@@ -57,25 +57,23 @@ async function handlePaymentSucceeded(intent: Stripe.PaymentIntent) {
     const invoiceId = meta.invoice_id;
     if (!invoiceId) return;
 
-    // Idempotency: skip if a payment with this Stripe intent ID already exists
-    const { data: existing, error: existingError } = await supabase
-      .from("payments")
-      .select("id")
-      .eq("invoice_id", invoiceId)
-      .eq("reference_number", intent.id)
-      .maybeSingle();
-    if (existingError) throw existingError;
-    if (!existing) {
-      // payments.project_id does not exist; derive it from the invoice FK
-      const { error: insertError } = await supabase.from("payments").insert({
-        invoice_id: invoiceId,
-        amount: amountDollars,
-        payment_date: new Date().toISOString().slice(0, 10),
-        payment_method: "stripe",
-        reference_number: intent.id,
-        notes: "Stripe online payment",
-      });
-      if (insertError) throw insertError;
+    const { error: insertError } = await supabase.from("payments").insert({
+      invoice_id: invoiceId,
+      amount: amountDollars,
+      payment_date: new Date().toISOString().slice(0, 10),
+      payment_method: "stripe",
+      reference_number: intent.id,
+      notes: "Stripe online payment",
+    });
+    if (insertError) {
+      // 23505 = unique_violation — payment already recorded, treat as success
+      if (insertError.code === "23505") {
+        console.log(
+          `[Stripe webhook] Duplicate payment ${intent.id} for invoice ${invoiceId} — already recorded`,
+        );
+        return;
+      }
+      throw insertError;
     }
 
     // Recalculate invoice balance via the dedicated RPC
