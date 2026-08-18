@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/admin/logs")({
   ssr: false,
   beforeLoad: async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw redirect({ to: "/auth", search: {} });
+    if (!user) throw redirect({ to: "/auth", search: { invite: undefined } });
     const { data } = await supabase
       .from("user_roles")
       .select("role")

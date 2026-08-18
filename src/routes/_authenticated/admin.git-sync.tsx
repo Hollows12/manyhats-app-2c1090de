@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin/git-sync")({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) throw redirect({ to: "/auth", search: {} });
+    if (!user) throw redirect({ to: "/auth", search: { invite: undefined } });
     const { data } = await supabase
       .from("user_roles")
       .select("role")
