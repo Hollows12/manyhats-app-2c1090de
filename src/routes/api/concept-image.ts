@@ -38,8 +38,16 @@ export const Route = createFileRoute("/api/concept-image")({
           return new Response("Unauthorized", { status: 401 });
         }
 
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        const { getAiRuntimeConfig } = await import("@/lib/ai-gateway.server");
+        let ai;
+        try {
+          ai = getAiRuntimeConfig();
+        } catch (error) {
+          return new Response(
+            error instanceof Error ? error.message : "AI provider is not configured",
+            { status: 500 },
+          );
+        }
 
         // Resolve the concept through the caller's RLS-scoped client first. The
         // service-role client is used only after tenant authorization succeeds.
@@ -64,14 +72,14 @@ export const Route = createFileRoute("/api/concept-image")({
           .filter(Boolean)
           .join("\n\n");
 
-        const upstream = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+        const upstream = await fetch(`${ai.baseURL}/images/generations`, {
           method: "POST",
           headers: {
-            "Lovable-API-Key": key,
+            ...ai.headers,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-3-pro-image-preview",
+            model: ai.imageModel,
             prompt,
             n: 1,
           }),
