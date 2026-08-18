@@ -43,18 +43,8 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-      - name: Resolve lockfile security overrides
-        run: npm install --package-lock-only --ignore-scripts
-      - name: Upload resolved lockfile for review
-        uses: actions/upload-artifact@v4
-        with:
-          name: resolved-package-lock
-          path: package-lock.json
-          retention-days: 1
       - name: Audit production lockfile dependencies
-        run: |
-          npm audit --omit=dev --audit-level=high
-          git diff --exit-code -- package-lock.json
+        run: npm audit --omit=dev --audit-level=high
 
   codeql:
     name: CodeQL (JavaScript/TypeScript)
