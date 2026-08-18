@@ -180,17 +180,17 @@ function CompanySettingsCard() {
     onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save company settings"),
   });
 
-  if (company.isLoading || !form) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-sm text-muted-foreground">Loading company settings…</CardContent>
-      </Card>
-    );
-  }
   if (company.error) {
     return (
       <Card>
         <CardContent className="py-8 text-sm text-destructive">Could not load company settings.</CardContent>
+      </Card>
+    );
+  }
+  if (company.isLoading || !form) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-sm text-muted-foreground">Loading company settings…</CardContent>
       </Card>
     );
   }
