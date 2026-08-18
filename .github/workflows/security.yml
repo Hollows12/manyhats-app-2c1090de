@@ -33,15 +33,18 @@ jobs:
             node scripts/security-gate.mjs
           fi
 
-  dependency-review:
-    name: Dependency review
+  dependency-audit:
+    name: Production dependency audit
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/setup-node@v4
         with:
-          fail-on-severity: high
+          node-version: "22"
+          cache: "npm"
+      - name: Audit production lockfile dependencies
+        run: npm audit --omit=dev --audit-level=high
 
   codeql:
     name: CodeQL (JavaScript/TypeScript)
