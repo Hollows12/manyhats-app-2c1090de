@@ -44,7 +44,11 @@ jobs:
           node-version: "22"
           cache: "npm"
       - name: Audit production lockfile dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          git diff -- package-lock.json
+          npm audit --omit=dev --audit-level=high
+          git diff --exit-code -- package-lock.json
 
   codeql:
     name: CodeQL (JavaScript/TypeScript)
