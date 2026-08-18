@@ -40,7 +40,7 @@ function AuthPage() {
 
   useEffect(() => {
     if (!invite) {
-      supabase.rpc("can_bootstrap_owner").then(({ data }) => setBootstrapAllowed(data === true));
+      (supabase as any).rpc("can_bootstrap_owner").then(({ data }: { data: unknown }) => setBootstrapAllowed(data === true));
       return;
     }
     supabase.rpc("get_invitation_preview", { _token: invite }).then(({ data, error }) => {
