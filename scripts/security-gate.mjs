@@ -96,11 +96,13 @@ for (const file of changedMigrations()) {
   }
 
   const createdTables = [
-    ...sql.matchAll(/CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+(?:public\.)?([a-zA-Z0-9_]+)/gi),
+    ...sql.matchAll(
+      /CREATE\\s+TABLE(?:\\s+IF\\s+NOT\\s+EXISTS)?\\s+(?:[a-zA-Z0-9_]+\\.)?([a-zA-Z0-9_]+)/gi,
+    ),
   ].map((match) => match[1]);
   for (const table of createdTables) {
     const rls = new RegExp(
-      `ALTER\\s+TABLE\\s+(?:public\\.)?${table}\\s+ENABLE\\s+ROW\\s+LEVEL\\s+SECURITY`,
+      `ALTER\\s+TABLE\\s+(?:[a-zA-Z0-9_]+\\.)?${table}\\s+ENABLE\\s+ROW\\s+LEVEL\\s+SECURITY`,
       "i",
     );
     if (!rls.test(sql))
