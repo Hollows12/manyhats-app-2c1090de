@@ -1,25 +1,68 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import type { Database } from "@/integrations/supabase/types";
+
+const RequestBody = z.object({ id: z.string().uuid() }).strict();
+
+export function bearerToken(request: Request) {
+  const authorization = request.headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) return null;
+  const token = authorization.slice("Bearer ".length).trim();
+  return token || null;
+}
 
 export const Route = createFileRoute("/api/concept-image")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { id } = (await request.json()) as { id: string };
-        if (!id) return new Response("Missing id", { status: 400 });
+        const token = bearerToken(request);
+        if (!token) return new Response("Unauthorized", { status: 401 });
+
+        const parsed = RequestBody.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) return new Response("Invalid concept id", { status: 400 });
+        const { id } = parsed.data;
+
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+        if (!supabaseUrl || !publishableKey) {
+          return new Response("Server authentication is not configured", { status: 500 });
+        }
+
+        const userClient = createClient<Database>(supabaseUrl, publishableKey, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data: claims, error: claimsError } = await userClient.auth.getClaims(token);
+        if (claimsError || !claims?.claims?.sub) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
 
+        // Resolve the concept through the caller's RLS-scoped client first. The
+        // service-role client is used only after tenant authorization succeeds.
+        const { data: authorizedConcept, error: authorizationError } = await userClient
+          .from("concept_requests")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (authorizationError || !authorizedConcept) {
+          return new Response("Concept not found", { status: 404 });
+        }
+
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: concept, error } = await supabaseAdmin
-          .from("concept_requests").select("*").eq("id", id).single();
-        if (error || !concept) return new Response("Concept not found", { status: 404 });
+        const concept = authorizedConcept;
 
         const prompt = [
           concept.prompt,
           concept.must_keep ? `Must keep: ${concept.must_keep}` : "",
           concept.requested_changes ? `Requested changes: ${concept.requested_changes}` : "",
           "Photorealistic architectural / construction concept rendering. Daylight. Clean composition.",
-        ].filter(Boolean).join("\n\n");
+        ]
+          .filter(Boolean)
+          .join("\n\n");
 
         const upstream = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
           method: "POST",
@@ -38,7 +81,9 @@ export const Route = createFileRoute("/api/concept-image")({
           console.error("AI image error", upstream.status, text);
           return new Response(text || "Image generation failed", { status: upstream.status });
         }
-        const json = (await upstream.json()) as { data?: Array<{ b64_json?: string; url?: string }> };
+        const json = (await upstream.json()) as {
+          data?: Array<{ b64_json?: string; url?: string }>;
+        };
         const item = json.data?.[0];
         if (!item) return new Response("No image returned", { status: 500 });
 
@@ -57,13 +102,18 @@ export const Route = createFileRoute("/api/concept-image")({
 
         const path = `${concept.project_id}/${id}-${Date.now()}.png`;
         const { error: upErr } = await supabaseAdmin.storage.from("concepts").upload(path, buf, {
-          contentType: "image/png", upsert: true,
+          contentType: "image/png",
+          upsert: true,
         });
         if (upErr) return new Response(upErr.message, { status: 500 });
 
-        await supabaseAdmin.from("concept_requests").update({
-          status: "generated", generated_image_path: path,
-        }).eq("id", id);
+        await supabaseAdmin
+          .from("concept_requests")
+          .update({
+            status: "generated",
+            generated_image_path: path,
+          })
+          .eq("id", id);
 
         return Response.json({ storage_path: path });
       },
