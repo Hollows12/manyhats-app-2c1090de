@@ -197,8 +197,8 @@ async function retrieveCaptureContent(supabase: SupabaseLike, data: z.infer<type
 }
 
 async function formatCaptureWithAi(rawText: string, target: TargetT) {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("Missing LOVABLE_API_KEY");
+  const { getAiRuntimeConfig } = await import("./ai-gateway.server");
+  const config = getAiRuntimeConfig();
   const label = TARGET_LABEL[target];
   const system = `You are the proposal writer for ManyHats Construction LLC (veteran-owned; Mike Canter, CEO; 740-600-1374).
 Convert raw field capture (photo tags + captions, voice transcripts, scope notes) into a client-ready "${label}" section.
@@ -209,11 +209,11 @@ Rules:
 - Plain text only — no markdown headers, no code fences.
 - Keep it tight: 3–6 sentences, or short bullet lines if the section reads better as a list.`;
 
-  const chatRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const chatRes = await fetch(`${config.baseURL}/chat/completions`, {
     method: "POST",
-    headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
+    headers: { ...config.headers, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: config.chatModel,
       messages: [
         { role: "system", content: system },
         { role: "user", content: `Section: ${label}\n\nRaw field capture:\n\n${rawText}` },

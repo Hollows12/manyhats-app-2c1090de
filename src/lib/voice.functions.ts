@@ -8,15 +8,15 @@ const TranscribeInput = z.object({
 
 /**
  * Transcribe + summarize a voice note stored in the `field-photos` bucket
- * (path `voice/<project>/<file>`). Uses Lovable AI STT + a follow-up
+ * (path `voice/<project>/<file>`). Uses the configured AI provider for STT + a follow-up
  * summarization pass. Writes transcript + summary back to voice_notes.
  */
 export const transcribeVoiceNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => TranscribeInput.parse(d))
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const { getAiRuntimeConfig } = await import("./ai-gateway.server");
+    const ai = getAiRuntimeConfig();
 
     const { supabase } = context;
     const { data: note, error: noteErr } = await supabase
@@ -29,9 +29,7 @@ export const transcribeVoiceNote = createServerFn({ method: "POST" })
 
     // Download audio (bucket 'field-photos', or fallback voice-notes)
     const bucket = "field-photos";
-    const { data: signed } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(storagePath, 300);
+    const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(storagePath, 300);
     if (!signed?.signedUrl) throw new Error("Could not sign audio URL");
     const audioRes = await fetch(signed.signedUrl);
     if (!audioRes.ok) throw new Error("Could not fetch audio");
@@ -39,16 +37,18 @@ export const transcribeVoiceNote = createServerFn({ method: "POST" })
 
     // 1. STT
     const form = new FormData();
-    form.append("model", "openai/gpt-4o-mini-transcribe");
+    form.append("model", ai.transcriptionModel);
     const ext = storagePath.split(".").pop() || "webm";
     form.append("file", audioBlob, `voice.${ext}`);
-    const sttRes = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+    const sttRes = await fetch(`${ai.baseURL}/audio/transcriptions`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}` },
+      headers: ai.headers,
       body: form,
     });
     if (!sttRes.ok) {
-      throw new Error(`Transcription failed: ${sttRes.status} ${await sttRes.text().catch(() => "")}`);
+      throw new Error(
+        `Transcription failed: ${sttRes.status} ${await sttRes.text().catch(() => "")}`,
+      );
     }
     const sttJson = (await sttRes.json()) as { text?: string };
     const transcript = (sttJson.text ?? "").trim();
@@ -57,20 +57,20 @@ export const transcribeVoiceNote = createServerFn({ method: "POST" })
     let summary = "";
     let scope_notes = "";
     if (transcript.length > 5) {
-      const chatRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const chatRes = await fetch(`${ai.baseURL}/chat/completions`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${key}`,
+          ...ai.headers,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: ai.chatModel,
           response_format: { type: "json_object" },
           messages: [
             {
               role: "system",
               content:
-                "You convert a contractor's raw voice note from the field into structured project notes for ManyHats Construction LLC. Return JSON: { \"summary\": string (2-3 sentences), \"scope_notes\": string (clean bullet-style scope language, one item per line, contractor-grade, no pricing). Never invent measurements.",
+                'You convert a contractor\'s raw voice note from the field into structured project notes for ManyHats Construction LLC. Return JSON: { "summary": string (2-3 sentences), "scope_notes": string (clean bullet-style scope language, one item per line, contractor-grade, no pricing). Never invent measurements.',
             },
             { role: "user", content: `Field voice note transcript:\n\n${transcript}` },
           ],
@@ -82,7 +82,9 @@ export const transcribeVoiceNote = createServerFn({ method: "POST" })
           const parsed = JSON.parse(j.choices?.[0]?.message?.content ?? "{}");
           summary = String(parsed.summary ?? "");
           scope_notes = String(parsed.scope_notes ?? "");
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
     }
 
