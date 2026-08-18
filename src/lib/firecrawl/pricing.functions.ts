@@ -236,7 +236,9 @@ export const enrichMaterialFromUrl = createServerFn({ method: "POST" })
 
 const KnowledgeInput = z.object({
   url: z.string().url(),
-  kind: z.enum(["install", "spec", "sds", "warranty", "practice", "safety", "other"]).default("other"),
+  kind: z
+    .enum(["install", "spec", "sds", "warranty", "practice", "safety", "other"])
+    .default("other"),
   tags: z.array(z.string()).default([]),
 });
 
@@ -310,13 +312,15 @@ export const importKnowledgeDoc = createServerFn({ method: "POST" })
 const RecommendInput = z.object({ project_id: z.string().uuid() });
 
 const RecommendationSchema = z.object({
-  materials: z.array(z.object({
-    name: z.string(),
-    quantity: z.number(),
-    unit: z.string(),
-    estimated_unit_cost: z.number().nullable().optional(),
-    notes: z.string().optional(),
-  })),
+  materials: z.array(
+    z.object({
+      name: z.string(),
+      quantity: z.number(),
+      unit: z.string(),
+      estimated_unit_cost: z.number().nullable().optional(),
+      notes: z.string().optional(),
+    }),
+  ),
   labor_hours: z.number(),
   equipment: z.array(z.string()).default([]),
   travel_mi: z.number().default(0),
@@ -334,9 +338,6 @@ export const recommendEstimate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => RecommendInput.parse(d))
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
     // Supersede any prior pending recommendations for this project so the
     // proposal draft-lock counts only the freshest advisory set.
     await context.supabase
@@ -360,30 +361,43 @@ export const recommendEstimate = createServerFn({ method: "POST" })
     const [{ data: measurements }, { data: photos }, { data: prices }] = await Promise.all([
       context.supabase.from("measurements").select("*").eq("project_id", data.project_id),
       context.supabase.from("project_photos").select("id, tags").eq("project_id", data.project_id),
-      context.supabase.from("material_prices").select("price, unit, material_id, retrieved_at, materials(name)").order("retrieved_at", { ascending: false }).limit(50),
+      context.supabase
+        .from("material_prices")
+        .select("price, unit, material_id, retrieved_at, materials(name)")
+        .order("retrieved_at", { ascending: false })
+        .limit(50),
     ]);
 
     const { generateText, Output } = await import("ai");
-    const { createLovableAiGatewayProvider } = await import("../ai-gateway.server");
-    const gateway = createLovableAiGatewayProvider(key);
+    const { createConfiguredAiProvider } = await import("../ai-gateway.server");
+    const { config, provider } = createConfiguredAiProvider();
 
     const system = `You are the Smart Pricing engine for ManyHats Construction (veteran-owned).
 Produce an ADVISORY estimate recommendation. The contractor will review, approve, or reject before any client sees pricing.
 NEVER invent measurements. If measurements are missing, lower confidence and add a disclaimer.
 Cite public reference prices when using them; otherwise mark cost as null.`;
 
-    const prompt = `Project: ${JSON.stringify({
-      name: project.name,
-      type: project.project_type,
-      status: (project as any).status,
-      description: (project as any).summary,
-      city: (project as any).city ?? project.clients?.city,
-      state: (project as any).state ?? project.clients?.state,
-      zip: (project as any).zip ?? (project.clients as any)?.zip,
+    const prompt = `Project: ${JSON.stringify(
+      {
+        name: project.name,
+        type: project.project_type,
+        status: (project as any).status,
+        description: (project as any).summary,
+        city: (project as any).city ?? project.clients?.city,
+        state: (project as any).state ?? project.clients?.state,
+        zip: (project as any).zip ?? (project.clients as any)?.zip,
 
-      measurements: (measurements ?? []).map((m: any) => ({ label: m.label, value: m.value, unit: m.unit, confirmed: m.is_confirmed })),
-      photo_count: photos?.length ?? 0,
-    }, null, 2)}
+        measurements: (measurements ?? []).map((m: any) => ({
+          label: m.label,
+          value: m.value,
+          unit: m.unit,
+          confirmed: m.is_confirmed,
+        })),
+        photo_count: photos?.length ?? 0,
+      },
+      null,
+      2,
+    )}
 
 Recent cached material prices (advisory only):
 ${JSON.stringify((prices ?? []).slice(0, 20), null, 2)}
@@ -391,7 +405,7 @@ ${JSON.stringify((prices ?? []).slice(0, 20), null, 2)}
 Return a structured recommendation.`;
 
     const { experimental_output } = await generateText({
-      model: gateway("google/gemini-3-flash-preview"),
+      model: provider(config.chatModel),
       system,
       prompt,
       experimental_output: Output.object({ schema: RecommendationSchema }),
