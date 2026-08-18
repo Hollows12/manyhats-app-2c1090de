@@ -4,17 +4,17 @@ ManyHats Pro V1 is release-ready only when every required gate below has current
 
 ## Automated pull-request gates
 
-| Gate                                            | Required evidence        | Blocks merge |
-| ----------------------------------------------- | ------------------------ | ------------ |
-| Changed-file lint                               | GitHub Actions CI result | Yes          |
-| TypeScript typecheck                            | GitHub Actions CI result | Yes          |
-| Unit and integration tests                      | GitHub Actions CI result | Yes          |
-| Production build                                | GitHub Actions CI result | Yes          |
-| Supabase migration/config validation            | GitHub Actions CI result | Yes          |
-| Root security policy and secret scan            | Security Gates workflow  | Yes          |
-| New-table RLS and `SECURITY DEFINER` invariants | Security Gates workflow  | Yes          |
-| High/critical dependency changes                | Dependency Review        | Yes          |
-| Static application security analysis            | CodeQL                   | Yes          |
+| Gate                                            | Required evidence         | Blocks merge |
+| ----------------------------------------------- | ------------------------- | ------------ |
+| Changed-file lint                               | GitHub Actions CI result  | Yes          |
+| TypeScript typecheck                            | GitHub Actions CI result  | Yes          |
+| Unit and integration tests                      | GitHub Actions CI result  | Yes          |
+| Production build                                | GitHub Actions CI result  | Yes          |
+| Supabase migration/config validation            | GitHub Actions CI result  | Yes          |
+| Root security policy and secret scan            | Security Gates workflow   | Yes          |
+| New-table RLS and `SECURITY DEFINER` invariants | Security Gates workflow   | Yes          |
+| High/critical production dependencies           | Lockfile dependency audit | Yes          |
+| Static application security analysis            | CodeQL                    | Yes          |
 
 ## Manual V1 release gates
 
