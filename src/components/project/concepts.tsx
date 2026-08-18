@@ -66,9 +66,15 @@ function ConceptCard({ concept }: { concept: any }) {
   async function generate() {
     setBusy(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error("Your session expired. Please sign in again.");
       const r = await fetch("/api/concept-image", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ id: concept.id }),
       });
       if (!r.ok) throw new Error(await r.text());
