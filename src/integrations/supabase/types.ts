@@ -2479,32 +2479,20 @@ export type Database = {
         }
         Returns: undefined
       }
-      portal_accept_proposal:
-        | {
-            Args: {
-              _ip_address?: string
-              _selected_option_id: string
-              _signature_data?: string
-              _signer_email: string
-              _signer_name: string
-              _token: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _ip_address?: string
-              _selected_option_id: string
-              _signature_data?: string
-              _signature_kind?: string
-              _signer_email: string
-              _signer_name: string
-              _signer_phone?: string
-              _terms_accepted?: boolean
-              _token: string
-            }
-            Returns: Json
-          }
+      portal_accept_proposal: {
+        Args: {
+          _ip_address?: string
+          _selected_option_id: string
+          _signature_data?: string
+          _signature_kind?: string
+          _signer_email: string
+          _signer_name: string
+          _signer_phone?: string
+          _terms_accepted?: boolean
+          _token: string
+        }
+        Returns: Json
+      }
       portal_get_client_file: {
         Args: { _pin: string; _token: string }
         Returns: Json
@@ -2518,6 +2506,10 @@ export type Database = {
         Returns: Json
       }
       project_profit_snapshot: { Args: { _project_id: string }; Returns: Json }
+      recalculate_invoice_balance: {
+        Args: { _invoice_id: string }
+        Returns: undefined
+      }
       revoke_client_file_share: { Args: { _share_id: string }; Returns: Json }
       revoke_invoice_portal_token: {
         Args: { _invoice_id: string }
