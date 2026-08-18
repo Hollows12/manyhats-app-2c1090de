@@ -36,9 +36,13 @@ function AuthPage() {
   const [fullName, setFullName] = useState("");
   const [invitePreview, setInvitePreview] = useState<InvitePreview | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [bootstrapAllowed, setBootstrapAllowed] = useState(false);
 
   useEffect(() => {
-    if (!invite) return;
+    if (!invite) {
+      (supabase as any).rpc("can_bootstrap_owner").then(({ data }: { data: unknown }) => setBootstrapAllowed(data === true));
+      return;
+    }
     supabase.rpc("get_invitation_preview", { _token: invite }).then(({ data, error }) => {
       if (error || !data) {
         setInviteError("This invitation link is invalid.");
@@ -55,15 +59,21 @@ function AuthPage() {
   async function acceptIfInvited() {
     if (!invite) return;
     const { error } = await supabase.rpc("accept_invitation", { _token: invite });
-    if (error) toast.error(error.message || "Could not accept invitation");
-    else toast.success("Invitation accepted.");
+    if (error) throw new Error(error.message || "Could not accept invitation");
+    toast.success("Invitation accepted.");
   }
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) return;
-      if (invite) await acceptIfInvited();
-      navigate({ to: "/dashboard", replace: true });
+      try {
+        if (invite) await acceptIfInvited();
+        navigate({ to: "/dashboard", replace: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Could not accept invitation";
+        setInviteError(message);
+        toast.error(message);
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
@@ -77,13 +87,26 @@ function AuthPage() {
         if (error) throw error;
         toast.success("Welcome back.");
       } else {
-        const { error } = await supabase.auth.signUp({
+        if (!invite && !bootstrapAllowed) {
+          throw new Error("A valid team invitation is required to create an account.");
+        }
+        if (invite && (!invitePreview || inviteError)) {
+          throw new Error(inviteError || "Invitation validation is still in progress.");
+        }
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName }, emailRedirectTo: `${window.location.origin}/auth${invite ? `?invite=${invite}` : ""}` },
+          options: {
+            data: { full_name: fullName, ...(invite ? { invite_token: invite } : {}) },
+            emailRedirectTo: `${window.location.origin}/auth${invite ? `?invite=${invite}` : ""}`,
+          },
         });
         if (error) throw error;
-        toast.success("Account created. Signing you in...");
+        if (!data.session) {
+          toast.success("Account created. Check your email to confirm your account.");
+          return;
+        }
+        toast.success("Account created.");
       }
       await acceptIfInvited();
       navigate({ to: "/dashboard", replace: true });
@@ -184,7 +207,7 @@ function AuthPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogle}
-            disabled={busy}
+            disabled={busy || Boolean(invite && inviteError)}
           >
             <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden>
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -254,17 +277,21 @@ function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email2">Email</Label>
-                  <Input id="email2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Input id="email2" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={Boolean(invitePreview)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password2">Password</Label>
                   <Input id="password2" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
-                <Button type="submit" className="w-full" disabled={busy}>
+                <Button type="submit" className="w-full" disabled={busy || Boolean(invite && (!invitePreview || inviteError)) || (!invite && !bootstrapAllowed)}>
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  The first account becomes admin. Later accounts default to crew — admins can change roles in Settings.
+                  {bootstrapAllowed && !invite
+                    ? "This first account becomes the owner administrator."
+                    : invite
+                      ? "Your verified invitation assigns your approved team role."
+                      : "New accounts require an invitation from an administrator."}
                 </p>
               </form>
             </TabsContent>
