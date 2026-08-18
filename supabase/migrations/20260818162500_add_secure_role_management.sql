@@ -8,7 +8,7 @@ create or replace function public.set_user_role(
 returns void
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = ''
 as $$
 declare
   _caller_id uuid := auth.uid();
