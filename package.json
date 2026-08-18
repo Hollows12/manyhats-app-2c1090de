@@ -99,5 +99,9 @@
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.16",
     "vitest": "^4.1.9"
+  },
+  "overrides": {
+    "esbuild": "0.28.1",
+    "nanoid": "3.3.18"
   }
 }

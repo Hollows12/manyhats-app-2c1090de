@@ -73,7 +73,9 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pin for reproducible CI and to avoid the action's rate-limited
+          # "latest release" lookup.
+          version: 2.111.0
 
       - name: Validate supabase/config.toml
         run: |
