@@ -29,3 +29,14 @@ This register documents the intentionally callable `SECURITY DEFINER` functions 
 ## Advisor disposition
 
 Supabase reports one warning per callable role, so these 18 functions produce 26 advisor entries. The entries are retained as reviewed intentional privileged surfaces rather than silenced by weakening or breaking required workflows. Any new callable `SECURITY DEFINER` function must be added here with its caller, authorization invariant, grant, fixed search path, and negative test before merge.
+
+
+## Public portal abuse protection
+
+All anonymous portal RPCs are protected by the PostgREST pre-request function `private.check_portal_rate_limit()`. It hashes the trusted forwarded client IP, uses five-minute per-path buckets, returns HTTP 429 with a five-minute `Retry-After`, and retains only short-lived pseudonymous counters.
+
+- Proposal acceptance: 10 requests per IP per five minutes.
+- Client-file PIN verification: 20 requests per IP per five minutes, in addition to the share-level five-attempt lockout.
+- Portal reads, previews, and viewed markers: 120 requests per IP per path per five minutes.
+- Other authenticated application and Data API traffic is not affected.
+- Rows older than one day are opportunistically removed.
