@@ -22,13 +22,14 @@ This register documents the intentionally callable `SECURITY DEFINER` functions 
 | Admin file-share management | `create_client_file_share`, `revoke_client_file_share`, `rotate_client_file_share_pin` | authenticated | Admin role |
 | Staff portal-token management | `ensure_invoice_portal_token`, `ensure_proposal_portal_token`, `revoke_invoice_portal_token`, `revoke_proposal_portal_token`, `send_proposal` | authenticated | Staff role |
 | Staff financial reporting | `project_profit_snapshot` | authenticated | Staff role |
+| Subscription entitlements | `has_entitlement` | authenticated | Caller is bound to `auth.uid()`; admin gets full access, otherwise reads only the caller's active/trialing subscription and unexpired override |
 | Proposal portal | `portal_get_proposal`, `portal_mark_proposal_viewed`, `portal_accept_proposal` | anon, authenticated | Valid unexpired proposal token; proposal/option relationship; terms acceptance |
 | Invoice portal | `portal_get_invoice`, `portal_mark_invoice_viewed` | anon, authenticated | Valid unexpired invoice token |
 | Client-file portal | `portal_verify_client_file_pin`, `portal_get_client_file` | anon, authenticated | Valid token, unexpired/unrevoked share, six-digit PIN, bcrypt verification and lockout |
 
 ## Advisor disposition
 
-Supabase reports one warning per callable role, so these 18 functions produce 26 advisor entries. The entries are retained as reviewed intentional privileged surfaces rather than silenced by weakening or breaking required workflows. Any new callable `SECURITY DEFINER` function must be added here with its caller, authorization invariant, grant, fixed search path, and negative test before merge.
+Supabase reports one warning per callable role for these registered functions. The entries are retained as reviewed intentional privileged surfaces rather than silenced by weakening or breaking required workflows. Any new callable `SECURITY DEFINER` function must be added here with its caller, authorization invariant, grant, fixed search path, and negative test before merge.
 
 
 ## Public portal abuse protection
