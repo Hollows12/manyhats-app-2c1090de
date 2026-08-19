@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireEntitlement } from "@/lib/entitlements.server";
 
 const Target = z.enum([
   "estimate_notes",
@@ -297,6 +298,7 @@ export const generateCapturePreview = createServerFn({ method: "POST" })
 
     let clientReadyText: string | null = null;
     if (data.polish) {
+      await requireEntitlement(context, "ai_generators");
       clientReadyText = await formatCaptureWithAi(source.rawText, data.target);
     }
 
