@@ -38,6 +38,29 @@ export const Route = createFileRoute("/api/concept-image")({
           return new Response("Unauthorized", { status: 401 });
         }
 
+        // Enforce the paid Shared Vision boundary on the server. UI gating is
+        // advisory only; direct API callers must pass the same entitlement check.
+        const entitlementResponse = await fetch(
+          `${supabaseUrl}/rest/v1/rpc/has_entitlement`,
+          {
+            method: "POST",
+            headers: {
+              apikey: publishableKey,
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ _feature_key: "shared_vision_rendering" }),
+          },
+        );
+        if (!entitlementResponse.ok) {
+          console.error("Entitlement check failed", entitlementResponse.status);
+          return new Response("Unable to verify feature access", { status: 503 });
+        }
+        const hasRenderingEntitlement = (await entitlementResponse.json()) === true;
+        if (!hasRenderingEntitlement) {
+          return new Response("Shared Vision rendering subscription required", { status: 403 });
+        }
+
         const { getAiRuntimeConfig } = await import("@/lib/ai-gateway.server");
         let ai;
         try {
