@@ -1,5 +1,17 @@
 -- Close entitlement review findings before V1 production rollout.
 
+-- Safely transition any rows created during a partial/staged deployment.
+-- Expired removes access without inventing billing dates.
+update public.user_subscriptions
+set status = 'expired',
+    updated_at = now()
+where status in ('trialing', 'active')
+  and (
+    current_period_start is null
+    or current_period_end is null
+    or current_period_end <= current_period_start
+  );
+
 alter table public.user_subscriptions
   add constraint user_subscriptions_entitled_period_check
   check (
@@ -44,6 +56,36 @@ end $$;
 
 revoke all on function public.has_entitlement(text) from public, anon, authenticated;
 grant execute on function public.has_entitlement(text) to authenticated, service_role;
+
+create or replace function public.enforce_estimates_core_entitlement()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $
+begin
+  -- Trusted backend/database roles may perform reconciliation and maintenance.
+  if current_user not in ('postgres', 'service_role', 'supabase_admin')
+     and not public.has_entitlement('estimates_core') then
+    raise exception 'Estimate subscription required'
+      using errcode = '42501';
+  end if;
+  return new;
+end
+$;
+
+revoke all on function public.enforce_estimates_core_entitlement() from public, anon;
+grant execute on function public.enforce_estimates_core_entitlement() to authenticated, service_role;
+
+drop trigger if exists trg_estimates_require_entitlement on public.estimates;
+create trigger trg_estimates_require_entitlement
+before insert or update on public.estimates
+for each row execute function public.enforce_estimates_core_entitlement();
+
+drop trigger if exists trg_estimate_lines_require_entitlement on public.estimate_line_items;
+create trigger trg_estimate_lines_require_entitlement
+before insert or update on public.estimate_line_items
+for each row execute function public.enforce_estimates_core_entitlement();
 
 -- Match the existing estimate screens: markup is calculated from subtotal only.
 
