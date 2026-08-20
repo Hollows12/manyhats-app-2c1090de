@@ -20,6 +20,10 @@ alter table public.user_subscriptions
       current_period_start is not null
       and current_period_end is not null
       and current_period_end > current_period_start
+      and (
+        plan_key = 'starter'
+        or current_period_end < 'infinity'::timestamptz
+      )
     )
   );
 
@@ -118,7 +122,11 @@ begin
     and current_period_start is not null
     and current_period_start <= now()
     and current_period_end is not null
-    and current_period_end > now();
+    and current_period_end > now()
+    and (
+      plan_key = 'starter'
+      or current_period_end < 'infinity'::timestamptz
+    );
 
   if _plan_key is null then return false; end if;
 
