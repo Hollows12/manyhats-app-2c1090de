@@ -36,6 +36,9 @@ Shared Vision → Field Capture → Estimate → Proposal → Client Approval
 
 See [`docs/`](./docs/) for the complete V1 architecture reference:
 
+- [`V1_BETA_SOURCE_OF_TRUTH.md`](./docs/V1_BETA_SOURCE_OF_TRUTH.md) — complete private-beta
+  product and acceptance contract preserving the original V1 plan
+- [`V1_RELEASE_GATES.md`](./docs/V1_RELEASE_GATES.md) — technical, operational and device gates
 - [`ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — stack overview, directory map, auth flow
 - [`DATABASE_SCHEMA.md`](./docs/DATABASE_SCHEMA.md) — all 46 tables, 14 migrations, RPCs
 - [`SECURITY.md`](./docs/SECURITY.md) — auth, RLS patterns, portal security
@@ -82,7 +85,7 @@ npm run test      # Vitest (4 pass / 1 skipped)
 
 ## V1 completion status
 
-**Money loop complete.** The full contractor workflow — lead → estimate → proposal → e-signature → deposit → project → invoice → payment → profit dashboard → client portal — is implemented end-to-end.
+**Money loop complete; private-beta acceptance remains in progress.** The contractor money loop — lead → estimate → proposal → e-signature → deposit → project → invoice → payment → profit dashboard → client portal — is implemented end-to-end. Complete V1 readiness additionally requires every mandatory capability and test in the private-beta source of truth.
 
 See [`docs/BUILD_STATUS.md`](./docs/BUILD_STATUS.md) for the detailed feature audit and [`docs/ROADMAP_V1.md`](./docs/ROADMAP_V1.md) for remaining V1 work.
 
