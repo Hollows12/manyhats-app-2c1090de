@@ -136,7 +136,7 @@ begin
 
   return exists(select 1 from public.plan_entitlements
     where plan_key=_plan_key and feature_key=_feature_key and enabled=true);
-end $$;
+end; $;
 
 revoke all on function public.has_entitlement(text) from public, anon, authenticated;
 grant execute on function public.has_entitlement(text) to authenticated, service_role;
