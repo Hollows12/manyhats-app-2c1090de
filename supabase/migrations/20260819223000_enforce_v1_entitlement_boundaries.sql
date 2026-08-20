@@ -158,7 +158,7 @@ begin
     return old;
   end if;
   return new;
-end
+end;
 $entitlement_trigger$;
 
 revoke all on function public.enforce_estimates_core_entitlement() from public, anon;
