@@ -4,6 +4,12 @@
 > This document tracks remaining work to reach V1 completion.  
 > Items marked ✅ are complete. Items marked 🔲 are remaining work.
 
+> **Historical status warning (2026-08-20):** This roadmap records the July money-loop
+> milestone; it is not the complete private-beta product contract. Use
+> [`V1_BETA_SOURCE_OF_TRUTH.md`](./V1_BETA_SOURCE_OF_TRUTH.md) and
+> [`V1_RELEASE_GATES.md`](./V1_RELEASE_GATES.md) for current release scope. “Money loop
+> complete” must not be interpreted as “V1 private-beta ready.”
+
 ---
 
 ## V1 Definition
