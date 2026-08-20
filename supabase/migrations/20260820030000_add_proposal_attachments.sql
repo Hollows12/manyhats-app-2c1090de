@@ -30,6 +30,9 @@ create table public.proposal_attachments (
 create index proposal_attachments_proposal_created_idx
   on public.proposal_attachments(proposal_id, created_at desc);
 
+create index proposal_attachments_uploaded_by_idx
+  on public.proposal_attachments(uploaded_by);
+
 alter table public.proposal_attachments enable row level security;
 
 revoke all on public.proposal_attachments from public, anon, authenticated;
