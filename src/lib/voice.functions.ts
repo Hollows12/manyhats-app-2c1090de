@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireEntitlement } from "@/lib/entitlements.server";
 
 const TranscribeInput = z.object({
   voice_note_id: z.string().uuid(),
@@ -15,6 +16,8 @@ export const transcribeVoiceNote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => TranscribeInput.parse(d))
   .handler(async ({ data, context }) => {
+    await requireEntitlement(context, "ai_generators");
+
     const { getAiRuntimeConfig } = await import("./ai-gateway.server");
     const ai = getAiRuntimeConfig();
 

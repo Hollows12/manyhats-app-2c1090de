@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireEntitlement } from "@/lib/entitlements.server";
 
 // ---------------- Service area ----------------
 
@@ -338,6 +339,8 @@ export const recommendEstimate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => RecommendInput.parse(d))
   .handler(async ({ data, context }) => {
+    await requireEntitlement(context, "ai_generators");
+
     // Supersede any prior pending recommendations for this project so the
     // proposal draft-lock counts only the freshest advisory set.
     await context.supabase
