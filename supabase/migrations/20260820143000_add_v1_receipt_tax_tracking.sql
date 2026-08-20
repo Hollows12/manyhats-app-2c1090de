@@ -122,3 +122,31 @@ grant execute on function public.post_receipt_to_job_cost(uuid) to authenticated
 
 comment on function public.post_receipt_to_job_cost(uuid) is
   'Idempotently posts one staff-visible receipt into its project job-cost actuals.';
+
+create or replace function public.protect_posted_receipt_financials()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+begin
+  if old.job_cost_id is not null and (
+    new.project_id is distinct from old.project_id
+    or new.amount is distinct from old.amount
+    or new.category is distinct from old.category
+    or new.job_cost_id is distinct from old.job_cost_id
+  ) then
+    raise exception 'Posted receipt financial fields are locked'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$function$;
+
+drop trigger if exists protect_posted_receipt_financials
+on public.receipts;
+create trigger protect_posted_receipt_financials
+before update on public.receipts
+for each row execute function public.protect_posted_receipt_financials();
+
+revoke all on function public.protect_posted_receipt_financials() from public, anon, authenticated;
