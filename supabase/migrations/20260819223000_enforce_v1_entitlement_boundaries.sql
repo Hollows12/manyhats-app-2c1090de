@@ -23,6 +23,78 @@ alter table public.user_subscriptions
     )
   );
 
+-- Starter is the free baseline. Provision every existing account before
+-- enforcing estimate boundaries, and extend onboarding so new accounts receive
+-- the same non-expiring free access. Paid provider subscriptions replace this row.
+insert into public.user_subscriptions (
+  user_id, plan_key, status, current_period_start, current_period_end
+)
+select users.id, 'starter', 'active', now(), 'infinity'::timestamptz
+from auth.users as users
+on conflict (user_id) do nothing;
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $onboarding$
+declare
+  _role_count integer;
+  _invite public.invitations%rowtype;
+  _invite_token text := nullif(new.raw_user_meta_data ->> 'invite_token', '');
+begin
+  insert into public.profiles (id, full_name)
+  values (
+    new.id,
+    coalesce(
+      new.raw_user_meta_data ->> 'full_name',
+      new.raw_user_meta_data ->> 'name',
+      split_part(new.email, '@', 1)
+    )
+  );
+
+  insert into public.user_subscriptions (
+    user_id, plan_key, status, current_period_start, current_period_end
+  )
+  values (new.id, 'starter', 'active', now(), 'infinity'::timestamptz);
+
+  lock table public.user_roles in share row exclusive mode;
+
+  select count(*) into _role_count
+  from public.user_roles;
+
+  if _role_count = 0 then
+    insert into public.user_roles (user_id, role)
+    values (new.id, 'admin'::public.app_role);
+  elsif _invite_token is not null then
+    select * into _invite
+    from public.invitations
+    where token = _invite_token
+      and accepted_at is null
+      and expires_at >= now()
+      and lower(email) = lower(new.email)
+    for update;
+
+    if found then
+      insert into public.user_roles (user_id, role)
+      values (new.id, _invite.role);
+
+      update public.invitations
+      set accepted_at = now(),
+          accepted_by = new.id,
+          updated_at = now()
+      where id = _invite.id;
+    end if;
+  end if;
+
+  return new;
+end;
+$onboarding$;
+
+revoke all on function public.handle_new_user()
+from public, anon, authenticated;
+
 create or replace function public.has_entitlement(_feature_key text)
 returns boolean language plpgsql stable security definer set search_path = ''
 as $$
@@ -70,6 +142,9 @@ begin
     raise exception 'Estimate subscription required'
       using errcode = '42501';
   end if;
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
   return new;
 end
 $entitlement_trigger$;
@@ -79,12 +154,12 @@ grant execute on function public.enforce_estimates_core_entitlement() to authent
 
 drop trigger if exists trg_estimates_require_entitlement on public.estimates;
 create trigger trg_estimates_require_entitlement
-before insert or update on public.estimates
+before insert or update or delete on public.estimates
 for each row execute function public.enforce_estimates_core_entitlement();
 
 drop trigger if exists trg_estimate_lines_require_entitlement on public.estimate_line_items;
 create trigger trg_estimate_lines_require_entitlement
-before insert or update on public.estimate_line_items
+before insert or update or delete on public.estimate_line_items
 for each row execute function public.enforce_estimates_core_entitlement();
 
 -- Match the existing estimate screens: markup is calculated from subtotal only.
