@@ -15,7 +15,7 @@ import { generateProposalNumber, formatMoney } from "@/lib/manyhats";
 import { useServerFn } from "@tanstack/react-start";
 import { writeScope } from "@/lib/scope-writer.functions";
 import { calculatePricingEconomics } from "@/lib/estimate-pricing";
-import { openStaffProposalPdf } from "@/lib/proposal-pdf.client";
+import { openStaffProposalPdf } from "@/lib/proposal-pdf";
 
 export function ProjectProposal({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
