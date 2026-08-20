@@ -4,7 +4,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { CheckCircle2, FileText, ShieldCheck, AlertCircle, Loader2, PenLine, Type as TypeIcon, Eraser, Wallet } from "lucide-react";
+import { CheckCircle2, FileText, ShieldCheck, AlertCircle, Loader2, PenLine, Type as TypeIcon, Eraser, Wallet, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,9 +16,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { formatMoney, formatDate } from "@/lib/manyhats";
 import { INVOICE_STATUS_META } from "@/lib/finance";
 import { createPortalDepositPaymentIntent } from "@/lib/stripe.functions";
+import {
+  createPortalProposalAttachmentUrl,
+  listPortalProposalAttachments,
+} from "@/lib/proposal-attachments.functions";
 
 const STRIPE_PK = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
+
+type PortalAttachment = {
+  id: string;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  created_at: string;
+};
 
 type PortalPayload = {
   proposal: {
@@ -73,6 +85,9 @@ export const Route = createFileRoute("/portal/proposal/$token")({
 function PortalProposalPage() {
   const { token } = Route.useParams();
   const router = useRouter();
+  const [openingAttachmentId, setOpeningAttachmentId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     (supabase.rpc as any)("portal_mark_proposal_viewed", { _token: token }).then(() => {});
@@ -86,6 +101,31 @@ function PortalProposalPage() {
       return data as unknown as PortalPayload;
     },
   });
+
+  const attachmentsQuery = useQuery({
+    queryKey: ["portal-proposal-attachments", token],
+    queryFn: async () =>
+      listPortalProposalAttachments({ data: { portal_token: token } }),
+    retry: false,
+  });
+
+  const openAttachment = async (attachment: PortalAttachment) => {
+    if (openingAttachmentId) return;
+    setOpeningAttachmentId(attachment.id);
+    try {
+      const result = await createPortalProposalAttachmentUrl({
+        data: {
+          portal_token: token,
+          attachment_id: attachment.id,
+        },
+      });
+      window.location.assign(result.signedUrl);
+    } catch {
+      toast.error("This private document could not be opened.");
+    } finally {
+      setOpeningAttachmentId(null);
+    }
+  };
 
   if (q.isLoading) {
     return <PortalShell><div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading proposal…</div></PortalShell>;
@@ -160,6 +200,62 @@ function PortalProposalPage() {
           </Card>
         </div>
       </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-sm">Proposal Documents</CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {attachmentsQuery.isLoading && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading private documents…
+            </div>
+          )}
+          {attachmentsQuery.isError && (
+            <p className="text-xs text-muted-foreground">
+              Private documents are temporarily unavailable.
+            </p>
+          )}
+          {!attachmentsQuery.isLoading &&
+            !attachmentsQuery.isError &&
+            (attachmentsQuery.data?.attachments.length ?? 0) === 0 && (
+              <p className="text-xs text-muted-foreground">
+                No proposal documents have been shared.
+              </p>
+            )}
+          {(attachmentsQuery.data?.attachments ?? []).map((attachment) => (
+            <div
+              key={attachment.id}
+              className="flex items-center justify-between gap-3 rounded-md border p-3"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium">
+                  {attachment.file_name}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {(Number(attachment.size_bytes) / 1024 / 1024).toFixed(1)} MB ·
+                  Private download
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={openingAttachmentId !== null}
+                onClick={() => openAttachment(attachment as PortalAttachment)}
+              >
+                {openingAttachmentId === attachment.id ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                Download
+              </Button>
+            </div>
+          ))}
+          <p className="text-[11px] text-muted-foreground">
+            Downloads use a short-lived secure link and are not publicly accessible.
+          </p>
+        </CardContent>
+      </Card>
 
       {invoices.length > 0 && (
         <Card>
