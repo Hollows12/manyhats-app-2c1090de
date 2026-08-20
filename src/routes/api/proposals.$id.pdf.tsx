@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Document, Page, Text, View, StyleSheet, renderToBuffer, Image } from "@react-pdf/renderer";
 import { COMPANY, formatMoney } from "@/lib/manyhats";
 import React from "react";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 const NAVY = "#0B1B33";
 const GOLD = "#C9A24B";
@@ -178,9 +180,23 @@ function Footer({ proposalNumber }: { proposalNumber: string }) {
 export const Route = createFileRoute("/api/proposals/$id/pdf")({
   server: {
     handlers: {
-      GET: async ({ params }: { params: { id: string } }) => {
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: proposal, error } = await supabaseAdmin
+      GET: async ({ params, request }: { params: { id: string }; request: Request }) => {
+        const authorization = request.headers.get("authorization");
+        if (!authorization?.startsWith("Bearer ")) return new Response("Unauthorized", { status: 401 });
+        const token = authorization.slice("Bearer ".length).trim();
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+        if (!token || !supabaseUrl || !publishableKey) return new Response("Unauthorized", { status: 401 });
+        const supabase = createClient<Database>(supabaseUrl, publishableKey, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
+        if (claimsError || !claims?.claims?.sub) return new Response("Unauthorized", { status: 401 });
+
+        // Exact-record reads and private-object signing stay behind the caller's
+        // RLS-scoped staff session. Client exports use the token-scoped portal route.
+        const { data: proposal, error } = await supabase
           .from("proposals")
           .select("*, proposal_options(*), projects(*, clients(*))")
           .eq("id", params.id)
@@ -190,20 +206,20 @@ export const Route = createFileRoute("/api/proposals/$id/pdf")({
         // Signed URLs for attached photos & approved concepts
         const photoUrls: string[] = [];
         if (proposal.attached_photo_ids?.length) {
-          const { data: photos } = await supabaseAdmin
+          const { data: photos } = await supabase
             .from("project_photos").select("storage_path").in("id", proposal.attached_photo_ids);
           for (const p of photos ?? []) {
-            const { data } = await supabaseAdmin.storage.from("field-photos").createSignedUrl(p.storage_path, 600);
+            const { data } = await supabase.storage.from("field-photos").createSignedUrl(p.storage_path, 600);
             if (data?.signedUrl) photoUrls.push(data.signedUrl);
           }
         }
-        const { data: concepts } = await supabaseAdmin
+        const { data: concepts } = await supabase
           .from("concept_requests").select("generated_image_path")
           .eq("project_id", proposal.project_id).eq("approved_for_proposal", true);
         const conceptUrls: string[] = [];
         for (const c of concepts ?? []) {
           if (!c.generated_image_path) continue;
-          const { data } = await supabaseAdmin.storage.from("concepts").createSignedUrl(c.generated_image_path, 600);
+          const { data } = await supabase.storage.from("concepts").createSignedUrl(c.generated_image_path, 600);
           if (data?.signedUrl) conceptUrls.push(data.signedUrl);
         }
 
