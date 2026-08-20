@@ -45,6 +45,14 @@ export const createDepositPaymentIntent = createServerFn({ method: "POST" })
       },
     });
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: bindError } = await (supabaseAdmin as any).from("stripe_payment_attempts").upsert({
+      intent_id: intent.id, target_type: "deposit", target_id: deposit.id,
+      project_id: deposit.project_id, expected_amount_cents: amountCents,
+      currency: "usd", created_by: context.userId,
+    });
+    if (bindError) throw new Error("Could not bind the payment to this deposit");
+
     return { clientSecret: intent.client_secret, intentId: intent.id, amountCents };
   });
 
@@ -91,6 +99,14 @@ export const createInvoicePaymentIntent = createServerFn({ method: "POST" })
         type: "invoice_payment",
       },
     });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: bindError } = await (supabaseAdmin as any).from("stripe_payment_attempts").upsert({
+      intent_id: intent.id, target_type: "invoice", target_id: inv.id,
+      project_id: inv.project_id, expected_amount_cents: amountCents,
+      currency: "usd", created_by: context.userId,
+    });
+    if (bindError) throw new Error("Could not bind the payment to this invoice");
 
     return { clientSecret: intent.client_secret, intentId: intent.id, amountCents };
   });
@@ -141,6 +157,12 @@ export const createPortalInvoicePaymentIntent = createServerFn({ method: "POST" 
         type: "portal_invoice_payment",
       },
     });
+
+    const { error: bindError } = await (adminClient as any).from("stripe_payment_attempts").upsert({
+      intent_id: intent.id, target_type: "invoice", target_id: data.invoice_id,
+      project_id: inv.project_id, expected_amount_cents: amountCents, currency: "usd",
+    });
+    if (bindError) throw new Error("Could not bind the payment to this invoice");
 
     return { clientSecret: intent.client_secret, intentId: intent.id, amountCents };
   });
@@ -211,6 +233,12 @@ export const createPortalDepositPaymentIntent = createServerFn({ method: "POST" 
         type: "deposit",
       },
     });
+
+    const { error: bindError } = await (adminClient as any).from("stripe_payment_attempts").upsert({
+      intent_id: intent.id, target_type: "deposit", target_id: deposit.id,
+      project_id: deposit.project_id, expected_amount_cents: amountCents, currency: "usd",
+    });
+    if (bindError) throw new Error("Could not bind the payment to this deposit");
 
     return { clientSecret: intent.client_secret, intentId: intent.id, amountCents };
   });
