@@ -62,7 +62,7 @@ returns trigger
 language plpgsql
 security invoker
 set search_path = ''
-as $
+as $entitlement_trigger$
 begin
   -- Trusted backend/database roles may perform reconciliation and maintenance.
   if current_user not in ('postgres', 'service_role', 'supabase_admin')
@@ -72,7 +72,7 @@ begin
   end if;
   return new;
 end
-$;
+$entitlement_trigger$;
 
 revoke all on function public.enforce_estimates_core_entitlement() from public, anon;
 grant execute on function public.enforce_estimates_core_entitlement() to authenticated, service_role;
