@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/manyhats";
+import { openStaffProposalPdf } from "@/lib/proposal-pdf.client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/proposals")({
   component: ProposalsPage,
@@ -42,8 +44,8 @@ function ProposalsPage() {
                   {p.invoice_status && <Badge variant="outline" className="capitalize">{p.invoice_status}</Badge>}
                 </div>
               )}
-              <Button asChild size="sm" variant="outline" className="w-full">
-                <a href={`/api/proposals/${p.id}/pdf`} target="_blank" rel="noreferrer"><Download className="mr-1 h-3 w-3"/>PDF</a>
+              <Button size="sm" variant="outline" className="w-full" onClick={() => openStaffProposalPdf(p.id).catch((error) => toast.error(error.message))}>
+                <Download className="mr-1 h-3 w-3"/>PDF
               </Button>
             </CardContent>
           </Card>
