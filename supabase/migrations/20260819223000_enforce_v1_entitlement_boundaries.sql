@@ -128,7 +128,11 @@ begin
       or current_period_end < 'infinity'::timestamptz
     );
 
-  if _plan_key is null then return false; end if;
+  -- Expired, canceled, paused, or malformed paid periods downgrade to
+  -- the free Starter catalog rather than removing core estimate access.
+  if _plan_key is null then
+    _plan_key := 'starter';
+  end if;
 
   return exists(select 1 from public.plan_entitlements
     where plan_key=_plan_key and feature_key=_feature_key and enabled=true);
