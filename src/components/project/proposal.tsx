@@ -15,6 +15,7 @@ import { generateProposalNumber, formatMoney } from "@/lib/manyhats";
 import { useServerFn } from "@tanstack/react-start";
 import { writeScope } from "@/lib/scope-writer.functions";
 import { calculatePricingEconomics } from "@/lib/estimate-pricing";
+import { openStaffProposalPdf } from "@/lib/proposal-pdf.client";
 
 export function ProjectProposal({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
@@ -165,10 +166,8 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
           <div className="flex gap-2 flex-wrap">
             <SendProposalButton proposalId={proposal.id} status={proposal.status} />
             <ClientLinkButtons proposalId={proposal.id} hasToken={!!proposal.portal_token} />
-            <Button asChild variant="outline" size="sm">
-              <a href={`/api/proposals/${proposal.id}/pdf`} target="_blank" rel="noreferrer">
-                <Download className="mr-1 h-4 w-4"/> PDF
-              </a>
+            <Button variant="outline" size="sm" onClick={() => openStaffProposalPdf(proposal.id).catch((error) => toast.error(error.message))}>
+              <Download className="mr-1 h-4 w-4"/> PDF
             </Button>
             <Button onClick={() => save.mutate()} disabled={save.isPending}>Save</Button>
           </div>
