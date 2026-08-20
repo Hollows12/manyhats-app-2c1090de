@@ -55,8 +55,11 @@ The `portal_get_proposal(token)` RPC returns:
 - Proposal options and pricing
 - Project name and client name
 - Company branding (ManyHats Construction LLC)
+- Proposal attachment metadata; downloads are authorized server-side and use 60-second signed URLs from the private `proposal-attachments` bucket
 
-**Not exposed:** Internal cost breakdown, AI draft history, staff notes, estimate line item details, other projects.
+**Not exposed:** Internal cost breakdown, AI draft history, staff notes, estimate line item details, storage paths, service credentials, or other projects.
+
+Attachment download authorization validates both the active proposal token and the attachment's proposal ID. A token cannot request an attachment belonging to another proposal.
 
 ### Signature Capture
 - Staff can type their name OR draw a signature
