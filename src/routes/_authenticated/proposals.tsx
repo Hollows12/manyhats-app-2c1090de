@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/manyhats";
-import { openStaffProposalPdf } from "@/lib/proposal-pdf.client";
+import { openStaffProposalPdf } from "@/lib/proposal-pdf";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/proposals")({
