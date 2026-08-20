@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { generateProposalNumber, formatMoney } from "@/lib/manyhats";
 import { useServerFn } from "@tanstack/react-start";
 import { writeScope } from "@/lib/scope-writer.functions";
+import { calculatePricingEconomics } from "@/lib/estimate-pricing";
 
 export function ProjectProposal({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
@@ -72,6 +73,24 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
   const writeScopeFn = useServerFn(writeScope);
   const [aiBusy, setAiBusy] = useState(false);
   const [roughNotes, setRoughNotes] = useState("");
+  const crewRates = useQuery({
+    queryKey: ["crew-labor-rates"],
+    queryFn: async () =>
+      (
+        await (supabase as any)
+          .from("crew_labor_rates")
+          .select("*")
+          .eq("active", true)
+          .order("employee_name")
+      ).data ?? [],
+  });
+  const averageCrewPay =
+    (crewRates.data?.length ?? 0) === 0
+      ? 25
+      : crewRates.data.reduce(
+          (sum: number, rate: any) => sum + Number(rate.hourly_pay),
+          0,
+        ) / crewRates.data.length;
   const [tone, setTone] = useState<"professional" | "board_ready" | "grant_friendly">("professional");
 
   const save = useMutation({
@@ -195,6 +214,8 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
         </CardContent>
       </Card>
 
+      <CrewLaborRatesPanel rates={crewRates.data ?? []} />
+
       {/* Options */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -210,7 +231,11 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3">
             {(proposal.proposal_options ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order).map((o: any) => (
-              <ProposalOptionCard key={o.id} option={o} />
+              <ProposalOptionCard
+                key={o.id}
+                option={o}
+                averageCrewPay={averageCrewPay}
+              />
             ))}
             {(proposal.proposal_options ?? []).length === 0 && (
               <div className="md:col-span-3 rounded-md border border-dashed py-6 text-center text-sm text-muted-foreground">
@@ -224,14 +249,169 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
   );
 }
 
-function ProposalOptionCard({ option }: { option: any }) {
+function CrewLaborRatesPanel({ rates }: { rates: any[] }) {
   const qc = useQueryClient();
-  const [edit, setEdit] = useState({ title: option.title, description: option.description ?? "", price: String(option.price), is_recommended: option.is_recommended });
+  const [employeeName, setEmployeeName] = useState("");
+  const [hourlyPay, setHourlyPay] = useState("25");
+  const [burdenPct, setBurdenPct] = useState("20");
+
+  const addRate = useMutation({
+    mutationFn: async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Your session expired. Sign in again.");
+      const { error } = await (supabase as any)
+        .from("crew_labor_rates")
+        .insert({
+          employee_name: employeeName.trim(),
+          hourly_pay: Number(hourlyPay),
+          labor_burden_pct: Number(burdenPct),
+          created_by: user.id,
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setEmployeeName("");
+      setHourlyPay("25");
+      qc.invalidateQueries({ queryKey: ["crew-labor-rates"] });
+      toast.success("Employee labor rate saved.");
+    },
+    onError: (error: any) => toast.error(error.message),
+  });
+
+  const deactivate = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from("crew_labor_rates")
+        .update({ active: false, updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["crew-labor-rates"] }),
+    onError: (error: any) => toast.error(error.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Contractor-only employee labor rates</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Enter each employee's actual hourly pay. If no active rate exists, pricing uses the $25/hour planning fallback.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <form
+          className="grid gap-2 sm:grid-cols-[1fr_130px_130px_auto]"
+          onSubmit={(event) => {
+            event.preventDefault();
+            addRate.mutate();
+          }}
+        >
+          <Input required value={employeeName} onChange={(event) => setEmployeeName(event.target.value)} placeholder="Employee or crew name" />
+          <Input required type="number" min="0" step="0.01" value={hourlyPay} onChange={(event) => setHourlyPay(event.target.value)} placeholder="Hourly pay" />
+          <Input required type="number" min="0" max="200" step="1" value={burdenPct} onChange={(event) => setBurdenPct(event.target.value)} placeholder="Burden %" />
+          <Button type="submit" disabled={addRate.isPending}>Add rate</Button>
+        </form>
+        <div className="flex flex-wrap gap-2">
+          {rates.map((rate) => (
+            <Badge key={rate.id} variant="outline" className="gap-1 py-1">
+              {rate.employee_name} · {formatMoney(Number(rate.hourly_pay))}/hr · {Number(rate.labor_burden_pct)}% burden
+              <button type="button" onClick={() => deactivate.mutate(rate.id)} aria-label={`Deactivate ${rate.employee_name}`}>×</button>
+            </Badge>
+          ))}
+          {rates.length === 0 && (
+            <span className="text-xs text-muted-foreground">
+              No employee rates entered—$25/hour fallback is active.
+            </span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProposalOptionCard({
+  option,
+  averageCrewPay,
+}: {
+  option: any;
+  averageCrewPay: number;
+}) {
+  const qc = useQueryClient();
+  const [edit, setEdit] = useState({
+    title: option.title,
+    description: option.description ?? "",
+    price: String(option.price),
+    is_recommended: option.is_recommended,
+    estimated_material_cost: String(option.estimated_material_cost ?? 0),
+    estimated_labor_hours: String(option.estimated_labor_hours ?? 0),
+    labor_cost_rate: String(option.labor_cost_rate ?? 25),
+    labor_burden_pct: String(option.labor_burden_pct ?? 20),
+    estimated_other_cost: String(option.estimated_other_cost ?? 0),
+    overhead_pct: String(option.overhead_pct ?? 10),
+    target_margin_pct: String(option.target_margin_pct ?? 20),
+    promotion_label: option.promotion_label ?? "",
+    promotion_discount_pct: String(option.promotion_discount_pct ?? 0),
+    estimated_days: String(option.estimated_days ?? ""),
+    pricing_source_summary: option.pricing_source_summary ?? "",
+  });
+
+  const economics = calculatePricingEconomics({
+    materialCost: Number(edit.estimated_material_cost) || 0,
+    laborHours: Number(edit.estimated_labor_hours) || 0,
+    hourlyPay:
+      edit.labor_cost_rate.trim() === ""
+        ? null
+        : Number(edit.labor_cost_rate),
+    laborBurdenPct: Number(edit.labor_burden_pct) || 0,
+    otherCost: Number(edit.estimated_other_cost) || 0,
+    overheadPct: Number(edit.overhead_pct) || 0,
+    targetMarginPct: Number(edit.target_margin_pct) || 0,
+    promotionDiscountPct: Number(edit.promotion_discount_pct) || 0,
+  });
+
+  const applyCalculatedPrice = () =>
+    setEdit({
+      ...edit,
+      price: economics.clientPrice.toFixed(2),
+    });
+
   const save = useMutation({
     mutationFn: async () => {
-      await supabase.from("proposal_options").update({ ...edit, price: Number(edit.price) }).eq("id", option.id);
+      await (supabase as any)
+        .from("proposal_options")
+        .update({
+          title: edit.title,
+          description: edit.description,
+          price: Number(edit.price),
+          is_recommended: edit.is_recommended,
+          estimated_material_cost: Number(edit.estimated_material_cost) || 0,
+          estimated_labor_hours: Number(edit.estimated_labor_hours) || 0,
+          labor_cost_rate:
+            edit.labor_cost_rate.trim() === ""
+              ? 25
+              : Number(edit.labor_cost_rate),
+          labor_burden_pct: Number(edit.labor_burden_pct) || 0,
+          estimated_other_cost: Number(edit.estimated_other_cost) || 0,
+          overhead_pct: Number(edit.overhead_pct) || 0,
+          target_margin_pct: Number(edit.target_margin_pct) || 0,
+          promotion_label: edit.promotion_label.trim() || null,
+          promotion_discount_pct:
+            Number(edit.promotion_discount_pct) || 0,
+          estimated_days:
+            edit.estimated_days.trim() === ""
+              ? null
+              : Number(edit.estimated_days),
+          pricing_source_summary:
+            edit.pricing_source_summary.trim() || null,
+          pricing_checked_at: new Date().toISOString(),
+        })
+        .eq("id", option.id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["proposal", option.proposal_id] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["proposal", option.proposal_id] }),
   });
   const del = useMutation({
     mutationFn: async () => { await supabase.from("proposal_options").delete().eq("id", option.id); },
@@ -244,6 +424,64 @@ function ProposalOptionCard({ option }: { option: any }) {
       <Textarea rows={3} value={edit.description} onChange={(e) => setEdit({ ...edit, description: e.target.value })} placeholder="What's included"/>
       <Input type="number" value={edit.price} onChange={(e) => setEdit({ ...edit, price: e.target.value })} />
       <div className="text-lg font-display font-bold tabular-nums text-navy">{formatMoney(Number(edit.price))}</div>
+
+      <details className="rounded-md border bg-muted/20 p-2">
+        <summary className="cursor-pointer text-xs font-semibold">
+          Contractor-only costs, labor & margin
+        </summary>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <InternalNumber label="Materials" value={edit.estimated_material_cost} onChange={(value) => setEdit({ ...edit, estimated_material_cost: value })} prefix="$" />
+          <InternalNumber label="Other direct costs" value={edit.estimated_other_cost} onChange={(value) => setEdit({ ...edit, estimated_other_cost: value })} prefix="$" />
+          <InternalNumber label="Labor hours" value={edit.estimated_labor_hours} onChange={(value) => setEdit({ ...edit, estimated_labor_hours: value })} />
+          <div>
+            <InternalNumber label="Employee pay / hr" value={edit.labor_cost_rate} onChange={(value) => setEdit({ ...edit, labor_cost_rate: value })} prefix="$" hint="$25 fallback" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="mt-1 h-6 px-1 text-[10px]"
+              onClick={() =>
+                setEdit({
+                  ...edit,
+                  labor_cost_rate: averageCrewPay.toFixed(2),
+                })
+              }
+            >
+              Use active crew average · {formatMoney(averageCrewPay)}/hr
+            </Button>
+          </div>
+          <InternalNumber label="Labor burden" value={edit.labor_burden_pct} onChange={(value) => setEdit({ ...edit, labor_burden_pct: value })} suffix="%" />
+          <InternalNumber label="Overhead" value={edit.overhead_pct} onChange={(value) => setEdit({ ...edit, overhead_pct: value })} suffix="%" />
+          <InternalNumber label="Target margin" value={edit.target_margin_pct} onChange={(value) => setEdit({ ...edit, target_margin_pct: value })} suffix="%" />
+          <InternalNumber label="Promotion discount" value={edit.promotion_discount_pct} onChange={(value) => setEdit({ ...edit, promotion_discount_pct: value })} suffix="%" />
+          <InternalNumber label="Estimated work days" value={edit.estimated_days} onChange={(value) => setEdit({ ...edit, estimated_days: value })} />
+          <div className="space-y-1">
+            <Label className="text-[11px]">Promotion label</Label>
+            <Input value={edit.promotion_label} onChange={(e) => setEdit({ ...edit, promotion_label: e.target.value })} placeholder="10% veteran metal-roof special" />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-[11px]">Pricing sources</Label>
+            <Input value={edit.pricing_source_summary} onChange={(e) => setEdit({ ...edit, pricing_source_summary: e.target.value })} placeholder="Local supplier quotes, contractor history, market range, national benchmark" />
+          </div>
+        </div>
+        <div className="mt-3 grid gap-1 rounded bg-background p-2 text-xs">
+          <CostRow label="Burdened labor" value={economics.burdenedLaborCost} />
+          <CostRow label="Cost + overhead" value={economics.costBasis} />
+          <CostRow label="Price before promotion" value={economics.priceBeforePromotion} />
+          <CostRow label="Promotion impact" value={-economics.promotionDiscount} />
+          <CostRow label="Projected gross profit" value={economics.grossProfit} />
+          <div className="flex justify-between font-semibold">
+            <span>Achieved margin</span>
+            <span className={economics.achievedMarginPct < 10 ? "text-destructive" : "text-emerald-700"}>
+              {economics.achievedMarginPct.toFixed(1)}%
+            </span>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={applyCalculatedPrice}>
+            Apply calculated client price {formatMoney(economics.clientPrice)}
+          </Button>
+        </div>
+      </details>
+
       <div className="flex items-center gap-2">
         <Switch checked={edit.is_recommended} onCheckedChange={(v) => setEdit({ ...edit, is_recommended: v })} id={`r-${option.id}`} />
         <Label htmlFor={`r-${option.id}`} className="text-xs">Recommended</Label>
@@ -252,6 +490,42 @@ function ProposalOptionCard({ option }: { option: any }) {
         <Button size="sm" onClick={() => save.mutate()}>Save</Button>
         <Button size="sm" variant="ghost" onClick={() => del.mutate()}>Delete</Button>
       </div>
+    </div>
+  );
+}
+
+function InternalNumber({
+  label,
+  value,
+  onChange,
+  prefix,
+  suffix,
+  hint,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  prefix?: string;
+  suffix?: string;
+  hint?: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-[11px]">{label}{hint ? ` · ${hint}` : ""}</Label>
+      <div className="flex items-center gap-1">
+        {prefix && <span className="text-xs text-muted-foreground">{prefix}</span>}
+        <Input type="number" min="0" step="0.01" value={value} onChange={(event) => onChange(event.target.value)} />
+        {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
+      </div>
+    </div>
+  );
+}
+
+function CostRow({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="tabular-nums">{formatMoney(value)}</span>
     </div>
   );
 }
