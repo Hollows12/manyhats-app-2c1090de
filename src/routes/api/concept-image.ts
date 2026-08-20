@@ -5,6 +5,29 @@ import type { Database } from "@/integrations/supabase/types";
 
 const RequestBody = z.object({ id: z.string().uuid() }).strict();
 
+export function resolveConceptGenerationProfile(title: string) {
+  const normalized = title.toLowerCase();
+  if (normalized.includes("walkthrough")) {
+    return {
+      entitlement: "walkthrough_3d",
+      outputKind: "walkthrough_preview",
+      instruction: "Create an ultra-realistic four-panel architectural 3D walkthrough storyboard showing a logical path through the proposed space. Maintain identical geometry, materials, lighting, scale, and camera-height continuity across panels. Label it Conceptual walkthrough preview.",
+    };
+  }
+  if (normalized.includes("concept plan") || normalized.includes("blueprint")) {
+    return {
+      entitlement: "concept_plans",
+      outputKind: "concept_plan",
+      instruction: "Create a clean preliminary architectural concept-plan sheet using only supplied measurements and constraints. Include an orthographic floor plan, supported dimension callouts, material legend, north arrow, code-review notes, and a title block labeled NOT FOR CONSTRUCTION. Do not invent dimensions, code compliance, or sealed engineering details.",
+    };
+  }
+  return {
+    entitlement: "shared_vision_rendering",
+    outputKind: "rendering",
+    instruction: "Create an ultra-realistic architectural construction visualization in natural daylight with physically plausible materials, scale, shadows, and site conditions. Preserve every stated measurement, constraint, and must-keep item.",
+  };
+}
+
 export function bearerToken(request: Request) {
   const authorization = request.headers.get("authorization");
   if (!authorization?.startsWith("Bearer ")) return null;
@@ -38,29 +61,6 @@ export const Route = createFileRoute("/api/concept-image")({
           return new Response("Unauthorized", { status: 401 });
         }
 
-        // Enforce the paid Shared Vision boundary on the server. UI gating is
-        // advisory only; direct API callers must pass the same entitlement check.
-        const entitlementResponse = await fetch(
-          `${supabaseUrl}/rest/v1/rpc/has_entitlement`,
-          {
-            method: "POST",
-            headers: {
-              apikey: publishableKey,
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ _feature_key: "shared_vision_rendering" }),
-          },
-        );
-        if (!entitlementResponse.ok) {
-          console.error("Entitlement check failed", entitlementResponse.status);
-          return new Response("Unable to verify feature access", { status: 503 });
-        }
-        const hasRenderingEntitlement = (await entitlementResponse.json()) === true;
-        if (!hasRenderingEntitlement) {
-          return new Response("Shared Vision rendering subscription required", { status: 403 });
-        }
-
         const { getAiRuntimeConfig } = await import("@/lib/ai-gateway.server");
         let ai;
         try {
@@ -85,12 +85,38 @@ export const Route = createFileRoute("/api/concept-image")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const concept = authorizedConcept;
+        const profile = resolveConceptGenerationProfile(concept.title);
+
+        // Enforce the exact paid deliverable boundary on the server. UI gating
+        // is advisory only; direct API callers must pass this check as well.
+        const entitlementResponse = await fetch(
+          `${supabaseUrl}/rest/v1/rpc/has_entitlement`,
+          {
+            method: "POST",
+            headers: {
+              apikey: publishableKey,
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ _feature_key: profile.entitlement }),
+          },
+        );
+        if (!entitlementResponse.ok) {
+          console.error("Entitlement check failed", entitlementResponse.status);
+          return new Response("Unable to verify feature access", { status: 503 });
+        }
+        if ((await entitlementResponse.json()) !== true) {
+          return new Response(
+            `${profile.entitlement.replaceAll("_", " ")} subscription required`,
+            { status: 403 },
+          );
+        }
 
         const prompt = [
           concept.prompt,
           concept.must_keep ? `Must keep: ${concept.must_keep}` : "",
           concept.requested_changes ? `Requested changes: ${concept.requested_changes}` : "",
-          "Photorealistic architectural / construction concept rendering. Daylight. Clean composition.",
+          profile.instruction,
         ]
           .filter(Boolean)
           .join("\n\n");
@@ -146,7 +172,7 @@ export const Route = createFileRoute("/api/concept-image")({
           })
           .eq("id", id);
 
-        return Response.json({ storage_path: path });
+        return Response.json({ storage_path: path, output_kind: profile.outputKind });
       },
     },
   },
