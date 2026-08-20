@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type GitSyncErrorKind =
   | "missing_repo"
@@ -58,8 +59,16 @@ function pickDeployedSha(): { sha?: string; source?: string } {
   return {};
 }
 
-export const getGitSyncStatus = createServerFn({ method: "GET" }).handler(
-  async (): Promise<GitSyncStatus> => {
+export const getGitSyncStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<GitSyncStatus> => {
+    const { data: adminRole, error: roleError } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError || !adminRole) throw new Error("Forbidden: administrator access required");
     const checkedAt = new Date().toISOString();
     const repo = process.env.GITHUB_REPO;
     const branch = process.env.GITHUB_BRANCH || "main";
@@ -262,8 +271,7 @@ export const getGitSyncStatus = createServerFn({ method: "GET" }).handler(
       checkedAt,
       issues,
     };
-  },
-);
+  });
 
 function truncate(s: string, n: number) {
   return s.length > n ? s.slice(0, n) + "…" : s;
