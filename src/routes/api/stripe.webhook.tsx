@@ -51,11 +51,25 @@ async function handlePaymentSucceeded(intent: Stripe.PaymentIntent) {
   const supabase = createClient<Database>(url, key);
   const meta = intent.metadata ?? {};
   const amountDollars = intent.amount / 100;
+  const { data: attempt, error: attemptError } = await (supabase as any)
+    .from("stripe_payment_attempts")
+    .select("intent_id, target_type, target_id, expected_amount_cents, currency, processed_at")
+    .eq("intent_id", intent.id)
+    .single();
+  if (attemptError || !attempt) throw new Error("Unknown Stripe payment intent");
 
   // Handle invoice payment
   if (meta.type === "invoice_payment" || meta.type === "portal_invoice_payment") {
     const invoiceId = meta.invoice_id;
     if (!invoiceId) return;
+
+    const { data: invoice, error: invoiceError } = await (supabase as any)
+      .from("invoices")
+      .select("id, balance_due")
+      .eq("id", invoiceId)
+      .single();
+    if (invoiceError || !invoice) throw new Error("Stripe invoice target not found");
+    assertStripeBinding(intent, attempt, "invoice", invoiceId, Math.round(Number(invoice.balance_due) * 100));
 
     const { error: insertError } = await supabase.from("payments").insert({
       invoice_id: invoiceId,
@@ -76,18 +90,6 @@ async function handlePaymentSucceeded(intent: Stripe.PaymentIntent) {
       throw insertError;
     }
 
-    // Recalculate invoice balance via the dedicated RPC
-    const invokeRpc = supabase.rpc as unknown as (
-      name: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ error: { message: string } | null }>;
-    const { error: rpcErr } = await invokeRpc("recalculate_invoice_balance", {
-      _invoice_id: invoiceId,
-    });
-    if (rpcErr) {
-      throw rpcErr;
-    }
-
     console.log(`[Stripe webhook] Recorded payment ${intent.id} for invoice ${invoiceId}`);
   }
 
@@ -95,6 +97,14 @@ async function handlePaymentSucceeded(intent: Stripe.PaymentIntent) {
   if (meta.type === "deposit") {
     const depositId = meta.deposit_id;
     if (!depositId) return;
+
+    const { data: deposit, error: depositLookupError } = await (supabase as any)
+      .from("deposits")
+      .select("id, amount")
+      .eq("id", depositId)
+      .single();
+    if (depositLookupError || !deposit) throw new Error("Stripe deposit target not found");
+    assertStripeBinding(intent, attempt, "deposit", depositId, Math.round(Number(deposit.amount) * 100));
 
     // Idempotency: mark paid only if not already paid
     const { error: depositError } = await supabase
@@ -105,5 +115,26 @@ async function handlePaymentSucceeded(intent: Stripe.PaymentIntent) {
     if (depositError) throw depositError;
 
     console.log(`[Stripe webhook] Recorded deposit payment ${intent.id} for deposit ${depositId}`);
+  }
+
+  await (supabase as any)
+    .from("stripe_payment_attempts")
+    .update({ processed_at: new Date().toISOString() })
+    .eq("intent_id", intent.id);
+}
+
+export function assertStripeBinding(
+  intent: Pick<Stripe.PaymentIntent, "id" | "amount" | "currency">,
+  attempt: { intent_id: string; target_type: string; target_id: string; expected_amount_cents: number; currency: string },
+  target: "invoice" | "deposit",
+  targetId: string,
+  authoritativeAmountCents: number,
+) {
+  if (intent.currency.toLowerCase() !== attempt.currency) throw new Error(`Unexpected ${target} currency`);
+  if (attempt.intent_id !== intent.id || attempt.target_type !== target || attempt.target_id !== targetId) {
+    throw new Error(`Unbound Stripe intent for ${target}`);
+  }
+  if (attempt.expected_amount_cents !== intent.amount || authoritativeAmountCents !== intent.amount) {
+    throw new Error(`Stripe amount mismatch for ${target}`);
   }
 }
