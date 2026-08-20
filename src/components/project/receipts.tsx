@@ -415,6 +415,12 @@ export function ProjectReceipts({ projectId }: { projectId: string }) {
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={Boolean(receipt.job_cost_id)}
+                  title={
+                    receipt.job_cost_id
+                      ? "Posted receipts are locked to preserve job-cost integrity."
+                      : "Delete receipt"
+                  }
                   onClick={() => remove.mutate(receipt)}
                 >
                   <Trash2 className="h-3 w-3" />
