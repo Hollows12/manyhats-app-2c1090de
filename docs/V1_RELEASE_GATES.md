@@ -2,6 +2,11 @@
 
 ManyHats Pro V1 is release-ready only when every required gate below has current evidence. Passing these gates supports a SOC 2 readiness program; it does not constitute SOC 2 certification.
 
+The complete product acceptance contract is
+[`V1_BETA_SOURCE_OF_TRUTH.md`](./V1_BETA_SOURCE_OF_TRUTH.md). A green technical build does not
+override or reduce that product scope. Every mandatory requirement in that contract must have
+traceable implementation and release-candidate evidence before private beta.
+
 ## Automated pull-request gates
 
 | Gate                                            | Required evidence         | Blocks merge |
@@ -21,6 +26,10 @@ ManyHats Pro V1 is release-ready only when every required gate below has current
 | Control                        | V1 requirement                                                                    | Current status               |
 | ------------------------------ | --------------------------------------------------------------------------------- | ---------------------------- |
 | Source of truth                | Reviewed GitHub `main`; Lovable remains unpublished                               | Enforced operationally       |
+| Product acceptance matrix      | Every mandatory V1 requirement maps to code, tests and an acceptance scenario     | In progress                  |
+| Universal project coverage     | Standard, custom, commercial/public, specialty and site/civil scenarios pass       | Pending                      |
+| Executive assistant            | Better Business briefing, health, profitability and action workflows pass          | Pending                      |
+| Advanced modules               | Site Intelligence and Sentinel entitlement plus safety boundaries pass             | Pending                      |
 | Mobile distribution            | Signed Flutter release build and store metadata                                   | Pending final Flutter work   |
 | Tenant scope                   | Controlled single-company use/invited beta only                                   | Approved V1 boundary         |
 | Public multi-company isolation | Organization-scoped schema, RLS, storage, RPCs, and negative tests                | Blocks public SaaS release   |
