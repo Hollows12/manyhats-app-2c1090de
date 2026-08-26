@@ -52,6 +52,24 @@ create table public.product_accounts (
 );
 create unique index product_accounts_provider_subscription_uidx on public.product_accounts(provider_subscription_id) where provider_subscription_id is not null;
 
+create or replace function private.prevent_closecrew_double_billing()
+returns trigger language plpgsql security invoker set search_path='' as $$
+begin
+  if new.status not in ('trialing','active','grace','past_due') then return new; end if;
+  if new.product='closecrew' and exists(
+    select 1 from public.product_accounts p
+    join public.organization_entitlements e on e.organization_id=p.organization_id and e.source_product='manyhats_pro' and e.feature_key='closecrew_core' and e.enabled
+    where p.organization_id=new.organization_id and p.product='manyhats_pro' and p.status in ('trialing','active','grace','past_due')
+  ) then raise exception 'closecrew_already_included' using errcode='23505'; end if;
+  if new.product='manyhats_pro' and exists(
+    select 1 from public.product_accounts p where p.organization_id=new.organization_id and p.product='closecrew' and p.status in ('trialing','active','grace','past_due')
+  ) and exists(
+    select 1 from public.organization_entitlements e where e.organization_id=new.organization_id and e.source_product='manyhats_pro' and e.feature_key='closecrew_core' and e.enabled
+  ) then raise exception 'closecrew_standalone_must_be_consolidated' using errcode='23505'; end if;
+  return new;
+end $$;
+revoke all on function private.prevent_closecrew_double_billing() from public,anon,authenticated;
+
 create table public.organization_entitlements (
   organization_id uuid not null references public.organizations(id) on delete cascade,
   feature_key text not null check (feature_key ~ '^closecrew_[a-z0-9_]+$'),
@@ -65,6 +83,7 @@ create table public.organization_entitlements (
   constraint organization_entitlement_period_check check (expires_at is null or expires_at > effective_at)
 );
 create index organization_entitlements_lookup_idx on public.organization_entitlements(organization_id,feature_key,effective_at,expires_at) where enabled;
+create trigger product_accounts_no_closecrew_double_billing before insert or update on public.product_accounts for each row execute function private.prevent_closecrew_double_billing();
 
 create table public.closecrew_rollouts (
   organization_id uuid primary key references public.organizations(id) on delete cascade,
@@ -305,7 +324,7 @@ returns public.closecrew_leads language plpgsql security invoker set search_path
 declare _lead public.closecrew_leads; _allowed boolean; _from_state public.closecrew_lead_state;
 begin
   select * into _lead from public.closecrew_leads where id=_lead_id for update;
-  if not found or not private.is_organization_member(_lead.organization_id) or not public.closecrew_has_entitlement(_lead.organization_id,'closecrew_core') then raise exception 'forbidden' using errcode='42501'; end if;
+  if not found or not private.is_organization_manager(_lead.organization_id) or not public.closecrew_has_entitlement(_lead.organization_id,'closecrew_core') then raise exception 'forbidden' using errcode='42501'; end if;
   _allowed := case _lead.state
     when 'new' then _to_state in ('contacted','awaiting_information','appointment_requested','declined','opted_out','closed','archived')
     when 'contacted' then _to_state in ('awaiting_information','appointment_requested','estimate_being_prepared','question_received','declined','no_response','opted_out','closed')
@@ -353,7 +372,8 @@ end $rls$;
 
 grant select on public.organizations,public.organization_memberships,public.product_accounts,public.organization_entitlements,public.closecrew_rollouts to authenticated;
 grant select,insert,update on public.closecrew_phone_connections,public.closecrew_contacts,public.closecrew_leads,public.closecrew_template_versions,public.closecrew_sequences,public.closecrew_sequence_steps,public.closecrew_enrollments,public.closecrew_review_requests to authenticated;
-grant select on public.closecrew_suppressions,public.closecrew_consent_events,public.closecrew_provider_events,public.closecrew_lead_transitions,public.closecrew_messages,public.closecrew_usage_events,public.closecrew_revenue_attributions,public.closecrew_audit_events to authenticated;
+grant select on public.closecrew_suppressions,public.closecrew_consent_events,public.closecrew_provider_events,public.closecrew_messages,public.closecrew_usage_events,public.closecrew_revenue_attributions,public.closecrew_audit_events to authenticated;
+grant select,insert on public.closecrew_lead_transitions to authenticated;
 
 create policy organizations_member_select on public.organizations for select to authenticated using (private.is_organization_member(id));
 create policy memberships_member_select on public.organization_memberships for select to authenticated using (private.is_organization_member(organization_id));
@@ -373,6 +393,8 @@ begin
     execute format('create policy %I on public.%I for select to authenticated using (private.is_organization_member(organization_id))',t||'_member_select',t);
   end loop;
 end $policies$;
+
+create policy closecrew_lead_transitions_manager_insert on public.closecrew_lead_transitions for insert to authenticated with check (private.is_organization_manager(organization_id) and public.closecrew_has_entitlement(organization_id,'closecrew_core'));
 
 create policy closecrew_sequence_steps_member_select on public.closecrew_sequence_steps for select to authenticated using (exists(select 1 from public.closecrew_sequences s where s.id=sequence_id and private.is_organization_member(s.organization_id)));
 create policy closecrew_sequence_steps_manager_insert on public.closecrew_sequence_steps for insert to authenticated with check (exists(select 1 from public.closecrew_sequences s where s.id=sequence_id and private.is_organization_manager(s.organization_id) and public.closecrew_has_entitlement(s.organization_id,'closecrew_follow_up')));
