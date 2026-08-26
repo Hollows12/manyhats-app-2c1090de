@@ -24,6 +24,7 @@ import {
   Wallet,
   ShieldAlert,
   GitBranch,
+  PhoneCall,
 } from "lucide-react";
 import { useRole } from "@/hooks/use-auth";
 
@@ -48,6 +49,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const PIPELINE = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "CloseCrew", url: "/closecrew", icon: PhoneCall },
   { title: "Leads", url: "/leads", icon: Inbox },
   { title: "Clients", url: "/clients", icon: Users },
   { title: "Projects", url: "/projects", icon: Briefcase },
