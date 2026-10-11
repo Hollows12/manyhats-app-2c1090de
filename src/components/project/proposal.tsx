@@ -1,6 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { FileText, Download, Sparkles, Loader2, Plus, Link2, RefreshCw, Send, XCircle } from "lucide-react";
+import {
+  FileText,
+  Download,
+  Sparkles,
+  Loader2,
+  Plus,
+  Link2,
+  RefreshCw,
+  Send,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,31 +19,54 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { generateProposalNumber, formatMoney } from "@/lib/manyhats";
 import { useServerFn } from "@tanstack/react-start";
 import { writeScope } from "@/lib/scope-writer.functions";
-import { calculatePricingEconomics } from "@/lib/estimate-pricing";
+import { calculatePricingEconomics, getPricingDefaultWarnings } from "@/lib/estimate-pricing";
 import { openStaffProposalPdf } from "@/lib/proposal-pdf";
 
 export function ProjectProposal({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
   const proposal = useQuery({
     queryKey: ["proposal", projectId],
-    queryFn: async () => (await supabase.from("proposals").select("*, proposal_options(*)").eq("project_id", projectId).order("created_at", { ascending: false }).limit(1).maybeSingle()).data,
+    queryFn: async () =>
+      (
+        await supabase
+          .from("proposals")
+          .select("*, proposal_options(*)")
+          .eq("project_id", projectId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ).data,
   });
   const measurementsCount = useQuery({
     queryKey: ["measurements-confirmed-count", projectId],
     queryFn: async () => {
-      const { count } = await supabase.from("measurements").select("id", { count: "exact", head: true }).eq("project_id", projectId).eq("is_confirmed", true);
+      const { count } = await supabase
+        .from("measurements")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", projectId)
+        .eq("is_confirmed", true);
       return count ?? 0;
     },
   });
   const pendingRecs = useQuery({
     queryKey: ["ai-recs-pending", projectId],
     queryFn: async () => {
-      const { count } = await supabase.from("ai_estimate_recommendations").select("id", { count: "exact", head: true }).eq("project_id", projectId).eq("status", "pending");
+      const { count } = await supabase
+        .from("ai_estimate_recommendations")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", projectId)
+        .eq("status", "pending");
       return count ?? 0;
     },
   });
@@ -41,11 +74,15 @@ export function ProjectProposal({ projectId }: { projectId: string }) {
   const create = useMutation({
     mutationFn: async () => {
       const seq = Math.floor(Math.random() * 900) + 100;
-      const { data, error } = await supabase.from("proposals").insert({
-        project_id: projectId,
-        proposal_number: generateProposalNumber(seq),
-        status: "draft",
-      }).select().single();
+      const { data, error } = await supabase
+        .from("proposals")
+        .insert({
+          project_id: projectId,
+          proposal_number: generateProposalNumber(seq),
+          status: "draft",
+        })
+        .select()
+        .single();
       if (error) throw error;
       return data;
     },
@@ -58,17 +95,31 @@ export function ProjectProposal({ projectId }: { projectId: string }) {
     return (
       <Card>
         <CardContent className="py-10 text-center space-y-4">
-          <FileText className="mx-auto h-8 w-8 text-muted-foreground"/>
+          <FileText className="mx-auto h-8 w-8 text-muted-foreground" />
           <div className="text-sm text-muted-foreground">No proposal yet for this project.</div>
           <Button onClick={() => create.mutate()}>Create proposal</Button>
         </CardContent>
       </Card>
     );
   }
-  return <ProposalEditor proposal={proposal.data} confirmedCount={measurementsCount.data ?? 0} pendingRecCount={pendingRecs.data ?? 0} />;
+  return (
+    <ProposalEditor
+      proposal={proposal.data}
+      confirmedCount={measurementsCount.data ?? 0}
+      pendingRecCount={pendingRecs.data ?? 0}
+    />
+  );
 }
 
-function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposal: any; confirmedCount: number; pendingRecCount: number }) {
+function ProposalEditor({
+  proposal,
+  confirmedCount,
+  pendingRecCount,
+}: {
+  proposal: any;
+  confirmedCount: number;
+  pendingRecCount: number;
+}) {
   const qc = useQueryClient();
   const [form, setForm] = useState(proposal);
   const writeScopeFn = useServerFn(writeScope);
@@ -85,45 +136,80 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
           .order("employee_name")
       ).data ?? [],
   });
+  const companyDefaults = useQuery({
+    queryKey: ["company-operating-defaults"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("company_operating_defaults")
+        .select("*")
+        .eq("settings_key", "primary")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
   const averageCrewPay =
     (crewRates.data?.length ?? 0) === 0
       ? 25
-      : crewRates.data.reduce(
-          (sum: number, rate: any) => sum + Number(rate.hourly_pay),
-          0,
-        ) / crewRates.data.length;
-  const [tone, setTone] = useState<"professional" | "board_ready" | "grant_friendly">("professional");
+      : crewRates.data.reduce((sum: number, rate: any) => sum + Number(rate.hourly_pay), 0) /
+        crewRates.data.length;
+  const [tone, setTone] = useState<"professional" | "board_ready" | "grant_friendly">(
+    "professional",
+  );
 
   const save = useMutation({
     mutationFn: async () => {
       const nextStatus = form.status ?? proposal.status;
       const promoting = nextStatus !== "draft" && proposal.status === "draft";
       if (promoting && pendingRecCount > 0) {
-        throw new Error(`Blocked: ${pendingRecCount} AI recommendation${pendingRecCount === 1 ? "" : "s"} still pending contractor review.`);
+        throw new Error(
+          `Blocked: ${pendingRecCount} AI recommendation${pendingRecCount === 1 ? "" : "s"} still pending contractor review.`,
+        );
       }
-      const { error } = await supabase.from("proposals").update({
-        executive_summary: form.executive_summary, existing_conditions: form.existing_conditions,
-        scope_of_work: form.scope_of_work, recommendation: form.recommendation,
-        timeline: form.timeline, warranty_length: form.warranty_length,
-        warranty_notes: form.warranty_notes, exclusions: form.exclusions,
-        payment_terms: form.payment_terms, grant_friendly: form.grant_friendly,
-        status: nextStatus,
-      }).eq("id", proposal.id);
+      const { error } = await supabase
+        .from("proposals")
+        .update({
+          executive_summary: form.executive_summary,
+          existing_conditions: form.existing_conditions,
+          scope_of_work: form.scope_of_work,
+          recommendation: form.recommendation,
+          timeline: form.timeline,
+          warranty_length: form.warranty_length,
+          warranty_notes: form.warranty_notes,
+          exclusions: form.exclusions,
+          payment_terms: form.payment_terms,
+          grant_friendly: form.grant_friendly,
+          status: nextStatus,
+        })
+        .eq("id", proposal.id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["proposal", proposal.project_id] }); toast.success("Saved."); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["proposal", proposal.project_id] });
+      toast.success("Saved.");
+    },
     onError: (e: any) => toast.error(e?.message ?? "Save failed"),
   });
 
   const addOption = useMutation({
     mutationFn: async ({ tier, price }: { tier: string; price: number }) => {
-      await supabase.from("proposal_options").insert({ proposal_id: proposal.id, tier, title: `${tier} package`, price, sort_order: (proposal.proposal_options?.length ?? 0) + 1 });
+      const { error } = await supabase.from("proposal_options").insert({
+        proposal_id: proposal.id,
+        tier,
+        title: `${tier} package`,
+        price,
+        sort_order: (proposal.proposal_options?.length ?? 0) + 1,
+      });
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["proposal", proposal.project_id] }),
   });
 
   async function runAi() {
-    if (!roughNotes.trim()) { toast.error("Add some rough notes first."); return; }
+    if (!roughNotes.trim()) {
+      toast.error("Add some rough notes first.");
+      return;
+    }
     setAiBusy(true);
     try {
       const result = await writeScopeFn({ data: { rough_notes: roughNotes, tone } });
@@ -152,35 +238,59 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
         <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
           <div>
             <CardTitle className="font-display flex items-center gap-3">
-              <FileText className="h-5 w-5 text-gold"/>
+              <FileText className="h-5 w-5 text-gold" />
               {proposal.proposal_number}
               <Badge variant="outline">{proposal.status}</Badge>
             </CardTitle>
             {!canMarkReady && (
-              <p className="text-xs text-amber-700 mt-1">⚠ No confirmed measurements yet. Final pricing requires at least one confirmed measurement.</p>
+              <p className="text-xs text-amber-700 mt-1">
+                ⚠ No confirmed measurements yet. Final pricing requires at least one confirmed
+                measurement.
+              </p>
             )}
             {pendingRecCount > 0 && (
-              <p className="text-xs text-amber-700 mt-1">⚠ {pendingRecCount} AI recommendation{pendingRecCount === 1 ? "" : "s"} pending contractor approval. Review in the Estimate tab before sending.</p>
+              <p className="text-xs text-amber-700 mt-1">
+                ⚠ {pendingRecCount} AI recommendation{pendingRecCount === 1 ? "" : "s"} pending
+                contractor approval. Review in the Estimate tab before sending.
+              </p>
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
             <SendProposalButton proposalId={proposal.id} status={proposal.status} />
             <ClientLinkButtons proposalId={proposal.id} hasToken={!!proposal.portal_token} />
-            <Button variant="outline" size="sm" onClick={() => openStaffProposalPdf(proposal.id).catch((error) => toast.error(error.message))}>
-              <Download className="mr-1 h-4 w-4"/> PDF
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                openStaffProposalPdf(proposal.id).catch((error) => toast.error(error.message))
+              }
+            >
+              <Download className="mr-1 h-4 w-4" /> PDF
             </Button>
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>Save</Button>
+            <Button onClick={() => save.mutate()} disabled={save.isPending}>
+              Save
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* AI Scope Writer */}
           <details className="rounded-md border border-gold/40 bg-gold/5 p-3">
-            <summary className="cursor-pointer text-sm font-semibold flex items-center gap-2"><Sparkles className="h-4 w-4 text-gold"/>AI Scope Writer</summary>
+            <summary className="cursor-pointer text-sm font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-gold" />
+              AI Scope Writer
+            </summary>
             <div className="mt-3 space-y-2">
-              <Textarea rows={4} placeholder="Paste rough notes from the field. The AI will draft the executive summary, scope, conditions, recommendation, warranty, and exclusions in contractor-grade wording." value={roughNotes} onChange={(e) => setRoughNotes(e.target.value)} />
+              <Textarea
+                rows={4}
+                placeholder="Paste rough notes from the field. The AI will draft the executive summary, scope, conditions, recommendation, warranty, and exclusions in contractor-grade wording."
+                value={roughNotes}
+                onChange={(e) => setRoughNotes(e.target.value)}
+              />
               <div className="flex items-center gap-2">
                 <Select value={tone} onValueChange={(v) => setTone(v as any)}>
-                  <SelectTrigger className="w-48"><SelectValue/></SelectTrigger>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="professional">Professional</SelectItem>
                     <SelectItem value="board_ready">Board-ready</SelectItem>
@@ -188,27 +298,76 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
                   </SelectContent>
                 </Select>
                 <Button onClick={runAi} disabled={aiBusy} size="sm">
-                  {aiBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin"/> : <Sparkles className="mr-1 h-4 w-4"/>}
+                  {aiBusy ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-1 h-4 w-4" />
+                  )}
                   Generate
                 </Button>
               </div>
             </div>
           </details>
 
-          <Field label="Executive summary" value={form.executive_summary} onChange={(v) => setForm({ ...form, executive_summary: v })} />
-          <Field label="Existing conditions" value={form.existing_conditions} onChange={(v) => setForm({ ...form, existing_conditions: v })} />
-          <Field label="Scope of work" value={form.scope_of_work} onChange={(v) => setForm({ ...form, scope_of_work: v })} rows={5}/>
-          <Field label="Recommendation" value={form.recommendation} onChange={(v) => setForm({ ...form, recommendation: v })} />
+          <Field
+            label="Executive summary"
+            value={form.executive_summary}
+            onChange={(v) => setForm({ ...form, executive_summary: v })}
+          />
+          <Field
+            label="Existing conditions"
+            value={form.existing_conditions}
+            onChange={(v) => setForm({ ...form, existing_conditions: v })}
+          />
+          <Field
+            label="Scope of work"
+            value={form.scope_of_work}
+            onChange={(v) => setForm({ ...form, scope_of_work: v })}
+            rows={5}
+          />
+          <Field
+            label="Recommendation"
+            value={form.recommendation}
+            onChange={(v) => setForm({ ...form, recommendation: v })}
+          />
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Timeline" value={form.timeline} onChange={(v) => setForm({ ...form, timeline: v })} rows={2}/>
-            <Field label="Warranty length" value={form.warranty_length} onChange={(v) => setForm({ ...form, warranty_length: v })} rows={2}/>
+            <Field
+              label="Timeline"
+              value={form.timeline}
+              onChange={(v) => setForm({ ...form, timeline: v })}
+              rows={2}
+            />
+            <Field
+              label="Warranty length"
+              value={form.warranty_length}
+              onChange={(v) => setForm({ ...form, warranty_length: v })}
+              rows={2}
+            />
           </div>
-          <Field label="Warranty notes" value={form.warranty_notes} onChange={(v) => setForm({ ...form, warranty_notes: v })} />
-          <Field label="Exclusions" value={form.exclusions} onChange={(v) => setForm({ ...form, exclusions: v })} />
-          <Field label="Payment terms" value={form.payment_terms} onChange={(v) => setForm({ ...form, payment_terms: v })} />
+          <Field
+            label="Warranty notes"
+            value={form.warranty_notes}
+            onChange={(v) => setForm({ ...form, warranty_notes: v })}
+          />
+          <Field
+            label="Exclusions"
+            value={form.exclusions}
+            onChange={(v) => setForm({ ...form, exclusions: v })}
+          />
+          <Field
+            label="Payment terms"
+            value={form.payment_terms}
+            onChange={(v) => setForm({ ...form, payment_terms: v })}
+          />
           <div className="flex items-center gap-2">
-            <Switch checked={form.grant_friendly} onCheckedChange={(v) => setForm({ ...form, grant_friendly: v })} id="gf" />
-            <Label htmlFor="gf" className="text-xs">Grant / donation-friendly wording</Label>
+            <Switch
+              checked={form.grant_friendly}
+              onCheckedChange={(v) => setForm({ ...form, grant_friendly: v })}
+              id="gf"
+            />
+            <Label htmlFor="gf" className="text-xs">
+              Grant / donation-friendly wording
+            </Label>
           </div>
         </CardContent>
       </Card>
@@ -221,21 +380,30 @@ function ProposalEditor({ proposal, confirmedCount, pendingRecCount }: { proposa
           <CardTitle className="text-sm">Good / Better / Best options</CardTitle>
           <div className="flex gap-1">
             {["Good", "Better", "Best"].map((t) => (
-              <Button key={t} variant="outline" size="sm" onClick={() => addOption.mutate({ tier: t, price: 0 })}>
-                <Plus className="mr-1 h-3 w-3"/>{t}
+              <Button
+                key={t}
+                variant="outline"
+                size="sm"
+                onClick={() => addOption.mutate({ tier: t, price: 0 })}
+              >
+                <Plus className="mr-1 h-3 w-3" />
+                {t}
               </Button>
             ))}
           </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-3">
-            {(proposal.proposal_options ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order).map((o: any) => (
-              <ProposalOptionCard
-                key={o.id}
-                option={o}
-                averageCrewPay={averageCrewPay}
-              />
-            ))}
+            {(proposal.proposal_options ?? [])
+              .sort((a: any, b: any) => a.sort_order - b.sort_order)
+              .map((o: any) => (
+                <ProposalOptionCard
+                  key={o.id}
+                  option={o}
+                  averageCrewPay={averageCrewPay}
+                  companyDefaults={companyDefaults.data}
+                />
+              ))}
             {(proposal.proposal_options ?? []).length === 0 && (
               <div className="md:col-span-3 rounded-md border border-dashed py-6 text-center text-sm text-muted-foreground">
                 Add Good / Better / Best option cards above.
@@ -260,14 +428,12 @@ function CrewLaborRatesPanel({ rates }: { rates: any[] }) {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Your session expired. Sign in again.");
-      const { error } = await (supabase as any)
-        .from("crew_labor_rates")
-        .insert({
-          employee_name: employeeName.trim(),
-          hourly_pay: Number(hourlyPay),
-          labor_burden_pct: Number(burdenPct),
-          created_by: user.id,
-        });
+      const { error } = await (supabase as any).from("crew_labor_rates").insert({
+        employee_name: employeeName.trim(),
+        hourly_pay: Number(hourlyPay),
+        labor_burden_pct: Number(burdenPct),
+        created_by: user.id,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -287,8 +453,7 @@ function CrewLaborRatesPanel({ rates }: { rates: any[] }) {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["crew-labor-rates"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["crew-labor-rates"] }),
     onError: (error: any) => toast.error(error.message),
   });
 
@@ -297,7 +462,8 @@ function CrewLaborRatesPanel({ rates }: { rates: any[] }) {
       <CardHeader>
         <CardTitle className="text-sm">Contractor-only employee labor rates</CardTitle>
         <p className="text-xs text-muted-foreground">
-          Enter each employee's actual hourly pay. If no active rate exists, pricing uses the $25/hour planning fallback.
+          Enter each employee's actual hourly pay. If no active rate exists, pricing uses the
+          $25/hour planning fallback.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -308,16 +474,47 @@ function CrewLaborRatesPanel({ rates }: { rates: any[] }) {
             addRate.mutate();
           }}
         >
-          <Input required value={employeeName} onChange={(event) => setEmployeeName(event.target.value)} placeholder="Employee or crew name" />
-          <Input required type="number" min="0" step="0.01" value={hourlyPay} onChange={(event) => setHourlyPay(event.target.value)} placeholder="Hourly pay" />
-          <Input required type="number" min="0" max="200" step="1" value={burdenPct} onChange={(event) => setBurdenPct(event.target.value)} placeholder="Burden %" />
-          <Button type="submit" disabled={addRate.isPending}>Add rate</Button>
+          <Input
+            required
+            value={employeeName}
+            onChange={(event) => setEmployeeName(event.target.value)}
+            placeholder="Employee or crew name"
+          />
+          <Input
+            required
+            type="number"
+            min="0"
+            step="0.01"
+            value={hourlyPay}
+            onChange={(event) => setHourlyPay(event.target.value)}
+            placeholder="Hourly pay"
+          />
+          <Input
+            required
+            type="number"
+            min="0"
+            max="200"
+            step="1"
+            value={burdenPct}
+            onChange={(event) => setBurdenPct(event.target.value)}
+            placeholder="Burden %"
+          />
+          <Button type="submit" disabled={addRate.isPending}>
+            Add rate
+          </Button>
         </form>
         <div className="flex flex-wrap gap-2">
           {rates.map((rate) => (
             <Badge key={rate.id} variant="outline" className="gap-1 py-1">
-              {rate.employee_name} · {formatMoney(Number(rate.hourly_pay))}/hr · {Number(rate.labor_burden_pct)}% burden
-              <button type="button" onClick={() => deactivate.mutate(rate.id)} aria-label={`Deactivate ${rate.employee_name}`}>×</button>
+              {rate.employee_name} · {formatMoney(Number(rate.hourly_pay))}/hr ·{" "}
+              {Number(rate.labor_burden_pct)}% burden
+              <button
+                type="button"
+                onClick={() => deactivate.mutate(rate.id)}
+                aria-label={`Deactivate ${rate.employee_name}`}
+              >
+                ×
+              </button>
             </Badge>
           ))}
           {rates.length === 0 && (
@@ -334,9 +531,18 @@ function CrewLaborRatesPanel({ rates }: { rates: any[] }) {
 function ProposalOptionCard({
   option,
   averageCrewPay,
+  companyDefaults,
 }: {
   option: any;
   averageCrewPay: number;
+  companyDefaults?: {
+    confirmed_fields: string[];
+    labor_cost_rate: number | null;
+    labor_burden_pct: number | null;
+    overhead_pct: number | null;
+    target_margin_pct: number | null;
+    veteran_discount_pct: number | null;
+  };
 }) {
   const qc = useQueryClient();
   const [edit, setEdit] = useState({
@@ -360,10 +566,7 @@ function ProposalOptionCard({
   const economics = calculatePricingEconomics({
     materialCost: Number(edit.estimated_material_cost) || 0,
     laborHours: Number(edit.estimated_labor_hours) || 0,
-    hourlyPay:
-      edit.labor_cost_rate.trim() === ""
-        ? null
-        : Number(edit.labor_cost_rate),
+    hourlyPay: edit.labor_cost_rate.trim() === "" ? null : Number(edit.labor_cost_rate),
     laborBurdenPct: Number(edit.labor_burden_pct) || 0,
     otherCost: Number(edit.estimated_other_cost) || 0,
     overheadPct: Number(edit.overhead_pct) || 0,
@@ -377,9 +580,64 @@ function ProposalOptionCard({
       price: economics.clientPrice.toFixed(2),
     });
 
+  const confirmedFields = companyDefaults?.confirmed_fields ?? [];
+  const corePricingFields = [
+    "labor_cost_rate",
+    "labor_burden_pct",
+    "overhead_pct",
+    "target_margin_pct",
+  ];
+  const unconfirmedPricingFields = getPricingDefaultWarnings(
+    confirmedFields,
+    edit.promotion_label,
+    Number(edit.promotion_discount_pct) || 0,
+  );
+  const applyCompanyDefaults = () => {
+    if (!companyDefaults) return;
+    setEdit({
+      ...edit,
+      ...(confirmedFields.includes("labor_cost_rate") && companyDefaults.labor_cost_rate !== null
+        ? { labor_cost_rate: String(companyDefaults.labor_cost_rate) }
+        : {}),
+      ...(confirmedFields.includes("labor_burden_pct") && companyDefaults.labor_burden_pct !== null
+        ? { labor_burden_pct: String(companyDefaults.labor_burden_pct) }
+        : {}),
+      ...(confirmedFields.includes("overhead_pct") && companyDefaults.overhead_pct !== null
+        ? { overhead_pct: String(companyDefaults.overhead_pct) }
+        : {}),
+      ...(confirmedFields.includes("target_margin_pct") &&
+      companyDefaults.target_margin_pct !== null
+        ? { target_margin_pct: String(companyDefaults.target_margin_pct) }
+        : {}),
+    });
+  };
+
   const save = useMutation({
     mutationFn: async () => {
-      await (supabase as any)
+      const pricingCheckedAt = new Date().toISOString();
+      const snapshot = {
+        schema_version: 1,
+        captured_at: pricingCheckedAt,
+        company_defaults: companyDefaults
+          ? {
+              labor_cost_rate: companyDefaults.labor_cost_rate,
+              labor_burden_pct: companyDefaults.labor_burden_pct,
+              overhead_pct: companyDefaults.overhead_pct,
+              target_margin_pct: companyDefaults.target_margin_pct,
+              veteran_discount_pct: companyDefaults.veteran_discount_pct,
+              confirmed_fields: confirmedFields,
+            }
+          : null,
+        quote_inputs: {
+          labor_cost_rate: Number(edit.labor_cost_rate) || 0,
+          labor_burden_pct: Number(edit.labor_burden_pct) || 0,
+          overhead_pct: Number(edit.overhead_pct) || 0,
+          target_margin_pct: Number(edit.target_margin_pct) || 0,
+          promotion_discount_pct: Number(edit.promotion_discount_pct) || 0,
+          promotion_label: edit.promotion_label.trim() || null,
+        },
+      };
+      const { error } = await (supabase as any)
         .from("proposal_options")
         .update({
           title: edit.title,
@@ -388,52 +646,113 @@ function ProposalOptionCard({
           is_recommended: edit.is_recommended,
           estimated_material_cost: Number(edit.estimated_material_cost) || 0,
           estimated_labor_hours: Number(edit.estimated_labor_hours) || 0,
-          labor_cost_rate:
-            edit.labor_cost_rate.trim() === ""
-              ? 25
-              : Number(edit.labor_cost_rate),
+          labor_cost_rate: edit.labor_cost_rate.trim() === "" ? 25 : Number(edit.labor_cost_rate),
           labor_burden_pct: Number(edit.labor_burden_pct) || 0,
           estimated_other_cost: Number(edit.estimated_other_cost) || 0,
           overhead_pct: Number(edit.overhead_pct) || 0,
           target_margin_pct: Number(edit.target_margin_pct) || 0,
           promotion_label: edit.promotion_label.trim() || null,
-          promotion_discount_pct:
-            Number(edit.promotion_discount_pct) || 0,
-          estimated_days:
-            edit.estimated_days.trim() === ""
-              ? null
-              : Number(edit.estimated_days),
-          pricing_source_summary:
-            edit.pricing_source_summary.trim() || null,
-          pricing_checked_at: new Date().toISOString(),
+          promotion_discount_pct: Number(edit.promotion_discount_pct) || 0,
+          estimated_days: edit.estimated_days.trim() === "" ? null : Number(edit.estimated_days),
+          pricing_source_summary: edit.pricing_source_summary.trim() || null,
+          pricing_checked_at: pricingCheckedAt,
+          pricing_defaults_snapshot: snapshot,
+          pricing_warning_tags: unconfirmedPricingFields,
         })
         .eq("id", option.id);
+      if (error) throw error;
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["proposal", option.proposal_id] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["proposal", option.proposal_id] }),
   });
   const del = useMutation({
-    mutationFn: async () => { await supabase.from("proposal_options").delete().eq("id", option.id); },
+    mutationFn: async () => {
+      await supabase.from("proposal_options").delete().eq("id", option.id);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["proposal", option.proposal_id] }),
   });
   return (
-    <div className={`rounded-md border p-3 space-y-2 ${edit.is_recommended ? "border-gold ring-gold" : ""}`}>
-      <Badge variant="outline" className="border-gold text-gold-foreground bg-gold/10">{option.tier}</Badge>
-      <Input value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} className="font-semibold"/>
-      <Textarea rows={3} value={edit.description} onChange={(e) => setEdit({ ...edit, description: e.target.value })} placeholder="What's included"/>
-      <Input type="number" value={edit.price} onChange={(e) => setEdit({ ...edit, price: e.target.value })} />
-      <div className="text-lg font-display font-bold tabular-nums text-navy">{formatMoney(Number(edit.price))}</div>
+    <div
+      className={`rounded-md border p-3 space-y-2 ${edit.is_recommended ? "border-gold ring-gold" : ""}`}
+    >
+      <Badge variant="outline" className="border-gold text-gold-foreground bg-gold/10">
+        {option.tier}
+      </Badge>
+      <Input
+        value={edit.title}
+        onChange={(e) => setEdit({ ...edit, title: e.target.value })}
+        className="font-semibold"
+      />
+      <Textarea
+        rows={3}
+        value={edit.description}
+        onChange={(e) => setEdit({ ...edit, description: e.target.value })}
+        placeholder="What's included"
+      />
+      <Input
+        type="number"
+        value={edit.price}
+        onChange={(e) => setEdit({ ...edit, price: e.target.value })}
+      />
+      <div className="text-lg font-display font-bold tabular-nums text-navy">
+        {formatMoney(Number(edit.price))}
+      </div>
 
       <details className="rounded-md border bg-muted/20 p-2">
         <summary className="cursor-pointer text-xs font-semibold">
           Contractor-only costs, labor & margin
         </summary>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          <InternalNumber label="Materials" value={edit.estimated_material_cost} onChange={(value) => setEdit({ ...edit, estimated_material_cost: value })} prefix="$" />
-          <InternalNumber label="Other direct costs" value={edit.estimated_other_cost} onChange={(value) => setEdit({ ...edit, estimated_other_cost: value })} prefix="$" />
-          <InternalNumber label="Labor hours" value={edit.estimated_labor_hours} onChange={(value) => setEdit({ ...edit, estimated_labor_hours: value })} />
+          <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 rounded border bg-background p-2">
+            <span className="text-xs text-muted-foreground">
+              {companyDefaults
+                ? `${confirmedFields.length} company values confirmed`
+                : "Company defaults unavailable"}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={applyCompanyDefaults}
+              disabled={
+                confirmedFields.filter((key) => corePricingFields.includes(key)).length === 0
+              }
+            >
+              Apply confirmed defaults
+            </Button>
+          </div>
+          {unconfirmedPricingFields.length > 0 && (
+            <div className="sm:col-span-2 rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+              Quote warning:{" "}
+              {unconfirmedPricingFields.map((key) => key.replaceAll("_", " ")).join(", ")}{" "}
+              {unconfirmedPricingFields.length === 1 ? "has" : "have"} no confirmed company default.
+              Saving captures this warning with the quote.
+            </div>
+          )}
+          <InternalNumber
+            label="Materials"
+            value={edit.estimated_material_cost}
+            onChange={(value) => setEdit({ ...edit, estimated_material_cost: value })}
+            prefix="$"
+          />
+          <InternalNumber
+            label="Other direct costs"
+            value={edit.estimated_other_cost}
+            onChange={(value) => setEdit({ ...edit, estimated_other_cost: value })}
+            prefix="$"
+          />
+          <InternalNumber
+            label="Labor hours"
+            value={edit.estimated_labor_hours}
+            onChange={(value) => setEdit({ ...edit, estimated_labor_hours: value })}
+          />
           <div>
-            <InternalNumber label="Employee pay / hr" value={edit.labor_cost_rate} onChange={(value) => setEdit({ ...edit, labor_cost_rate: value })} prefix="$" hint="$25 fallback" />
+            <InternalNumber
+              label="Employee pay / hr"
+              value={edit.labor_cost_rate}
+              onChange={(value) => setEdit({ ...edit, labor_cost_rate: value })}
+              prefix="$"
+              hint="$25 fallback"
+            />
             <Button
               type="button"
               variant="ghost"
@@ -449,18 +768,72 @@ function ProposalOptionCard({
               Use active crew average · {formatMoney(averageCrewPay)}/hr
             </Button>
           </div>
-          <InternalNumber label="Labor burden" value={edit.labor_burden_pct} onChange={(value) => setEdit({ ...edit, labor_burden_pct: value })} suffix="%" />
-          <InternalNumber label="Overhead" value={edit.overhead_pct} onChange={(value) => setEdit({ ...edit, overhead_pct: value })} suffix="%" />
-          <InternalNumber label="Target margin" value={edit.target_margin_pct} onChange={(value) => setEdit({ ...edit, target_margin_pct: value })} suffix="%" />
-          <InternalNumber label="Promotion discount" value={edit.promotion_discount_pct} onChange={(value) => setEdit({ ...edit, promotion_discount_pct: value })} suffix="%" />
-          <InternalNumber label="Estimated work days" value={edit.estimated_days} onChange={(value) => setEdit({ ...edit, estimated_days: value })} />
+          <InternalNumber
+            label="Labor burden"
+            value={edit.labor_burden_pct}
+            onChange={(value) => setEdit({ ...edit, labor_burden_pct: value })}
+            suffix="%"
+          />
+          <InternalNumber
+            label="Overhead"
+            value={edit.overhead_pct}
+            onChange={(value) => setEdit({ ...edit, overhead_pct: value })}
+            suffix="%"
+          />
+          <InternalNumber
+            label="Target margin"
+            value={edit.target_margin_pct}
+            onChange={(value) => setEdit({ ...edit, target_margin_pct: value })}
+            suffix="%"
+          />
+          <InternalNumber
+            label="Promotion discount"
+            value={edit.promotion_discount_pct}
+            onChange={(value) => setEdit({ ...edit, promotion_discount_pct: value })}
+            suffix="%"
+          />
+          <div className="flex items-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              disabled={
+                !confirmedFields.includes("veteran_discount_pct") ||
+                companyDefaults?.veteran_discount_pct === null ||
+                companyDefaults?.veteran_discount_pct === undefined
+              }
+              onClick={() =>
+                setEdit({
+                  ...edit,
+                  promotion_label: "Veteran discount",
+                  promotion_discount_pct: String(companyDefaults?.veteran_discount_pct ?? 0),
+                })
+              }
+            >
+              Apply confirmed veteran discount
+            </Button>
+          </div>
+          <InternalNumber
+            label="Estimated work days"
+            value={edit.estimated_days}
+            onChange={(value) => setEdit({ ...edit, estimated_days: value })}
+          />
           <div className="space-y-1">
             <Label className="text-[11px]">Promotion label</Label>
-            <Input value={edit.promotion_label} onChange={(e) => setEdit({ ...edit, promotion_label: e.target.value })} placeholder="10% veteran metal-roof special" />
+            <Input
+              value={edit.promotion_label}
+              onChange={(e) => setEdit({ ...edit, promotion_label: e.target.value })}
+              placeholder="10% veteran metal-roof special"
+            />
           </div>
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-[11px]">Pricing sources</Label>
-            <Input value={edit.pricing_source_summary} onChange={(e) => setEdit({ ...edit, pricing_source_summary: e.target.value })} placeholder="Local supplier quotes, contractor history, market range, national benchmark" />
+            <Input
+              value={edit.pricing_source_summary}
+              onChange={(e) => setEdit({ ...edit, pricing_source_summary: e.target.value })}
+              placeholder="Local supplier quotes, contractor history, market range, national benchmark"
+            />
           </div>
         </div>
         <div className="mt-3 grid gap-1 rounded bg-background p-2 text-xs">
@@ -471,7 +844,9 @@ function ProposalOptionCard({
           <CostRow label="Projected gross profit" value={economics.grossProfit} />
           <div className="flex justify-between font-semibold">
             <span>Achieved margin</span>
-            <span className={economics.achievedMarginPct < 10 ? "text-destructive" : "text-emerald-700"}>
+            <span
+              className={economics.achievedMarginPct < 10 ? "text-destructive" : "text-emerald-700"}
+            >
               {economics.achievedMarginPct.toFixed(1)}%
             </span>
           </div>
@@ -481,13 +856,31 @@ function ProposalOptionCard({
         </div>
       </details>
 
+      {Array.isArray(option.pricing_warning_tags) && option.pricing_warning_tags.length > 0 && (
+        <div className="rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+          Saved pricing warning:{" "}
+          {option.pricing_warning_tags.map((key: string) => key.replaceAll("_", " ")).join(", ")}{" "}
+          was unconfirmed when this quote was saved.
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
-        <Switch checked={edit.is_recommended} onCheckedChange={(v) => setEdit({ ...edit, is_recommended: v })} id={`r-${option.id}`} />
-        <Label htmlFor={`r-${option.id}`} className="text-xs">Recommended</Label>
+        <Switch
+          checked={edit.is_recommended}
+          onCheckedChange={(v) => setEdit({ ...edit, is_recommended: v })}
+          id={`r-${option.id}`}
+        />
+        <Label htmlFor={`r-${option.id}`} className="text-xs">
+          Recommended
+        </Label>
       </div>
       <div className="flex gap-2">
-        <Button size="sm" onClick={() => save.mutate()}>Save</Button>
-        <Button size="sm" variant="ghost" onClick={() => del.mutate()}>Delete</Button>
+        <Button size="sm" onClick={() => save.mutate()}>
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => del.mutate()}>
+          Delete
+        </Button>
       </div>
     </div>
   );
@@ -510,10 +903,19 @@ function InternalNumber({
 }) {
   return (
     <div className="space-y-1">
-      <Label className="text-[11px]">{label}{hint ? ` · ${hint}` : ""}</Label>
+      <Label className="text-[11px]">
+        {label}
+        {hint ? ` · ${hint}` : ""}
+      </Label>
       <div className="flex items-center gap-1">
         {prefix && <span className="text-xs text-muted-foreground">{prefix}</span>}
-        <Input type="number" min="0" step="0.01" value={value} onChange={(event) => onChange(event.target.value)} />
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
         {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
       </div>
     </div>
@@ -529,7 +931,17 @@ function CostRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function Field({ label, value, onChange, rows = 3 }: { label: string; value: any; onChange: (v: string) => void; rows?: number }) {
+function Field({
+  label,
+  value,
+  onChange,
+  rows = 3,
+}: {
+  label: string;
+  value: any;
+  onChange: (v: string) => void;
+  rows?: number;
+}) {
   return (
     <div className="space-y-1">
       <Label className="text-xs">{label}</Label>
@@ -544,7 +956,9 @@ function SendProposalButton({ proposalId, status }: { proposalId: string; status
   async function send() {
     setBusy(true);
     try {
-      const { data, error } = await (supabase.rpc as any)("send_proposal", { _proposal_id: proposalId });
+      const { data, error } = await (supabase.rpc as any)("send_proposal", {
+        _proposal_id: proposalId,
+      });
       if (error) throw error;
       const r = data as any;
       if (r?.error) throw new Error(r.error);
@@ -559,7 +973,9 @@ function SendProposalButton({ proposalId, status }: { proposalId: string; status
       } catch (emailErr: any) {
         const msg: string = emailErr?.message ?? "";
         if (msg.includes("RESEND_API_KEY")) {
-          toast.success("Proposal marked sent. Client link copied. (Email not configured — set RESEND_API_KEY to enable email delivery.)");
+          toast.success(
+            "Proposal marked sent. Client link copied. (Email not configured — set RESEND_API_KEY to enable email delivery.)",
+          );
         } else {
           toast.success("Proposal marked sent. Client link copied.");
           console.warn("[proposal send] Email delivery failed:", msg);
@@ -569,12 +985,15 @@ function SendProposalButton({ proposalId, status }: { proposalId: string; status
       qc.invalidateQueries({ queryKey: ["proposal"] });
     } catch (e: any) {
       toast.error(e.message ?? "Could not send");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
   const sent = status !== "draft";
   return (
     <Button size="sm" variant={sent ? "outline" : "default"} disabled={busy} onClick={send}>
-      <Send className="mr-1 h-4 w-4"/>{sent ? "Resend link" : "Send proposal"}
+      <Send className="mr-1 h-4 w-4" />
+      {sent ? "Resend link" : "Send proposal"}
     </Button>
   );
 }
@@ -604,24 +1023,35 @@ function ClientLinkButtons({ proposalId, hasToken }: { proposalId: string; hasTo
   async function revoke() {
     setBusy(true);
     try {
-      const { error } = await (supabase.rpc as any)("revoke_proposal_portal_token", { _proposal_id: proposalId });
+      const { error } = await (supabase.rpc as any)("revoke_proposal_portal_token", {
+        _proposal_id: proposalId,
+      });
       if (error) throw error;
       toast.success("Client link revoked.");
       qc.invalidateQueries({ queryKey: ["proposal"] });
-    } catch (e: any) { toast.error(e.message ?? "Could not revoke"); }
-    finally { setBusy(false); }
+    } catch (e: any) {
+      toast.error(e.message ?? "Could not revoke");
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <>
       <Button variant="outline" size="sm" disabled={busy} onClick={() => ensure(false)}>
-        <Link2 className="mr-1 h-4 w-4"/> Copy link
+        <Link2 className="mr-1 h-4 w-4" /> Copy link
       </Button>
-      <Button variant="ghost" size="sm" disabled={busy} onClick={() => ensure(true)} title="Rotate link (invalidates old URL)">
-        <RefreshCw className="h-4 w-4"/>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={busy}
+        onClick={() => ensure(true)}
+        title="Rotate link (invalidates old URL)"
+      >
+        <RefreshCw className="h-4 w-4" />
       </Button>
       {hasToken && (
         <Button variant="ghost" size="sm" disabled={busy} onClick={revoke} title="Revoke link">
-          <XCircle className="h-4 w-4 text-destructive"/>
+          <XCircle className="h-4 w-4 text-destructive" />
         </Button>
       )}
     </>
