@@ -1,18 +1,14 @@
 # ManyHats Lovable Build Status
 
-## Authoritative current status — verified 2026-08-11
+## Authoritative current status — verified 2026-10-11
 
 This section supersedes older point-in-time status statements below.
 
-- GitHub PR #6 is **merged** into `main`.
-- GitHub PR #11 (`codex/backend-stabilization`) is **open and not yet merged**.
-- Stabilization migrations (Stripe unique index, RPC hardening) are **not deployed to production**.
-- The Flutter backend contract is **not frozen** until:
-  1. PR #11 merges into `main`
-  2. Migrations are applied to the production database
-  3. Production ACLs are verified (anonymous users cannot call internal RPCs)
-  4. Supabase types are regenerated from the live schema
-- Do not treat production as containing the complete repository schema until all four steps above are confirmed.
+- Web source `Hollows12/manyhats-app-2c1090de` `main` is at `9d768170a15067d78de4caf55aec3daab0ca9174` and includes merged PRs #38–#40: universal project foundation, immutable proposal acceptance, and indexes.
+- PRs #38–#40 document non-production migration rehearsal and state that production was unchanged. Production deployment of those migrations remains **unverified**; do not assume production schema matches GitHub `main`.
+- Flutter source `Hollows12/manyhats-app` PR #37 (`feature/behind-the-build-beta`) remains **open**. Its Flutter CI and Mobile Release Check passed for head `13a8ab13d3958f99409fafc1f3309c2ae53619f9`; migration `010_behind_build_audit.sql` is still a deployment prerequisite before distributing that workflow.
+- Lovable company operating defaults described in the beta conversation are not yet represented in the reviewed GitHub settings form; see the updated V1 gap audit.
+- Private-beta acceptance, production migration verification, offline/device acceptance, and app-store release gates remain open. A successful code merge does not authorize production deployment or store publication.
 
 Historical audit sections below are retained as point-in-time records and must not be read as the current merge or deployment state.
 
