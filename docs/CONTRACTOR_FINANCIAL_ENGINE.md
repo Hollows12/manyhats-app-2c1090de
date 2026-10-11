@@ -105,6 +105,31 @@ LEAD & SITE VISIT
 
 ## Smart Financial Features
 
+### Company Operating Defaults and Quote Traceability
+
+Company-wide labor cost, labor burden, crew size, equipment, travel, disposal,
+permit allowance, overhead, contingency, target margin, and veteran discount
+values are managed in the admin settings page. Values start blank. Each field
+must be explicitly confirmed before it is treated as a company default, and
+every settings change is recorded in an append-only history table.
+
+The proposal pricing editor can apply confirmed labor cost, labor burden,
+overhead, and target margin defaults. A confirmed veteran discount is applied
+only when the contractor chooses it for a proposal. When quote pricing is saved,
+the system records the company-default values, the inputs used, and warning tags
+for pricing defaults that are missing or unconfirmed. The existing client
+acceptance snapshot captures that option row, preserving the pricing context
+with the accepted proposal.
+
+The other saved operating inputs (crew size, equipment, travel, disposal,
+permit allowance, and contingency) are available in settings but are not yet
+applied automatically to proposal or estimate line items. Keep those values
+visible as configuration until each costing flow explicitly consumes them.
+
+---
+
+## Smart Financial Features
+
 ### AI-Powered Financial Intelligence
 
 **Profit Forecasting:**
