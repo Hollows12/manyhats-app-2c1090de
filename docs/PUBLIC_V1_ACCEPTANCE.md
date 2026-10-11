@@ -104,6 +104,59 @@ updates, organizing receipts, flagging schedule/cost risks, and assembling close
   appropriate.
 - Never train or make decisions from one company's data in another company's tenant.
 
+## Development-platform bake-off and roadmap
+
+Evaluate tools against the ManyHats stack and workflows before moving source-of-truth work.
+The baseline is the current GitHub web repository + Supabase backend + Flutter mobile repository.
+Emergent is a candidate, not an assumed replacement. Its published mobile conversion uses
+Expo/React Native, and its mobile data documentation describes a MongoDB-backed mobile app;
+verify current capabilities directly before any architecture decision. Lovable documents
+Git sync and Supabase connectors.
+
+Platform references:
+- [Emergent pricing and plan features](https://emergent.sh/pricing)
+- [Emergent mobile conversion](https://help.emergent.sh/web-mobile-conversion-canonical)
+- [Emergent mobile database and data](https://help.emergent.sh/database-data-on-mobile)
+- [Lovable connectors](https://lovable.dev/connect)
+- [Lovable Git sync glossary](https://docs.lovable.dev/glossary)
+
+Run the same test specification in an isolated Emergent project and the current source-of-truth
+workflow. Use synthetic company and project data only; do not connect production credentials or
+customer data. Record build prompts, resulting commits, successful and failed test cases, elapsed
+time, platform credits, subscription costs, and any extra hosting or service costs.
+
+| Test | Required evidence |
+| --- | --- |
+| Company defaults and estimating | Confirmed/example values, dated change history, estimate snapshots, and warning tags work consistently; example values never silently become approved pricing |
+| Offline field capture | On real iPhone and Android devices, save a note/photo with no network, restart, reconnect, and verify sync state, safe retry, no duplicate/lost records, and conflict handling |
+| AI-assisted project work | Draft an estimate or client update from approved records, show source evidence and uncertainty, and require an explicit person to approve before any external or financial action |
+| 1/5/20-user access | Invitations, roles, assignment, offboarding, owner-private margins, crew boundaries, and client-specific visibility pass positive and negative access tests |
+| Portability and backend fit | Full code and schema changes land in version control; a clean checkout can be built and deployed outside the builder; the test app continues to use the selected Supabase schema, Auth, Storage, and RLS without silent duplicate system-of-record data |
+| Cost and maintainability | Capture credits and recurring costs for each identical task; record manual repairs, code review findings, tests, and maintenance burden |
+
+Score each category from 0–5 using test evidence, then apply these weights: workflow fit 20%,
+backend/data fit 20%, mobile/offline 20%, security and role controls 15%, code portability 10%,
+cost 10%, and maintainability 5%. A hard-gate failure disqualifies a platform regardless of its
+score: production-data isolation, passing tenant/role privacy tests, reproducible build from
+versioned source, usable recovery/offline behavior, or no critical unresolved security finding.
+Do not choose a platform from its demo, marketing claims, or one successful screen.
+
+### Decision roadmap
+
+1. **Baseline:** Record the current app's build, workflow results, time-to-complete, and costs.
+2. **Isolated proof:** Rebuild the two highest-risk workflows—company defaults/estimate snapshot and
+   offline field capture—in the candidate platform using fake data and the exact same acceptance
+   tests.
+3. **Architecture and security review:** Verify Supabase compatibility, tenant boundaries, migration
+   history, code export, and clean-checkout deployment. Run real-device checks and independent code
+   review.
+4. **Decision:** Adopt a candidate for future work only if it clears every hard gate, reaches at
+   least 85/100, and demonstrates a measurable advantage in delivery time or total cost. Keep the
+   accepted GitHub repository and Supabase schema as the source of truth during evaluation.
+5. **Controlled transition:** If selected, migrate one bounded workflow through a reviewed PR,
+   regression suite, database backup/restore rehearsal, and rollback plan before changing the
+   broader build process. Do not migrate production data as part of the bake-off.
+
 ## Public release evidence
 
 Before public availability, record evidence against the exact release candidate:
