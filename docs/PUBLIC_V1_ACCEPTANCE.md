@@ -12,6 +12,19 @@ record: **capture once, use everywhere**.
 
 “Best in market” is a goal, not a claim to publish before comparative user testing supports it.
 
+## Small-business leverage target
+
+ManyHats should give a one-person operator access to the repeatable business capacity of a much
+larger contractor: capture information once, then carry it through estimating, scheduling,
+field records, client communication, cost tracking, invoicing, and closeout. Agents should prepare
+routine work across those steps so the owner can review decisions instead of re-entering data.
+
+Treat “the work of 20 people” as a product vision to prove, not a literal staffing or savings
+claim. Measure human minutes spent per project and per workflow before and after ManyHats, the
+share of routine steps completed accurately with owner approval, correction/rework rates, and
+time-to-complete at 1-, 5-, and 20-user company sizes. Public claims require customer evidence
+and comparative tests.
+
 ## Competitive baseline
 
 Reviewed 2026-10-11 from vendor product pages. These are vendor-described capabilities, not
