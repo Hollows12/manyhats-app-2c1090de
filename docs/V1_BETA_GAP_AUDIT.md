@@ -1,30 +1,39 @@
 # V1 Private-Beta Gap Audit
 
-**Audit baseline:** backend `main` at `f988099259ad15c455dc380a01d0bb9fc06e647a` and
-production Supabase project `hgiwvyziupfpxzdocbxr` on 2026-08-20. Flutter findings must be
-completed against its coordinated release head before the release candidate is tagged.
+**Repository snapshot:** backend `main` at `9d768170a15067d78de4caf55aec3daab0ca9174`
+(2026-08-20). The prior production Supabase baseline is the 2026-08-20 audit; deployment of the
+later PR #38–#40 migrations was not confirmed in this reconciliation (2026-10-11). Flutter
+findings must be completed against its coordinated release head before the release candidate is
+tagged.
 
 This audit uses `V1_BETA_SOURCE_OF_TRUTH.md` as the acceptance contract. A database table,
 documentation entry, or route shell is evidence of foundation only; it is not proof of an
 end-to-end private-beta workflow.
 
+**Reconciliation note (2026-10-11):** the prior table reflected backend commit
+`f988099259ad15c455dc380a01d0bb9fc06e647a`. PRs #38 (universal project foundation), #39
+(immutable proposal acceptance), and #40 (foreign-key indexes) subsequently merged to GitHub
+`main`. The affected rows below are corrected to reflect those merges. Other rows retain the
+prior audit's status and require a fresh implementation and acceptance review.
+
 | Capability | Current evidence | Audit status | Required closure evidence |
 | --- | --- | --- | --- |
-| Canonical backend and production schema | PR #36 merged; production migration history includes the V1 security, entitlement, receipt, profitability and payment-integrity migrations | Implemented foundation | Re-run coordinated release checks on exact candidate |
+| Canonical backend and production schema | GitHub `main` includes migrations from PRs #38–#40; those PRs report non-production rehearsal and explicitly leave production unchanged | Repository code current; production deployment unverified | Verify production migration history and ACLs against exact release candidate |
 | Money loop | Lead/project, estimate, proposal, signature, deposits, progress billing, invoices, payments, receipts and profit tables/UI exist | Implemented; device verification pending | Owner and client-actor end-to-end tests |
 | Three pricing tiers and private profitability | Atomic estimate builder, proposal options, crew labor rates and profitability engine exist | Implemented; device verification pending | Low/recommended/premium and privacy acceptance tests |
+| Company operating defaults and estimate snapshots | The reviewed GitHub settings form covers company identity/proposal branding; repository search did not find Lovable-described confirmed/example defaults, change history, or an estimate snapshot of those values | Prototype-to-source parity gap; partial | Bring over defaults for labor/burden, crew/equipment/travel/disposal, permits, overhead/contingency, target margins, veteran discount, and production rates; require per-field confirmation, change history, estimate snapshots, warning tags, and mobile parity tests |
 | Proposal attachments/PDF | Private attachment table/storage policies and private PDF route exist | Implemented; device verification pending | Upload, access denial, client delivery and signed-copy tests |
 | Shared Vision complete structured intake | Basic project, photo, voice and measurement foundations exist; older completion plan records missing goals, priorities, risks, constraints, inclusions, exclusions and readiness integration | Partial | One capture populates estimate, proposal, schedule, portal, closeout and BI |
 | Offline field workflow | Flutter source-of-truth requires it; backend documentation describes queue behavior | Unverified | Real-device airplane-mode, reconnect, retry, duplicate and conflict tests |
-| Universal/custom project engine | Backend has a broad project-type selector and several specialty tables; no implemented reusable phase/task/trade/dependency template engine was found | Missing/partial | Standard presets plus unrestricted custom project acceptance scenarios |
+| Universal/custom project engine | PR #38 merged 12 project templates, 63 template phases, structured Shared Vision/jurisdiction context, classifications, editable project phases, and staff/client RLS separation | Foundation implemented; full contract partial | Verify all project families end to end; add/verify task, trade, dependency, estimation, and closeout coverage for unrestricted custom work |
 | Municipal/public works | Retainage and municipal proposal tone exist | Partial | Procurement, compliance, prevailing wage/certified payroll, bonds, submittals, RFIs and pay-app workflow |
 | Pool installation | No dedicated pool workflow was found | Missing | Pool intake, phases, estimating, permits/inspections and closeout scenario |
 | Excavation/land/water control/bridge | Basic excavation, site-development, drainage and stormwater project types exist | Partial | Detailed templates, takeoffs, inspections, bridge and engineered-water checkpoints |
-| LiDAR Site Intelligence | Production has `lidar_scans`; no complete analysis/decision-support UI was found in backend | Missing/partial | Evidence overlays, alternatives, confidence/risk and contractor-approval workflow |
+| LiDAR Site Intelligence | PR #38 adds entitlement-aware AI/LiDAR site-intelligence foundations; no evidence here proves complete analysis and decision-support workflows or production migration deployment | Foundation implemented; full module partial | Verify evidence overlays, alternatives, confidence/risk, contractor approval, and production entitlement enforcement |
 | Sentinel Septic | Production has `septic_projects`; entitlements include `sentinel_septic`; old roadmap identifies specialty UI as incomplete | Partial | Complete install/repair, mapping, permit, inspection, report and entitlement tests |
 | Ultra-real rendering/concept plans/3D walkthrough | Estimate deliverables and entitlements exist | Implemented foundation | Quality, Shared Vision consistency, safety labels and device delivery tests |
 | Local codes and supplier freshness | Service areas, suppliers, materials/prices and Firecrawl pricing foundation exist | Partial | Source/timestamp/freshness, jurisdiction evidence and contractor approval tests |
-| Proposal revisions and immutable acceptance | Existing completion plan explicitly records missing revision request and immutable proposal version/snapshot | Missing | Versioned revision path, locked signed snapshot and signed-copy download |
+| Proposal revisions and immutable acceptance | PR #39 merged append-only acceptance snapshots, SHA-256 digests, and guards against edits to accepted proposal terms/options; the full client revision/version workflow remains unverified | Immutable acceptance implemented in repository; revisions and device acceptance pending | Verify client revision request, new version creation, signed-copy retrieval, and exact-candidate end-to-end tests |
 | Change orders | Table and project workflow exist | Partial | Client approval, immutable snapshot, estimate/schedule/invoice/profit propagation |
 | Closeout | Profit snapshot and client file foundations exist | Partial | Punch, warranty, final/as-built files, approvals and immutable closeout acceptance |
 | CEO/Executive Business Assistant | Finance/profit KPIs and AI business architecture exist; no complete executive briefing, business-health, hiring, marketing and prioritized-action workflow was found | Missing/partial | Role-private Better Business dashboard and decision-support scenarios |

@@ -2,10 +2,11 @@
 
 ManyHats Pro V1 is release-ready only when every required gate below has current evidence. Passing these gates supports a SOC 2 readiness program; it does not constitute SOC 2 certification.
 
-The complete product acceptance contract is
-[`V1_BETA_SOURCE_OF_TRUTH.md`](./V1_BETA_SOURCE_OF_TRUTH.md). A green technical build does not
-override or reduce that product scope. Every mandatory requirement in that contract must have
-traceable implementation and release-candidate evidence before private beta.
+The private-beta product acceptance contract is
+[`V1_BETA_SOURCE_OF_TRUTH.md`](./V1_BETA_SOURCE_OF_TRUTH.md). Public availability has the additional
+acceptance standard in [`PUBLIC_V1_ACCEPTANCE.md`](./PUBLIC_V1_ACCEPTANCE.md). A green technical
+build does not override or reduce either scope. Every applicable requirement must have traceable
+implementation and release-candidate evidence before its intended release audience.
 
 ## Automated pull-request gates
 
@@ -33,6 +34,7 @@ traceable implementation and release-candidate evidence before private beta.
 | Mobile distribution            | Signed Flutter release build and store metadata                                   | Pending final Flutter work   |
 | Tenant scope                   | Controlled single-company use/invited beta only                                   | Approved V1 boundary         |
 | Public multi-company isolation | Organization-scoped schema, RLS, storage, RPCs, and negative tests                | Blocks public SaaS release   |
+| Solo-to-team growth            | Same core journeys pass with 1, 5, and 20-user company profiles, role controls, stable project history, and measured performance | Pending public acceptance evidence |
 | Supabase advisors              | Security warnings dispositioned; performance warnings prioritized and load-tested | In progress                  |
 | Portal abuse controls          | Rate limiting and live token-expiry/revocation verification                       | Pending                      |
 | Authentication hardening       | Breached-password protection and production redirect review                       | Pending live verification    |
