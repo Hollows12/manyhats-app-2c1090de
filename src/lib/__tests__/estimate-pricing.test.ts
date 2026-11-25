@@ -3,9 +3,39 @@ import {
   buildThreePricingTiers,
   calculatePricingEconomics,
   DEFAULT_EMPLOYEE_HOURLY_PAY,
+  getPricingDefaultWarnings,
 } from "../estimate-pricing";
 
 describe("estimate pricing economics", () => {
+  it("warns for unconfirmed company pricing defaults and discounts", () => {
+    expect(getPricingDefaultWarnings([])).toEqual([
+      "labor_cost_rate",
+      "labor_burden_pct",
+      "overhead_pct",
+      "target_margin_pct",
+    ]);
+    expect(
+      getPricingDefaultWarnings(
+        ["labor_cost_rate", "labor_burden_pct", "overhead_pct", "target_margin_pct"],
+        "Veteran discount",
+        10,
+      ),
+    ).toEqual(["veteran_discount_pct"]);
+    expect(
+      getPricingDefaultWarnings(
+        [
+          "labor_cost_rate",
+          "labor_burden_pct",
+          "overhead_pct",
+          "target_margin_pct",
+          "veteran_discount_pct",
+        ],
+        "Veteran discount",
+        10,
+      ),
+    ).toEqual([]);
+  });
+
   it("uses the $25 employee-pay fallback when no rate is entered", () => {
     const result = calculatePricingEconomics({
       materialCost: 1000,
@@ -43,12 +73,8 @@ describe("estimate pricing economics", () => {
       targetMarginPct: 20,
       promotionDiscountPct: 10,
     });
-    expect(withPromotion.clientPrice).toBeLessThan(
-      withoutPromotion.clientPrice,
-    );
-    expect(withPromotion.achievedMarginPct).toBeLessThan(
-      withoutPromotion.achievedMarginPct,
-    );
+    expect(withPromotion.clientPrice).toBeLessThan(withoutPromotion.clientPrice);
+    expect(withPromotion.achievedMarginPct).toBeLessThan(withoutPromotion.achievedMarginPct);
   });
 
   it("builds competitive, recommended, and premium choices", () => {
@@ -61,18 +87,10 @@ describe("estimate pricing economics", () => {
       overheadPct: 10,
       promotionDiscountPct: 0,
     });
-    expect(tiers.map((tier) => tier.tier)).toEqual([
-      "Competitive",
-      "Recommended",
-      "Premium",
-    ]);
+    expect(tiers.map((tier) => tier.tier)).toEqual(["Competitive", "Recommended", "Premium"]);
     expect(tiers[1].isRecommended).toBe(true);
-    expect(tiers[0].economics.clientPrice).toBeLessThan(
-      tiers[1].economics.clientPrice,
-    );
-    expect(tiers[1].economics.clientPrice).toBeLessThan(
-      tiers[2].economics.clientPrice,
-    );
+    expect(tiers[0].economics.clientPrice).toBeLessThan(tiers[1].economics.clientPrice);
+    expect(tiers[1].economics.clientPrice).toBeLessThan(tiers[2].economics.clientPrice);
   });
 
   it("rejects invalid margins and negative costs", () => {

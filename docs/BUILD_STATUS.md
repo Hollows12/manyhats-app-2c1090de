@@ -358,7 +358,7 @@ Lead ✅ → Project ✅ → Estimate ✅ → Proposal ✅ → Invoice ❌ → P
 | `/job-costing` | Partial | Estimated vs actual roll-up. No line-item drill-in, no cost entry form (must go through project). |
 | `/knowledge-base` | Present | Confirm search + import works end-to-end. |
 | `/team` | Complete | Invite create/copy/resend/revoke. |
-| `/settings` | Partial | Read-only company info + user list. No company-editable fields, no service-area editor (server fn `upsertServiceArea` exists but no UI). No role edit. |
+| `/settings` | Partial | Company contact/branding, role controls, and admin-only operating defaults. New defaults remain unconfirmed until reviewed and are audit logged; service-area editor is still missing. |
 | `/schema-diff` | Complete | Dev tool. |
 | **Missing** `/invoices` | ❌ | Not built. |
 | **Missing** `/payments` | ❌ | Not built. |
