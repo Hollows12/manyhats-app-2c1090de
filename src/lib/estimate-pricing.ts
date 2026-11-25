@@ -1,5 +1,35 @@
 export const DEFAULT_EMPLOYEE_HOURLY_PAY = 25;
 
+export type CompanyPricingDefaultField =
+  | "labor_cost_rate"
+  | "labor_burden_pct"
+  | "overhead_pct"
+  | "target_margin_pct"
+  | "veteran_discount_pct";
+
+const REQUIRED_QUOTE_DEFAULTS: CompanyPricingDefaultField[] = [
+  "labor_cost_rate",
+  "labor_burden_pct",
+  "overhead_pct",
+  "target_margin_pct",
+];
+
+export function getPricingDefaultWarnings(
+  confirmedFields: readonly string[],
+  promotionLabel = "",
+  promotionDiscountPct = 0,
+): CompanyPricingDefaultField[] {
+  const warnings = REQUIRED_QUOTE_DEFAULTS.filter((field) => !confirmedFields.includes(field));
+  if (
+    promotionLabel.toLowerCase().includes("veteran") &&
+    promotionDiscountPct > 0 &&
+    !confirmedFields.includes("veteran_discount_pct")
+  ) {
+    warnings.push("veteran_discount_pct");
+  }
+  return warnings;
+}
+
 export type PricingInputs = {
   materialCost: number;
   laborHours: number;
@@ -38,9 +68,7 @@ function boundedPct(value: number, label: string, max = 100) {
   return value;
 }
 
-export function calculatePricingEconomics(
-  input: PricingInputs,
-): PricingEconomics {
+export function calculatePricingEconomics(input: PricingInputs): PricingEconomics {
   const materialCost = finiteNonnegative(input.materialCost, "Material cost");
   const laborHours = finiteNonnegative(input.laborHours, "Labor hours");
   const otherCost = finiteNonnegative(input.otherCost, "Other cost");
@@ -48,36 +76,21 @@ export function calculatePricingEconomics(
     input.hourlyPay == null
       ? DEFAULT_EMPLOYEE_HOURLY_PAY
       : finiteNonnegative(input.hourlyPay, "Hourly pay");
-  const laborBurdenPct = boundedPct(
-    input.laborBurdenPct,
-    "Labor burden",
-    200,
-  );
+  const laborBurdenPct = boundedPct(input.laborBurdenPct, "Labor burden", 200);
   const overheadPct = boundedPct(input.overheadPct, "Overhead");
-  const targetMarginPct = boundedPct(
-    input.targetMarginPct,
-    "Target margin",
-    95,
-  );
-  const promotionDiscountPct = boundedPct(
-    input.promotionDiscountPct ?? 0,
-    "Promotion discount",
-  );
+  const targetMarginPct = boundedPct(input.targetMarginPct, "Target margin", 95);
+  const promotionDiscountPct = boundedPct(input.promotionDiscountPct ?? 0, "Promotion discount");
 
   const directLaborCost = laborHours * hourlyPay;
-  const burdenedLaborCost =
-    directLaborCost * (1 + laborBurdenPct / 100);
+  const burdenedLaborCost = directLaborCost * (1 + laborBurdenPct / 100);
   const directCost = materialCost + burdenedLaborCost + otherCost;
   const overheadCost = directCost * (overheadPct / 100);
   const costBasis = directCost + overheadCost;
-  const priceBeforePromotion =
-    costBasis === 0 ? 0 : costBasis / (1 - targetMarginPct / 100);
-  const promotionDiscount =
-    priceBeforePromotion * (promotionDiscountPct / 100);
+  const priceBeforePromotion = costBasis === 0 ? 0 : costBasis / (1 - targetMarginPct / 100);
+  const promotionDiscount = priceBeforePromotion * (promotionDiscountPct / 100);
   const clientPrice = Math.max(0, priceBeforePromotion - promotionDiscount);
   const grossProfit = clientPrice - costBasis;
-  const achievedMarginPct =
-    clientPrice === 0 ? 0 : (grossProfit / clientPrice) * 100;
+  const achievedMarginPct = clientPrice === 0 ? 0 : (grossProfit / clientPrice) * 100;
 
   return {
     hourlyPay,

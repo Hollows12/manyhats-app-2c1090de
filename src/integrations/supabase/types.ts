@@ -353,6 +353,104 @@ export type Database = {
         }
         Relationships: []
       }
+      company_operating_defaults: {
+        Row: {
+          confirmed_fields: string[]
+          contingency_pct: number | null
+          created_at: string
+          crew_size: number | null
+          disposal_cost_per_load: number | null
+          equipment_cost_per_hour: number | null
+          id: string
+          labor_burden_pct: number | null
+          labor_cost_rate: number | null
+          overhead_pct: number | null
+          permit_allowance: number | null
+          settings_key: string
+          target_margin_pct: number | null
+          travel_cost_per_mile: number | null
+          updated_at: string
+          updated_by: string | null
+          veteran_discount_pct: number | null
+        }
+        Insert: {
+          confirmed_fields?: string[]
+          contingency_pct?: number | null
+          created_at?: string
+          crew_size?: number | null
+          disposal_cost_per_load?: number | null
+          equipment_cost_per_hour?: number | null
+          id?: string
+          labor_burden_pct?: number | null
+          labor_cost_rate?: number | null
+          overhead_pct?: number | null
+          permit_allowance?: number | null
+          settings_key?: string
+          target_margin_pct?: number | null
+          travel_cost_per_mile?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          veteran_discount_pct?: number | null
+        }
+        Update: {
+          confirmed_fields?: string[]
+          contingency_pct?: number | null
+          created_at?: string
+          crew_size?: number | null
+          disposal_cost_per_load?: number | null
+          equipment_cost_per_hour?: number | null
+          id?: string
+          labor_burden_pct?: number | null
+          labor_cost_rate?: number | null
+          overhead_pct?: number | null
+          permit_allowance?: number | null
+          settings_key?: string
+          target_margin_pct?: number | null
+          travel_cost_per_mile?: number | null
+          updated_at?: string
+          updated_by?: string | null
+          veteran_discount_pct?: number | null
+        }
+        Relationships: []
+      }
+      company_operating_defaults_history: {
+        Row: {
+          after_values: Json
+          before_values: Json | null
+          changed_at: string
+          changed_by: string | null
+          id: string
+          operation: string
+          settings_id: string
+        }
+        Insert: {
+          after_values: Json
+          before_values?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          operation: string
+          settings_id: string
+        }
+        Update: {
+          after_values?: Json
+          before_values?: Json | null
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          operation?: string
+          settings_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_operating_defaults_history_settings_id_fkey"
+            columns: ["settings_id"]
+            isOneToOne: false
+            referencedRelation: "company_operating_defaults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concept_requests: {
         Row: {
           approved_for_proposal: boolean
@@ -1973,31 +2071,73 @@ export type Database = {
       proposal_options: {
         Row: {
           description: string | null
+          estimated_days: number | null
+          estimated_labor_hours: number
+          estimated_material_cost: number
+          estimated_other_cost: number
           id: string
           is_recommended: boolean
+          labor_burden_pct: number
+          labor_cost_rate: number
+          overhead_pct: number
           price: number
+          pricing_checked_at: string | null
+          pricing_defaults_snapshot: Json
+          pricing_source_summary: string | null
+          pricing_warning_tags: string[]
+          promotion_discount_pct: number
+          promotion_label: string | null
           proposal_id: string
           sort_order: number
+          target_margin_pct: number
           tier: string
           title: string
         }
         Insert: {
           description?: string | null
+          estimated_days?: number | null
+          estimated_labor_hours?: number
+          estimated_material_cost?: number
+          estimated_other_cost?: number
           id?: string
           is_recommended?: boolean
+          labor_burden_pct?: number
+          labor_cost_rate?: number
+          overhead_pct?: number
           price?: number
+          pricing_checked_at?: string | null
+          pricing_defaults_snapshot?: Json
+          pricing_source_summary?: string | null
+          pricing_warning_tags?: string[]
+          promotion_discount_pct?: number
+          promotion_label?: string | null
           proposal_id: string
           sort_order?: number
+          target_margin_pct?: number
           tier: string
           title: string
         }
         Update: {
           description?: string | null
+          estimated_days?: number | null
+          estimated_labor_hours?: number
+          estimated_material_cost?: number
+          estimated_other_cost?: number
           id?: string
           is_recommended?: boolean
+          labor_burden_pct?: number
+          labor_cost_rate?: number
+          overhead_pct?: number
           price?: number
+          pricing_checked_at?: string | null
+          pricing_defaults_snapshot?: Json
+          pricing_source_summary?: string | null
+          pricing_warning_tags?: string[]
+          promotion_discount_pct?: number
+          promotion_label?: string | null
           proposal_id?: string
           sort_order?: number
+          target_margin_pct?: number
           tier?: string
           title?: string
         }
